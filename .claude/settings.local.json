@@ -4,7 +4,11 @@
       "Bash(find:*)",
       "Bash(head:*)",
       "Bash(wc:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(dotnet new:*)",
+      "Bash(cat:*)",
+      "Bash(dotnet build:*)",
+      "Bash(dotnet publish:*)"
     ]
   }
 }

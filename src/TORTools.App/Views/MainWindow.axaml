@@ -1,0 +1,158 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:TORTools.App.ViewModels"
+        xmlns:views="using:TORTools.App.Views"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="700"
+        x:Class="TORTools.App.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="TOR Tools - XML Editor"
+        Width="1200" Height="700"
+        WindowStartupLocation="CenterScreen">
+
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}"/>
+        <KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveAllCommand}"/>
+        <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoCommand}"/>
+        <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}"/>
+        <KeyBinding Gesture="Ctrl+N" Command="{Binding AddRowCommand}"/>
+        <KeyBinding Gesture="Ctrl+D" Command="{Binding DuplicateRowCommand}"/>
+        <KeyBinding Gesture="Delete" Command="{Binding DeleteRowCommand}"/>
+    </Window.KeyBindings>
+
+    <Window.DataTemplates>
+        <DataTemplate DataType="vm:FileTabViewModel">
+            <views:FileTabView/>
+        </DataTemplate>
+    </Window.DataTemplates>
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <Grid ColumnDefinitions="280,Auto,*" RowDefinitions="Auto,*,Auto">
+
+        <!-- Menu Bar -->
+        <Menu Grid.Row="0" Grid.ColumnSpan="3">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Save" InputGesture="Ctrl+S" Command="{Binding SaveCommand}"/>
+                <MenuItem Header="Save _All" InputGesture="Ctrl+Shift+S" Command="{Binding SaveAllCommand}"/>
+                <Separator/>
+                <MenuItem Header="_Refresh Workspace" Command="{Binding RefreshWorkspaceCommand}"/>
+                <Separator/>
+                <MenuItem Header="E_xit" Command="{Binding ExitCommand}"/>
+            </MenuItem>
+            <MenuItem Header="_Edit">
+                <MenuItem Header="_Undo" InputGesture="Ctrl+Z" Command="{Binding UndoCommand}"/>
+                <MenuItem Header="_Redo" InputGesture="Ctrl+Y" Command="{Binding RedoCommand}"/>
+                <Separator/>
+                <MenuItem Header="_Add Row" InputGesture="Ctrl+N" Command="{Binding AddRowCommand}"/>
+                <MenuItem Header="_Duplicate Row" InputGesture="Ctrl+D" Command="{Binding DuplicateRowCommand}"/>
+                <MenuItem Header="De_lete Row" InputGesture="Delete" Command="{Binding DeleteRowCommand}"/>
+            </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="_Workspace Settings" Command="{Binding OpenWorkspaceSettingsCommand}"/>
+            </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="_About" Command="{Binding AboutCommand}"/>
+            </MenuItem>
+        </Menu>
+
+        <!-- Catalog Sidebar -->
+        <Border Grid.Row="1" Grid.Column="0"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                BorderThickness="0,0,1,0"
+                Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+            <Grid RowDefinitions="Auto,*">
+                <TextBlock Grid.Row="0" Text="Catalogs" FontWeight="SemiBold" Margin="12,10,12,6"/>
+                <TreeView Grid.Row="1"
+                          ItemsSource="{Binding Catalogs}"
+                          Margin="4,0"
+                          DoubleTapped="TreeView_DoubleTapped">
+                    <TreeView.DataTemplates>
+                        <!-- Template for catalog nodes -->
+                        <TreeDataTemplate DataType="vm:CatalogNode" ItemsSource="{Binding Files}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"/>
+                                <TextBlock Text="{Binding Files.Count, StringFormat='({0})'}"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           FontSize="12"/>
+                            </StackPanel>
+                        </TreeDataTemplate>
+                        <!-- Template for file nodes inside catalogs -->
+                        <DataTemplate DataType="vm:FileNode">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock Text="{Binding DisplayName}" FontSize="12"/>
+                                <TextBlock Text="{Binding Repository, StringFormat='[{0}]'}"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                           FontSize="10"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </TreeView.DataTemplates>
+                </TreeView>
+            </Grid>
+        </Border>
+
+        <!-- Splitter -->
+        <GridSplitter Grid.Row="1" Grid.Column="1"
+                      Width="4"
+                      ResizeDirection="Columns"
+                      Background="Transparent"/>
+
+        <!-- Tab Panel for Open Files -->
+        <TabControl Grid.Row="1" Grid.Column="2"
+                    ItemsSource="{Binding OpenTabs}"
+                    SelectedItem="{Binding ActiveTab}">
+            <TabControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:FileTabViewModel">
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <TextBlock Text="{Binding Title}"/>
+                        <TextBlock Text="*" IsVisible="{Binding HasUnsavedChanges}"
+                                   Foreground="Orange" FontWeight="Bold"/>
+                    </StackPanel>
+                </DataTemplate>
+            </TabControl.ItemTemplate>
+        </TabControl>
+
+        <!-- Welcome message when no tabs open -->
+        <Border Grid.Row="1" Grid.Column="2"
+                IsVisible="{Binding !HasOpenTabs}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+            <StackPanel Spacing="15" HorizontalAlignment="Center">
+                <TextBlock Text="TOR Tools"
+                           FontSize="28"
+                           FontWeight="Light"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="XML Editor for The Old Realms"
+                           FontSize="14"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="Double-click a file in the sidebar to open it"
+                           FontSize="12"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           HorizontalAlignment="Center"
+                           Margin="0,20,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="2" Grid.ColumnSpan="3"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="12,6">
+            <Grid ColumnDefinitions="*,Auto,Auto">
+                <TextBlock Grid.Column="0" Text="{Binding StatusMessage}" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="{Binding RowCountText}" Margin="20,0" VerticalAlignment="Center"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                <TextBlock Grid.Column="2" Text="{Binding WorkspacePath}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           VerticalAlignment="Center"
+                           FontSize="11"/>
+            </Grid>
+        </Border>
+    </Grid>
+
+</Window>

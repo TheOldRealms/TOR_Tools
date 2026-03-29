@@ -1,0 +1,323 @@
+using System.Text.Json;
+using TORTools.Core.Models;
+
+namespace TORTools.Core.Workspace;
+
+/// <summary>
+/// Service for managing the TOR workspace configuration and file discovery.
+/// </summary>
+public class WorkspaceService : IWorkspaceService
+{
+    private static readonly string[] CommonBannerlordPaths =
+    [
+        @"C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord",
+        @"C:\Program Files\Steam\steamapps\common\Mount & Blade II Bannerlord",
+        @"D:\Steam\steamapps\common\Mount & Blade II Bannerlord",
+        @"D:\SteamLibrary\steamapps\common\Mount & Blade II Bannerlord",
+        @"E:\SteamLibrary\steamapps\common\Mount & Blade II Bannerlord",
+    ];
+
+    /// <summary>
+    /// Maps XML file names to their catalog and display name.
+    /// </summary>
+    private static readonly Dictionary<string, (string Catalog, string DisplayName)> FileCatalogMap =
+        new(StringComparer.OrdinalIgnoreCase)
+    {
+        // Item Catalog - TOR_Armory
+        ["tor_armors.xml"] = ("Item Catalog", "Armors"),
+        ["tor_meleeweapons.xml"] = ("Item Catalog", "Melee Weapons"),
+        ["tor_rangedweapons.xml"] = ("Item Catalog", "Ranged Weapons"),
+        ["tor_shields.xml"] = ("Item Catalog", "Shields"),
+        ["tor_projectiles.xml"] = ("Item Catalog", "Projectiles"),
+        ["tor_other_items.xml"] = ("Item Catalog", "Other Items"),
+        ["tor_horseandharness.xml"] = ("Item Catalog", "Horses & Harness"),
+
+        // Item Catalog - TOR_Core (item extensions)
+        ["tor_itemtraits.xml"] = ("Item Catalog", "Item Traits"),
+        ["tor_extendeditemproperties.xml"] = ("Item Catalog", "Extended Item Properties"),
+
+        // Unit Catalog - TOR_Core
+        ["tor_heroes.xml"] = ("Unit Catalog", "Heroes"),
+        ["tor_campaign_lords.xml"] = ("Unit Catalog", "Campaign Lords"),
+        ["tor_troopdefinitions.xml"] = ("Unit Catalog", "Troop Definitions"),
+        ["tor_charactertemplates.xml"] = ("Unit Catalog", "Character Templates"),
+        ["tor_dummyNPCs.xml"] = ("Unit Catalog", "Dummy NPCs"),
+        ["tor_extendedunitproperties.xml"] = ("Unit Catalog", "Extended Unit Properties"),
+        ["tor_bodyproperties.xml"] = ("Unit Catalog", "Body Properties"),
+
+        // Equipment Catalog
+        ["tor_equipment_sets.xml"] = ("Equipment", "Equipment Sets"),
+
+        // Abilities & Effects Catalog
+        ["tor_abilitytemplates.xml"] = ("Abilities & Effects", "Ability Templates"),
+        ["tor_statuseffects.xml"] = ("Abilities & Effects", "Status Effects"),
+        ["tor_triggeredeffects.xml"] = ("Abilities & Effects", "Triggered Effects"),
+
+        // Factions Catalog
+        ["tor_clans.xml"] = ("Factions", "Clans"),
+        ["tor_cultures.xml"] = ("Factions", "Cultures"),
+        ["tor_kingdoms.xml"] = ("Factions", "Kingdoms"),
+
+        // Crafting Catalog
+        ["tor_crafting_pieces.xml"] = ("Crafting", "Crafting Pieces"),
+        ["tor_crafting_templates.xml"] = ("Crafting", "Crafting Templates"),
+
+        // Settlements Catalog
+        ["tor_settlements.xml"] = ("Settlements", "TOR Settlements"),
+        ["settlements.xml"] = ("Settlements", "Settlements"),
+
+        // Configuration
+        ["tor_config.xml"] = ("Configuration", "Config"),
+        ["tor_cc_options.xml"] = ("Configuration", "Character Creation Options"),
+        ["tor_skillsets.xml"] = ("Configuration", "Skill Sets"),
+        ["tor_specialization_options.xml"] = ("Configuration", "Specialization Options"),
+
+        // Armory Metadata
+        ["tor_monsters.xml"] = ("Creatures", "Monsters"),
+        ["tor_monster_usage_sets.xml"] = ("Creatures", "Monster Usage Sets"),
+        ["tor_action_sets.xml"] = ("Animation", "Action Sets"),
+        ["tor_voice_definitions.xml"] = ("Animation", "Voice Definitions"),
+        ["tor_weapon_descriptions.xml"] = ("Item Catalog", "Weapon Descriptions"),
+    };
+
+    /// <summary>
+    /// Defines the display order of catalogs.
+    /// </summary>
+    private static readonly string[] CatalogOrder =
+    [
+        "Item Catalog",
+        "Unit Catalog",
+        "Equipment",
+        "Abilities & Effects",
+        "Factions",
+        "Crafting",
+        "Settlements",
+        "Creatures",
+        "Animation",
+        "Configuration",
+        "Other"
+    ];
+
+    public string ConfigFilePath => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "TORTools",
+        "workspace.json");
+
+    public WorkspaceConfig AutoDetect()
+    {
+        var config = new WorkspaceConfig();
+
+        // Try to find Bannerlord installation
+        foreach (var path in CommonBannerlordPaths)
+        {
+            if (Directory.Exists(path))
+            {
+                config.BannerlordPath = path;
+                break;
+            }
+        }
+
+        // If not found in common paths, check if we're already in a Modules folder
+        if (config.BannerlordPath == null)
+        {
+            var currentDir = Directory.GetCurrentDirectory();
+            var modulesIndex = currentDir.IndexOf("Modules", StringComparison.OrdinalIgnoreCase);
+            if (modulesIndex > 0)
+            {
+                var potentialPath = currentDir[..(modulesIndex - 1)];
+                if (Directory.Exists(Path.Combine(potentialPath, "Modules")))
+                {
+                    config.BannerlordPath = potentialPath;
+                }
+            }
+        }
+
+        if (config.BannerlordPath != null)
+        {
+            var modulesPath = Path.Combine(config.BannerlordPath, "Modules");
+
+            // Check for TOR repositories
+            var torCorePath = Path.Combine(modulesPath, "TOR_Core");
+            if (Directory.Exists(torCorePath))
+                config.TorCorePath = torCorePath;
+
+            var torArmoryPath = Path.Combine(modulesPath, "TOR_Armory");
+            if (Directory.Exists(torArmoryPath))
+                config.TorArmoryPath = torArmoryPath;
+
+            var torEnvironmentPath = Path.Combine(modulesPath, "TOR_Environment");
+            if (Directory.Exists(torEnvironmentPath))
+                config.TorEnvironmentPath = torEnvironmentPath;
+        }
+
+        return config;
+    }
+
+    public WorkspaceConfig LoadConfig()
+    {
+        try
+        {
+            if (File.Exists(ConfigFilePath))
+            {
+                var json = File.ReadAllText(ConfigFilePath);
+                var config = JsonSerializer.Deserialize<WorkspaceConfig>(json);
+                if (config != null)
+                    return config;
+            }
+        }
+        catch
+        {
+            // If loading fails, return auto-detected config
+        }
+
+        return AutoDetect();
+    }
+
+    public void SaveConfig(WorkspaceConfig config)
+    {
+        var directory = Path.GetDirectoryName(ConfigFilePath);
+        if (directory != null && !Directory.Exists(directory))
+            Directory.CreateDirectory(directory);
+
+        var json = JsonSerializer.Serialize(config, new JsonSerializerOptions
+        {
+            WriteIndented = true
+        });
+        File.WriteAllText(ConfigFilePath, json);
+    }
+
+    public IReadOnlyList<XmlFileInfo> GetXmlFiles(WorkspaceConfig config)
+    {
+        var files = new List<XmlFileInfo>();
+
+        if (!string.IsNullOrEmpty(config.TorCorePath))
+            files.AddRange(ScanRepository(config.TorCorePath, "TOR_Core"));
+
+        if (!string.IsNullOrEmpty(config.TorArmoryPath))
+            files.AddRange(ScanRepository(config.TorArmoryPath, "TOR_Armory"));
+
+        if (!string.IsNullOrEmpty(config.TorEnvironmentPath))
+            files.AddRange(ScanRepository(config.TorEnvironmentPath, "TOR_Environment"));
+
+        return files;
+    }
+
+    /// <summary>
+    /// Gets XML files organized by catalog (spanning across repositories).
+    /// </summary>
+    public IReadOnlyList<CatalogGroup> GetCatalogs(WorkspaceConfig config)
+    {
+        var allFiles = GetXmlFiles(config);
+
+        var catalogs = allFiles
+            .GroupBy(f => GetCatalogInfo(f.FileName).Catalog)
+            .Select(g => new CatalogGroup
+            {
+                Name = g.Key,
+                Files = g.OrderBy(f => GetCatalogInfo(f.FileName).DisplayName).ToList()
+            })
+            .OrderBy(c => Array.IndexOf(CatalogOrder, c.Name) is var idx && idx >= 0 ? idx : 999)
+            .ToList();
+
+        return catalogs;
+    }
+
+    private IEnumerable<XmlFileInfo> ScanRepository(string repoPath, string repoName)
+    {
+        var moduleDataPath = Path.Combine(repoPath, "ModuleData");
+        if (!Directory.Exists(moduleDataPath))
+            yield break;
+
+        foreach (var file in Directory.EnumerateFiles(moduleDataPath, "*.xml", SearchOption.AllDirectories))
+        {
+            // Skip tor_strings.xml (too large, MCP-only)
+            // Skip tor_skins.xml (excluded per requirements)
+            var fileName = Path.GetFileName(file);
+            if (fileName.Equals("tor_strings.xml", StringComparison.OrdinalIgnoreCase) ||
+                fileName.Equals("tor_skins.xml", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            // Skip Language folders for now
+            if (file.Contains("Languages", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var fileInfo = new FileInfo(file);
+            var relativePath = Path.GetRelativePath(repoPath, file);
+            var catalogInfo = GetCatalogInfo(fileName);
+
+            yield return new XmlFileInfo
+            {
+                FilePath = file,
+                Category = catalogInfo.Catalog,
+                DisplayName = catalogInfo.DisplayName,
+                Repository = repoName,
+                RelativePath = relativePath,
+                FileSize = fileInfo.Length,
+                LastModified = fileInfo.LastWriteTime
+            };
+        }
+    }
+
+    private static (string Catalog, string DisplayName) GetCatalogInfo(string fileName)
+    {
+        if (FileCatalogMap.TryGetValue(fileName, out var info))
+            return info;
+
+        // Default: use file name without extension
+        var displayName = Path.GetFileNameWithoutExtension(fileName);
+
+        // Determine catalog based on file name patterns
+        if (fileName.StartsWith("tor_", StringComparison.OrdinalIgnoreCase))
+            return ("Other", displayName);
+
+        return ("Vanilla", displayName);
+    }
+
+    public WorkspaceValidationResult ValidateWorkspace(WorkspaceConfig config)
+    {
+        var result = new WorkspaceValidationResult
+        {
+            TorCoreFound = !string.IsNullOrEmpty(config.TorCorePath) && Directory.Exists(config.TorCorePath),
+            TorArmoryFound = !string.IsNullOrEmpty(config.TorArmoryPath) && Directory.Exists(config.TorArmoryPath),
+            TorEnvironmentFound = !string.IsNullOrEmpty(config.TorEnvironmentPath) && Directory.Exists(config.TorEnvironmentPath),
+            Errors = new List<string>(),
+            Warnings = new List<string>()
+        };
+
+        if (!result.TorCoreFound && !result.TorArmoryFound && !result.TorEnvironmentFound)
+        {
+            result.Errors.Add("No TOR repositories found. Please configure workspace paths.");
+        }
+
+        if (!result.TorCoreFound && !string.IsNullOrEmpty(config.TorCorePath))
+        {
+            result.Warnings.Add($"TOR_Core path not found: {config.TorCorePath}");
+        }
+
+        if (!result.TorArmoryFound && !string.IsNullOrEmpty(config.TorArmoryPath))
+        {
+            result.Warnings.Add($"TOR_Armory path not found: {config.TorArmoryPath}");
+        }
+
+        if (!result.TorEnvironmentFound && !string.IsNullOrEmpty(config.TorEnvironmentPath))
+        {
+            result.Warnings.Add($"TOR_Environment path not found: {config.TorEnvironmentPath}");
+        }
+
+        result = result with
+        {
+            IsValid = result.Errors.Count == 0 && (result.TorCoreFound || result.TorArmoryFound)
+        };
+
+        return result;
+    }
+}
+
+/// <summary>
+/// A group of XML files within a catalog.
+/// </summary>
+public class CatalogGroup
+{
+    public required string Name { get; init; }
+    public required List<XmlFileInfo> Files { get; init; }
+}

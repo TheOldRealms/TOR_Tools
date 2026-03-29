@@ -1,0 +1,141 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:TORTools.App.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="TORTools.App.Views.FileTabView"
+             x:DataType="vm:FileTabViewModel">
+
+    <UserControl.Styles>
+        <!-- Style for new entry rows (green background with dark text) -->
+        <Style Selector="DataGridRow.newEntry">
+            <Setter Property="Background" Value="#C8E6C9"/>
+            <Setter Property="Foreground" Value="#1B5E20"/>
+        </Style>
+        <Style Selector="DataGridRow.newEntry:selected">
+            <Setter Property="Background" Value="#A5D6A7"/>
+        </Style>
+        <!-- Ensure cells in new rows have proper text color -->
+        <Style Selector="DataGridRow.newEntry DataGridCell">
+            <Setter Property="Foreground" Value="#1B5E20"/>
+        </Style>
+        <Style Selector="DataGridRow.newEntry DataGridCell TextBlock">
+            <Setter Property="Foreground" Value="#1B5E20"/>
+        </Style>
+
+        <!-- Style for rows selected for copy (blue border) -->
+        <Style Selector="DataGridRow.selectedForCopy">
+            <Setter Property="BorderBrush" Value="#1976D2"/>
+            <Setter Property="BorderThickness" Value="2"/>
+        </Style>
+        <Style Selector="DataGridRow.selectedForCopy DataGridCell">
+            <Setter Property="Background" Value="#E3F2FD"/>
+        </Style>
+
+        <!-- Row header with copy button -->
+        <Style Selector="DataGridRowHeader">
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="MinWidth" Value="32"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Toolbar for row operations -->
+        <Border Grid.Row="0"
+                Background="#F5F5F5"
+                BorderBrush="#E0E0E0"
+                BorderThickness="0,0,0,1"
+                Padding="4"
+                IsVisible="{Binding !HasError}">
+            <StackPanel Orientation="Horizontal" Spacing="4">
+                <Button Content="+ Add Row"
+                        Command="{Binding AddRowCommand}"
+                        ToolTip.Tip="Add new row after selection (Ctrl+Shift+A)"
+                        Padding="8,4"/>
+                <Button Content="Duplicate"
+                        Command="{Binding DuplicateRowCommand}"
+                        ToolTip.Tip="Duplicate selected row (Ctrl+D)"
+                        Padding="8,4"/>
+                <Button Content="Delete"
+                        Command="{Binding DeleteRowCommand}"
+                        ToolTip.Tip="Delete selected row (Del)"
+                        Padding="8,4"
+                        Background="#FFEBEE"
+                        Foreground="#C62828"/>
+                <Separator Width="1" Background="#E0E0E0" Margin="8,0"/>
+                <TextBlock Text="{Binding Rows.Count, StringFormat='Rows: {0}'}"
+                           VerticalAlignment="Center"
+                           Foreground="#666"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Error message if loading failed -->
+        <Border Grid.Row="1"
+                IsVisible="{Binding HasError}"
+                Background="#20FF0000"
+                Padding="20"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+            <TextBlock Text="{Binding ErrorMessage}"
+                       Foreground="Red"
+                       TextWrapping="Wrap"/>
+        </Border>
+
+        <!-- DataGrid when loaded successfully -->
+        <DataGrid x:Name="EntryGrid"
+                  Grid.Row="1"
+                  ItemsSource="{Binding Rows}"
+                  SelectedIndex="{Binding SelectedIndex}"
+                  IsVisible="{Binding !HasError}"
+                  AutoGenerateColumns="False"
+                  CanUserReorderColumns="True"
+                  CanUserResizeColumns="True"
+                  CanUserSortColumns="True"
+                  GridLinesVisibility="All"
+                  IsReadOnly="False"
+                  SelectionMode="Extended"
+                  HeadersVisibility="All"
+                  RowHeaderWidth="24"
+                  LoadingRow="OnDataGridLoadingRow">
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Insert Row Above" Command="{Binding InsertRowAboveCommand}">
+                        <MenuItem.Icon>
+                            <TextBlock Text="+" FontWeight="Bold" Foreground="#4CAF50"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Insert Row Below" Command="{Binding AddRowCommand}">
+                        <MenuItem.Icon>
+                            <TextBlock Text="+" FontWeight="Bold" Foreground="#4CAF50"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <Separator/>
+                    <MenuItem Header="Select Row for Copy" Command="{Binding CopyRowCommand}">
+                        <MenuItem.Icon>
+                            <TextBlock Text="📋" FontSize="12"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Paste Row" InputGesture="Ctrl+V" Command="{Binding PasteRowCommand}">
+                        <MenuItem.Icon>
+                            <TextBlock Text="📄" FontSize="12"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <Separator/>
+                    <MenuItem Header="Duplicate Row" Command="{Binding DuplicateRowCommand}">
+                        <MenuItem.Icon>
+                            <TextBlock Text="⧉" FontSize="14"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <Separator/>
+                    <MenuItem Header="Delete Row" Command="{Binding DeleteRowCommand}" Foreground="#C62828">
+                        <MenuItem.Icon>
+                            <TextBlock Text="✕" FontWeight="Bold" Foreground="#C62828"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                </ContextMenu>
+            </DataGrid.ContextMenu>
+        </DataGrid>
+    </Grid>
+
+</UserControl>
