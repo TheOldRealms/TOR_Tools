@@ -1,9 +1,108 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="TORTools.App.App"
-             RequestedThemeVariant="Default">
+             RequestedThemeVariant="Dark">
+
+    <Application.Resources>
+        <!-- Discord Dark Mode Colors -->
+        <Color x:Key="DiscordBgDarkest">#202225</Color>
+        <Color x:Key="DiscordBgDark">#2f3136</Color>
+        <Color x:Key="DiscordBgMain">#36393f</Color>
+        <Color x:Key="DiscordBgHover">#40444b</Color>
+        <Color x:Key="DiscordBgSelected">#42464d</Color>
+        <Color x:Key="DiscordAccent">#5865f2</Color>
+        <Color x:Key="DiscordTextPrimary">#dcddde</Color>
+        <Color x:Key="DiscordTextSecondary">#b9bbbe</Color>
+        <Color x:Key="DiscordTextMuted">#72767d</Color>
+        <Color x:Key="DiscordRed">#ed4245</Color>
+        <Color x:Key="DiscordGreen">#3ba55d</Color>
+
+        <SolidColorBrush x:Key="DiscordBgDarkestBrush" Color="{StaticResource DiscordBgDarkest}"/>
+        <SolidColorBrush x:Key="DiscordBgDarkBrush" Color="{StaticResource DiscordBgDark}"/>
+        <SolidColorBrush x:Key="DiscordBgMainBrush" Color="{StaticResource DiscordBgMain}"/>
+        <SolidColorBrush x:Key="DiscordBgHoverBrush" Color="{StaticResource DiscordBgHover}"/>
+        <SolidColorBrush x:Key="DiscordAccentBrush" Color="{StaticResource DiscordAccent}"/>
+        <SolidColorBrush x:Key="DiscordTextPrimaryBrush" Color="{StaticResource DiscordTextPrimary}"/>
+        <SolidColorBrush x:Key="DiscordTextSecondaryBrush" Color="{StaticResource DiscordTextSecondary}"/>
+        <SolidColorBrush x:Key="DiscordTextMutedBrush" Color="{StaticResource DiscordTextMuted}"/>
+    </Application.Resources>
+
     <Application.Styles>
         <FluentTheme />
         <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
+
+        <!-- Discord-style Window -->
+        <Style Selector="Window">
+            <Setter Property="Background" Value="{StaticResource DiscordBgMainBrush}"/>
+        </Style>
+
+        <!-- Discord-style Menu -->
+        <Style Selector="Menu">
+            <Setter Property="Background" Value="{StaticResource DiscordBgDarkBrush}"/>
+        </Style>
+        <Style Selector="MenuItem">
+            <Setter Property="Foreground" Value="{StaticResource DiscordTextPrimaryBrush}"/>
+        </Style>
+
+        <!-- Discord-style TreeView -->
+        <Style Selector="TreeView">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="TreeViewItem">
+            <Setter Property="Foreground" Value="{StaticResource DiscordTextSecondaryBrush}"/>
+        </Style>
+        <Style Selector="TreeViewItem:pointerover /template/ Border#PART_LayoutRoot">
+            <Setter Property="Background" Value="{StaticResource DiscordBgHoverBrush}"/>
+        </Style>
+        <Style Selector="TreeViewItem:selected /template/ Border#PART_LayoutRoot">
+            <Setter Property="Background" Value="{StaticResource DiscordBgHoverBrush}"/>
+        </Style>
+
+        <!-- Discord-style TabControl -->
+        <Style Selector="TabControl">
+            <Setter Property="Background" Value="{StaticResource DiscordBgMainBrush}"/>
+        </Style>
+        <Style Selector="TabItem">
+            <Setter Property="Foreground" Value="{StaticResource DiscordTextSecondaryBrush}"/>
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="TabItem:selected">
+            <Setter Property="Foreground" Value="{StaticResource DiscordTextPrimaryBrush}"/>
+            <Setter Property="Background" Value="{StaticResource DiscordBgMainBrush}"/>
+        </Style>
+
+        <!-- Discord-style DataGrid -->
+        <Style Selector="DataGrid">
+            <Setter Property="Background" Value="{StaticResource DiscordBgMainBrush}"/>
+        </Style>
+        <Style Selector="DataGridColumnHeader">
+            <Setter Property="Background" Value="{StaticResource DiscordBgDarkBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource DiscordTextSecondaryBrush}"/>
+        </Style>
+        <Style Selector="DataGridRow">
+            <Setter Property="Foreground" Value="{StaticResource DiscordTextPrimaryBrush}"/>
+        </Style>
+        <Style Selector="DataGridRow:pointerover /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="{StaticResource DiscordBgHoverBrush}"/>
+        </Style>
+        <Style Selector="DataGridCell">
+            <Setter Property="Foreground" Value="{StaticResource DiscordTextPrimaryBrush}"/>
+        </Style>
+
+        <!-- Discord-style Buttons -->
+        <Style Selector="Button">
+            <Setter Property="Background" Value="{StaticResource DiscordBgHoverBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource DiscordTextPrimaryBrush}"/>
+        </Style>
+        <Style Selector="Button:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#4f545c"/>
+        </Style>
+
+        <!-- Discord-style TextBox -->
+        <Style Selector="TextBox">
+            <Setter Property="Background" Value="{StaticResource DiscordBgDarkestBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource DiscordTextPrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
     </Application.Styles>
 </Application>

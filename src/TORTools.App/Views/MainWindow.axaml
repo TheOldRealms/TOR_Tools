@@ -12,6 +12,7 @@
         WindowStartupLocation="CenterScreen">
 
     <Window.KeyBindings>
+        <KeyBinding Gesture="Ctrl+Q" Command="{Binding ExitCommand}"/>
         <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}"/>
         <KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveAllCommand}"/>
         <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoCommand}"/>
@@ -41,7 +42,7 @@
                 <Separator/>
                 <MenuItem Header="_Refresh Workspace" Command="{Binding RefreshWorkspaceCommand}"/>
                 <Separator/>
-                <MenuItem Header="E_xit" Command="{Binding ExitCommand}"/>
+                <MenuItem Header="E_xit" InputGesture="Ctrl+Q" Command="{Binding ExitCommand}"/>
             </MenuItem>
             <MenuItem Header="_Edit">
                 <MenuItem Header="_Undo" InputGesture="Ctrl+Z" Command="{Binding UndoCommand}"/>
@@ -61,11 +62,12 @@
 
         <!-- Catalog Sidebar -->
         <Border Grid.Row="1" Grid.Column="0"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                BorderBrush="#202225"
                 BorderThickness="0,0,1,0"
-                Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+                Background="#2f3136">
             <Grid RowDefinitions="Auto,*">
-                <TextBlock Grid.Row="0" Text="Catalogs" FontWeight="SemiBold" Margin="12,10,12,6"/>
+                <TextBlock Grid.Row="0" Text="Catalogs" FontWeight="SemiBold" Margin="12,10,12,6"
+                           Foreground="#dcddde"/>
                 <TreeView Grid.Row="1"
                           ItemsSource="{Binding Catalogs}"
                           Margin="4,0"
@@ -82,13 +84,7 @@
                         </TreeDataTemplate>
                         <!-- Template for file nodes inside catalogs -->
                         <DataTemplate DataType="vm:FileNode">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <TextBlock Text="{Binding DisplayName}" FontSize="12"/>
-                                <TextBlock Text="{Binding Repository, StringFormat='[{0}]'}"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                           FontSize="10"
-                                           VerticalAlignment="Center"/>
-                            </StackPanel>
+                            <TextBlock Text="{Binding DisplayName}" FontSize="12"/>
                         </DataTemplate>
                     </TreeView.DataTemplates>
                 </TreeView>
@@ -125,14 +121,15 @@
                 <TextBlock Text="TOR Tools"
                            FontSize="28"
                            FontWeight="Light"
+                           Foreground="#dcddde"
                            HorizontalAlignment="Center"/>
                 <TextBlock Text="XML Editor for The Old Realms"
                            FontSize="14"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           Foreground="#b9bbbe"
                            HorizontalAlignment="Center"/>
                 <TextBlock Text="Double-click a file in the sidebar to open it"
                            FontSize="12"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           Foreground="#72767d"
                            HorizontalAlignment="Center"
                            Margin="0,20,0,0"/>
             </StackPanel>
@@ -140,15 +137,17 @@
 
         <!-- Status Bar -->
         <Border Grid.Row="2" Grid.ColumnSpan="3"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                BorderBrush="#202225"
                 BorderThickness="0,1,0,0"
+                Background="#2f3136"
                 Padding="12,6">
             <Grid ColumnDefinitions="*,Auto,Auto">
-                <TextBlock Grid.Column="0" Text="{Binding StatusMessage}" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="0" Text="{Binding StatusMessage}" VerticalAlignment="Center"
+                           Foreground="#dcddde"/>
                 <TextBlock Grid.Column="1" Text="{Binding RowCountText}" Margin="20,0" VerticalAlignment="Center"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                           Foreground="#b9bbbe"/>
                 <TextBlock Grid.Column="2" Text="{Binding WorkspacePath}"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           Foreground="#72767d"
                            VerticalAlignment="Center"
                            FontSize="11"/>
             </Grid>

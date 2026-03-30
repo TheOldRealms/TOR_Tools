@@ -8,29 +8,27 @@
              x:DataType="vm:FileTabViewModel">
 
     <UserControl.Styles>
-        <!-- Style for new entry rows (green background with dark text) -->
+        <!-- Style for new entry rows (Discord green) -->
         <Style Selector="DataGridRow.newEntry">
-            <Setter Property="Background" Value="#C8E6C9"/>
-            <Setter Property="Foreground" Value="#1B5E20"/>
+            <Setter Property="Background" Value="#2d3d2d"/>
         </Style>
         <Style Selector="DataGridRow.newEntry:selected">
-            <Setter Property="Background" Value="#A5D6A7"/>
+            <Setter Property="Background" Value="#3d4d3d"/>
         </Style>
-        <!-- Ensure cells in new rows have proper text color -->
         <Style Selector="DataGridRow.newEntry DataGridCell">
-            <Setter Property="Foreground" Value="#1B5E20"/>
+            <Setter Property="Foreground" Value="#3ba55d"/>
         </Style>
         <Style Selector="DataGridRow.newEntry DataGridCell TextBlock">
-            <Setter Property="Foreground" Value="#1B5E20"/>
+            <Setter Property="Foreground" Value="#3ba55d"/>
         </Style>
 
-        <!-- Style for rows selected for copy (dark blue border, subtle background) -->
+        <!-- Style for rows selected for copy (Discord blurple accent) -->
         <Style Selector="DataGridRow.selectedForCopy">
-            <Setter Property="Background" Value="#BBDEFB"/>
+            <Setter Property="Background" Value="#3c4270"/>
         </Style>
         <Style Selector="DataGridRow.selectedForCopy DataGridCell">
-            <Setter Property="Background" Value="#BBDEFB"/>
-            <Setter Property="BorderBrush" Value="#1565C0"/>
+            <Setter Property="Background" Value="#3c4270"/>
+            <Setter Property="BorderBrush" Value="#5865f2"/>
             <Setter Property="BorderThickness" Value="0,2,0,2"/>
         </Style>
         <Style Selector="DataGridRow.selectedForCopy DataGridCell:nth-child(1)">
@@ -40,18 +38,13 @@
             <Setter Property="BorderThickness" Value="0,2,2,2"/>
         </Style>
 
-        <!-- Minimal row header -->
-        <Style Selector="DataGridRowHeader">
-            <Setter Property="Width" Value="0"/>
-            <Setter Property="MinWidth" Value="0"/>
-        </Style>
     </UserControl.Styles>
 
     <Grid RowDefinitions="Auto,*">
         <!-- Toolbar for row operations -->
         <Border Grid.Row="0"
-                Background="#F5F5F5"
-                BorderBrush="#E0E0E0"
+                Background="#2f3136"
+                BorderBrush="#202225"
                 BorderThickness="0,0,0,1"
                 Padding="4"
                 IsVisible="{Binding !HasError}">
@@ -59,7 +52,9 @@
                 <Button Content="+ Add Row"
                         Command="{Binding AddRowCommand}"
                         ToolTip.Tip="Add new row after selection (Ctrl+Shift+A)"
-                        Padding="8,4"/>
+                        Padding="8,4"
+                        Background="#3ba55d"
+                        Foreground="#ffffff"/>
                 <Button Content="Duplicate"
                         Command="{Binding DuplicateRowCommand}"
                         ToolTip.Tip="Duplicate selected row (Ctrl+D)"
@@ -68,12 +63,12 @@
                         Command="{Binding DeleteRowCommand}"
                         ToolTip.Tip="Delete selected row (Del)"
                         Padding="8,4"
-                        Background="#FFEBEE"
-                        Foreground="#C62828"/>
-                <Separator Width="1" Background="#E0E0E0" Margin="8,0"/>
+                        Background="#ed4245"
+                        Foreground="#ffffff"/>
+                <Separator Width="1" Background="#40444b" Margin="8,0"/>
                 <TextBlock Text="{Binding Rows.Count, StringFormat='Rows: {0}'}"
                            VerticalAlignment="Center"
-                           Foreground="#666"/>
+                           Foreground="#b9bbbe"/>
             </StackPanel>
         </Border>
 
@@ -102,8 +97,7 @@
                   GridLinesVisibility="All"
                   IsReadOnly="False"
                   SelectionMode="Extended"
-                  HeadersVisibility="All"
-                  RowHeaderWidth="24"
+                  HeadersVisibility="Column"
                   LoadingRow="OnDataGridLoadingRow">
             <DataGrid.ContextMenu>
                 <ContextMenu>
