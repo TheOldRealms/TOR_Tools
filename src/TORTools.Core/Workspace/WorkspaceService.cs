@@ -8,14 +8,6 @@ namespace TORTools.Core.Workspace;
 /// </summary>
 public class WorkspaceService : IWorkspaceService
 {
-    private static readonly string[] CommonBannerlordPaths =
-    [
-        @"C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord",
-        @"C:\Program Files\Steam\steamapps\common\Mount & Blade II Bannerlord",
-        @"D:\Steam\steamapps\common\Mount & Blade II Bannerlord",
-        @"D:\SteamLibrary\steamapps\common\Mount & Blade II Bannerlord",
-        @"E:\SteamLibrary\steamapps\common\Mount & Blade II Bannerlord",
-    ];
 
     /// <summary>
     /// Maps XML file names to their catalog and display name.
@@ -107,36 +99,16 @@ public class WorkspaceService : IWorkspaceService
     {
         var config = new WorkspaceConfig();
 
-        // Try to find Bannerlord installation
-        foreach (var path in CommonBannerlordPaths)
-        {
-            if (Directory.Exists(path))
-            {
-                config.BannerlordPath = path;
-                break;
-            }
-        }
-
-        // If not found in common paths, check if we're already in a Modules folder
-        if (config.BannerlordPath == null)
-        {
-            var currentDir = Directory.GetCurrentDirectory();
-            var modulesIndex = currentDir.IndexOf("Modules", StringComparison.OrdinalIgnoreCase);
-            if (modulesIndex > 0)
-            {
-                var potentialPath = currentDir[..(modulesIndex - 1)];
-                if (Directory.Exists(Path.Combine(potentialPath, "Modules")))
-                {
-                    config.BannerlordPath = potentialPath;
-                }
-            }
-        }
+        // Detect Bannerlord path by walking up from current directory
+        // The app is expected to run from within Modules/TORTools
+        var currentDir = Directory.GetCurrentDirectory();
+        config.BannerlordPath = FindBannerlordPath(currentDir);
 
         if (config.BannerlordPath != null)
         {
             var modulesPath = Path.Combine(config.BannerlordPath, "Modules");
 
-            // Check for TOR repositories
+            // Check for TOR repositories (sibling modules)
             var torCorePath = Path.Combine(modulesPath, "TOR_Core");
             if (Directory.Exists(torCorePath))
                 config.TorCorePath = torCorePath;
@@ -151,6 +123,49 @@ public class WorkspaceService : IWorkspaceService
         }
 
         return config;
+    }
+
+    /// <summary>
+    /// Walks up from the given directory to find the Bannerlord installation root.
+    /// Looks for a parent directory that contains a "Modules" folder.
+    /// </summary>
+    private static string? FindBannerlordPath(string startDir)
+    {
+        var dir = new DirectoryInfo(startDir);
+
+        while (dir != null)
+        {
+            // Check if this directory has a Modules subfolder
+            var modulesPath = Path.Combine(dir.FullName, "Modules");
+            if (Directory.Exists(modulesPath))
+            {
+                // Verify it looks like Bannerlord (has bin folder or Bannerlord.exe)
+                var hasBin = Directory.Exists(Path.Combine(dir.FullName, "bin"));
+                var hasExe = File.Exists(Path.Combine(dir.FullName, "bin", "Win64_Shipping_Client", "Bannerlord.exe")) ||
+                             File.Exists(Path.Combine(dir.FullName, "bin", "Win64_Shipping_Client", "Bannerlord.Native.exe"));
+
+                if (hasBin || hasExe)
+                {
+                    return dir.FullName;
+                }
+
+                // If we're inside the Modules folder itself, go up one more
+                if (dir.Name.Equals("Modules", StringComparison.OrdinalIgnoreCase))
+                {
+                    return dir.Parent?.FullName;
+                }
+            }
+
+            // Check if we ARE the Modules folder
+            if (dir.Name.Equals("Modules", StringComparison.OrdinalIgnoreCase) && dir.Parent != null)
+            {
+                return dir.Parent.FullName;
+            }
+
+            dir = dir.Parent;
+        }
+
+        return null;
     }
 
     public WorkspaceConfig LoadConfig()
