@@ -53,6 +53,26 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     private int _selectedIndex = -1;
 
     /// <summary>
+    /// Whether ID editing is locked for all rows (default true).
+    /// Toggle via the lock icon in the ID column header.
+    /// </summary>
+    [ObservableProperty]
+    private bool _isIdColumnLocked = true;
+
+    partial void OnIsIdColumnLockedChanged(bool value)
+    {
+        // Update all rows' IsIdLocked state
+        foreach (var row in Rows)
+        {
+            // Only lock existing entries; new entries stay unlocked
+            if (!row.IsNew)
+            {
+                row.IsIdLocked = value;
+            }
+        }
+    }
+
+    /// <summary>
     /// The undo/redo service for this tab.
     /// </summary>
     public IUndoRedoService UndoRedoService => _undoRedoService;
@@ -195,10 +215,14 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         }
 
         Rows.Clear();
+        int rowNum = 1;
         foreach (var entry in entries)
         {
+            var isNew = _newEntries.Contains(entry);
             var row = new EntryRowViewModel(entry, ColumnNames);
-            row.IsNew = _newEntries.Contains(entry);
+            row.IsNew = isNew;
+            row.IsIdLocked = !isNew; // New entries have unlocked ID
+            row.RowNumber = rowNum++;
             row.CellValueChanged += OnCellValueChanged;
             Rows.Add(row);
         }
@@ -479,8 +503,13 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
             targetRow[kvp.Key] = kvp.Value;
         }
 
+        // Force UI update by removing and re-adding the row at the same position
+        var index = SelectedIndex;
+        Rows.RemoveAt(index);
+        Rows.Insert(index, targetRow);
+        SelectedIndex = index;
+
         MarkAsModified();
-        ForceRowsRefresh();
     }
 
     /// <summary>

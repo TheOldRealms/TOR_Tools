@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/TORTools.App/TORTools.App.csproj" />
+    <Project Path="src/TORTools.Core/TORTools.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/TORTools.Core.Tests/TORTools.Core.Tests.csproj" />
+  </Folder>
+</Solution>

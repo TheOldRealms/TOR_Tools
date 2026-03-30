@@ -30,6 +30,8 @@ public class EntryRowViewModel : INotifyPropertyChanged
     private readonly Dictionary<string, string> _values = new();
     private bool _isNew;
     private bool _isSelectedForCopy;
+    private bool _isIdLocked = true;
+    private int _rowNumber;
 
     public XmlEntry XmlEntry { get; }
 
@@ -66,6 +68,39 @@ public class EntryRowViewModel : INotifyPropertyChanged
         }
     }
 
+    /// <summary>
+    /// Whether the ID field is locked for editing.
+    /// Default is true (locked) for existing entries, false for new entries.
+    /// </summary>
+    public bool IsIdLocked
+    {
+        get => _isIdLocked;
+        set
+        {
+            if (_isIdLocked != value)
+            {
+                _isIdLocked = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsIdLocked)));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Row number for display (1-based).
+    /// </summary>
+    public int RowNumber
+    {
+        get => _rowNumber;
+        set
+        {
+            if (_rowNumber != value)
+            {
+                _rowNumber = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(RowNumber)));
+            }
+        }
+    }
+
     public event PropertyChangedEventHandler? PropertyChanged;
     public event EventHandler<CellValueChangedEventArgs>? CellValueChanged;
 
@@ -88,8 +123,8 @@ public class EntryRowViewModel : INotifyPropertyChanged
         get => _values.TryGetValue(columnName, out var val) ? val : "";
         set
         {
-            // Block ID edits on existing (non-new) entries
-            if (columnName.Equals("id", StringComparison.OrdinalIgnoreCase) && !IsNew)
+            // Block ID edits when locked
+            if (columnName.Equals("id", StringComparison.OrdinalIgnoreCase) && IsIdLocked)
                 return;
 
             var oldValue = _values.TryGetValue(columnName, out var val) ? val : "";
@@ -117,4 +152,16 @@ public class EntryRowViewModel : INotifyPropertyChanged
     /// Gets all column names.
     /// </summary>
     public IEnumerable<string> ColumnNames => _values.Keys;
+
+    /// <summary>
+    /// Forces property changed notifications for all values (used after bulk updates).
+    /// </summary>
+    public void NotifyAllValuesChanged()
+    {
+        foreach (var col in _values.Keys)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs($"Item[{col}]"));
+        }
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item[]"));
+    }
 }
