@@ -61,6 +61,21 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     /// </summary>
     public event EventHandler<CrossReferenceNavigationEventArgs>? NavigateToCrossReference;
 
+    /// <summary>
+    /// Event raised when cells need to refresh their content and styling.
+    /// Subscribe to this in cell templates for centralized refresh handling.
+    /// </summary>
+    public event EventHandler? CellRefreshRequested;
+
+    /// <summary>
+    /// Triggers a refresh of all cell content and styling.
+    /// Call this after any operation that changes data or state (save, undo, redo, etc.).
+    /// </summary>
+    public void RequestCellRefresh()
+    {
+        CellRefreshRequested?.Invoke(this, EventArgs.Empty);
+    }
+
     [ObservableProperty]
     private string _title = "Untitled";
 
@@ -1307,17 +1322,13 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>
-    /// Forces the DataGrid to refresh by re-adding all rows.
-    /// This works around Avalonia DataGrid not responding to indexed property changes.
+    /// Notifies all cells to refresh their content and styling.
+    /// This preserves scroll position unlike clearing/re-adding rows.
     /// </summary>
     private void ForceRowsRefresh()
     {
-        var items = Rows.ToList();
-        Rows.Clear();
-        foreach (var item in items)
-        {
-            Rows.Add(item);
-        }
+        // Just trigger cell refresh - cells update their own content via the event
+        RequestCellRefresh();
     }
 
     private void RefreshRows()

@@ -11,14 +11,14 @@ namespace TORTools.App.Helpers;
 /// </summary>
 public static class CellStyleHelper
 {
-    // Pseudo-class names (must match CellStyles.axaml selectors)
-    private static readonly string PseudoRemoved = ":removed";
-    private static readonly string PseudoError = ":error";
-    private static readonly string PseudoWarning = ":warning";
-    private static readonly string PseudoNew = ":new";
-    private static readonly string PseudoModified = ":modified";
-    private static readonly string PseudoWasNew = ":wasNew";
-    private static readonly string PseudoSaved = ":saved";
+    // CSS class names (must match CellStyles.axaml selectors)
+    private static readonly string ClassRemoved = "removed";
+    private static readonly string ClassError = "error";
+    private static readonly string ClassWarning = "warning";
+    private static readonly string ClassNew = "new";
+    private static readonly string ClassModified = "modified";
+    private static readonly string ClassWasNew = "wasNew";
+    private static readonly string ClassSaved = "saved";
 
     /// <summary>
     /// Updates the pseudo-classes on a cell border based on the current state.
@@ -50,7 +50,7 @@ public static class CellStyleHelper
 
         if (rowVm.IsRemoved)
         {
-            SetPseudoClass(border, PseudoRemoved, true);
+            SetClass(border, ClassRemoved, true);
             return;
         }
 
@@ -59,29 +59,29 @@ public static class CellStyleHelper
 
         if (hasError)
         {
-            SetPseudoClass(border, PseudoError, true);
+            SetClass(border, ClassError, true);
             SetTooltip(border, issues.Where(i => i.Severity == ValidationSeverity.Error));
         }
         else if (hasWarning)
         {
-            SetPseudoClass(border, PseudoWarning, true);
+            SetClass(border, ClassWarning, true);
             SetTooltip(border, issues.Where(i => i.Severity == ValidationSeverity.Warning));
         }
         else if (vm.HasUnsavedChanges && rowVm.IsNew)
         {
-            SetPseudoClass(border, PseudoNew, true);
+            SetClass(border, ClassNew, true);
         }
         else if (vm.HasUnsavedChanges && rowVm.IsFieldModified(attributeName))
         {
-            SetPseudoClass(border, PseudoModified, true);
+            SetClass(border, ClassModified, true);
         }
         else if (rowVm.WasNew)
         {
-            SetPseudoClass(border, PseudoWasNew, true);
+            SetClass(border, ClassWasNew, true);
         }
         else if (rowVm.IsFieldSaved(attributeName))
         {
-            SetPseudoClass(border, PseudoSaved, true);
+            SetClass(border, ClassSaved, true);
         }
         else
         {
@@ -91,35 +91,35 @@ public static class CellStyleHelper
     }
 
     /// <summary>
-    /// Clears all cell state pseudo-classes from a border.
+    /// Clears all cell state classes from a border.
     /// </summary>
     private static void ClearAllStates(Border border)
     {
-        SetPseudoClass(border, PseudoRemoved, false);
-        SetPseudoClass(border, PseudoError, false);
-        SetPseudoClass(border, PseudoWarning, false);
-        SetPseudoClass(border, PseudoNew, false);
-        SetPseudoClass(border, PseudoModified, false);
-        SetPseudoClass(border, PseudoWasNew, false);
-        SetPseudoClass(border, PseudoSaved, false);
+        SetClass(border, ClassRemoved, false);
+        SetClass(border, ClassError, false);
+        SetClass(border, ClassWarning, false);
+        SetClass(border, ClassNew, false);
+        SetClass(border, ClassModified, false);
+        SetClass(border, ClassWasNew, false);
+        SetClass(border, ClassSaved, false);
         ToolTip.SetTip(border, null);
     }
 
     /// <summary>
-    /// Sets or removes a pseudo-class on a control.
+    /// Sets or removes a CSS class on a control.
     /// </summary>
-    private static void SetPseudoClass(StyledElement element, string pseudoClass, bool isSet)
+    private static void SetClass(StyledElement element, string className, bool isSet)
     {
-        // Remove the leading colon for the pseudo-classes API
-        var className = pseudoClass.TrimStart(':');
-
         if (isSet)
         {
-            ((IPseudoClasses)element.Classes).Add(className);
+            if (!element.Classes.Contains(className))
+            {
+                element.Classes.Add(className);
+            }
         }
         else
         {
-            ((IPseudoClasses)element.Classes).Remove(className);
+            element.Classes.Remove(className);
         }
     }
 

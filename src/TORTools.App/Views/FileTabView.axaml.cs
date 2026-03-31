@@ -883,20 +883,16 @@ public partial class FileTabView : UserControl
                 CellValidationHelper.ValidateAndRegister(
                     vm.ValidationManager, rowIndex, attributeName, value, fieldDef, entryId);
 
-                // Initial styling via pseudo-classes
+                // Initial styling
                 CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
 
-                // Subscribe to property changes for dynamic styling updates
-                rowVm.PropertyChanged += (s, args) =>
+                // Subscribe to centralized refresh event for all updates
+                vm.CellRefreshRequested += (s, args) =>
                 {
-                    if (args.PropertyName == nameof(EntryRowViewModel.SavedFields) ||
-                        args.PropertyName == nameof(EntryRowViewModel.ModifiedFields) ||
-                        args.PropertyName == nameof(EntryRowViewModel.WasNew) ||
-                        args.PropertyName == nameof(EntryRowViewModel.IsNew) ||
-                        args.PropertyName == nameof(EntryRowViewModel.IsRemoved))
-                    {
-                        CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
-                    }
+                    // Re-read value from row and update text
+                    text.Text = rowVm[attributeName];
+                    // Update styling
+                    CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
                 };
             }
 
@@ -1008,20 +1004,16 @@ public partial class FileTabView : UserControl
                         vm.ValidationManager, rowIndex, attributeName, value, fieldDef, entryId);
                 }
 
-                // Initial styling via pseudo-classes
+                // Initial styling
                 CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
 
-                // Subscribe to property changes for dynamic styling updates
-                rowVm.PropertyChanged += (s, args) =>
+                // Subscribe to centralized refresh event for all updates
+                vm.CellRefreshRequested += (s, args) =>
                 {
-                    if (args.PropertyName == nameof(EntryRowViewModel.SavedFields) ||
-                        args.PropertyName == nameof(EntryRowViewModel.ModifiedFields) ||
-                        args.PropertyName == nameof(EntryRowViewModel.WasNew) ||
-                        args.PropertyName == nameof(EntryRowViewModel.IsNew) ||
-                        args.PropertyName == nameof(EntryRowViewModel.IsRemoved))
-                    {
-                        CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
-                    }
+                    // Re-read value from row and update text
+                    text.Text = rowVm[attributeName];
+                    // Update styling
+                    CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
                 };
             }
 
