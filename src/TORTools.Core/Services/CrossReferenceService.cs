@@ -42,8 +42,11 @@ public class CrossReferenceService
             if (root == null)
                 return result;
 
-            // Parse the value path (e.g., "ItemTraits/ItemTrait")
-            var pathParts = config.SourceValuePath.Split('/');
+            // Check if this is an attribute path (starts with "@")
+            var isAttributePath = config.SourceValuePath.StartsWith("@");
+            var pathParts = isAttributePath
+                ? new[] { config.SourceValuePath.Substring(1) }
+                : config.SourceValuePath.Split('/');
 
             foreach (var entry in root.Elements())
             {
@@ -55,19 +58,29 @@ public class CrossReferenceService
                 var key = keyAttr.Value;
                 var values = new List<string>();
 
-                // Navigate the path to get values
-                IEnumerable<XElement> currentElements = new[] { entry };
-                foreach (var part in pathParts)
+                if (isAttributePath)
                 {
-                    currentElements = currentElements.SelectMany(e => e.Elements(part));
+                    // Read attribute value directly from the entry element
+                    var attrValue = entry.Attribute(pathParts[0])?.Value?.Trim();
+                    if (!string.IsNullOrEmpty(attrValue))
+                        values.Add(attrValue);
                 }
-
-                // Collect the values (text content of final elements)
-                foreach (var valueElement in currentElements)
+                else
                 {
-                    var value = valueElement.Value?.Trim();
-                    if (!string.IsNullOrEmpty(value))
-                        values.Add(value);
+                    // Navigate the path to get values (nested elements)
+                    IEnumerable<XElement> currentElements = new[] { entry };
+                    foreach (var part in pathParts)
+                    {
+                        currentElements = currentElements.SelectMany(e => e.Elements(part));
+                    }
+
+                    // Collect the values (text content of final elements)
+                    foreach (var valueElement in currentElements)
+                    {
+                        var value = valueElement.Value?.Trim();
+                        if (!string.IsNullOrEmpty(value))
+                            values.Add(value);
+                    }
                 }
 
                 if (values.Count > 0)
@@ -157,8 +170,11 @@ public class CrossReferenceService
             if (root == null)
                 return result;
 
-            // Parse the value path (e.g., "ItemTraits/ItemTrait")
-            var pathParts = config.SourceValuePath.Split('/');
+            // Check if this is an attribute path (starts with "@")
+            var isAttributePath = config.SourceValuePath.StartsWith("@");
+            var pathParts = isAttributePath
+                ? new[] { config.SourceValuePath.Substring(1) }
+                : config.SourceValuePath.Split('/');
 
             foreach (var entry in root.Elements())
             {
@@ -169,17 +185,10 @@ public class CrossReferenceService
 
                 var sourceKey = keyAttr.Value;
 
-                // Navigate the path to get values
-                IEnumerable<XElement> currentElements = new[] { entry };
-                foreach (var part in pathParts)
+                if (isAttributePath)
                 {
-                    currentElements = currentElements.SelectMany(e => e.Elements(part));
-                }
-
-                // For each value, add the source key to the reverse mapping
-                foreach (var valueElement in currentElements)
-                {
-                    var value = valueElement.Value?.Trim();
+                    // Read attribute value directly
+                    var value = entry.Attribute(pathParts[0])?.Value?.Trim();
                     if (!string.IsNullOrEmpty(value))
                     {
                         if (!result.TryGetValue(value, out var keyList))
@@ -190,6 +199,33 @@ public class CrossReferenceService
                         if (!keyList.Contains(sourceKey))
                         {
                             keyList.Add(sourceKey);
+                        }
+                    }
+                }
+                else
+                {
+                    // Navigate the path to get values
+                    IEnumerable<XElement> currentElements = new[] { entry };
+                    foreach (var part in pathParts)
+                    {
+                        currentElements = currentElements.SelectMany(e => e.Elements(part));
+                    }
+
+                    // For each value, add the source key to the reverse mapping
+                    foreach (var valueElement in currentElements)
+                    {
+                        var value = valueElement.Value?.Trim();
+                        if (!string.IsNullOrEmpty(value))
+                        {
+                            if (!result.TryGetValue(value, out var keyList))
+                            {
+                                keyList = new List<string>();
+                                result[value] = keyList;
+                            }
+                            if (!keyList.Contains(sourceKey))
+                            {
+                                keyList.Add(sourceKey);
+                            }
                         }
                     }
                 }
@@ -233,10 +269,16 @@ public class CrossReferenceService
             if (root == null)
                 return false;
 
-            // Parse the value path (e.g., "ItemTraits/ItemTrait")
-            var pathParts = config.SourceValuePath.Split('/');
+            // Check if this is an attribute path (starts with "@")
+            var isAttributePath = config.SourceValuePath.StartsWith("@");
+            var attributeName = isAttributePath ? config.SourceValuePath.Substring(1) : null;
+
+            // Parse the value path for element paths (e.g., "ItemTraits/ItemTrait")
+            var pathParts = isAttributePath
+                ? Array.Empty<string>()
+                : config.SourceValuePath.Split('/');
             var containerElementName = pathParts.Length > 1 ? pathParts[0] : null;
-            var valueElementName = pathParts.Length > 1 ? pathParts[1] : pathParts[0];
+            var valueElementName = pathParts.Length > 1 ? pathParts[1] : (pathParts.Length > 0 ? pathParts[0] : null);
 
             // Find the entry with matching key
             XElement? targetEntry = null;
@@ -266,47 +308,63 @@ public class CrossReferenceService
                 Console.WriteLine($"[CrossReferenceService] Created new entry for {localKey}");
             }
 
-            // Find or create the container element
-            XElement container;
-            if (containerElementName != null)
+            // Handle attribute path differently from element path
+            if (isAttributePath && attributeName != null)
             {
-                container = targetEntry.Element(containerElementName) ?? new XElement(containerElementName);
-                if (container.Parent == null)
-                    targetEntry.Add(container);
-            }
-            else
-            {
-                container = targetEntry;
-            }
-
-            // Remove existing value elements and any text nodes (whitespace)
-            container.Elements(valueElementName).Remove();
-            container.Nodes().OfType<XText>().Remove();
-
-            // Detect indentation from document (usually 2 spaces per level)
-            var baseIndent = "      "; // 6 spaces for ItemTrait level
-
-            // Add new value elements with proper formatting
-            foreach (var value in newValues)
-            {
-                if (!string.IsNullOrWhiteSpace(value))
+                // For attribute paths, set or remove the attribute
+                if (newValues.Count > 0 && !string.IsNullOrWhiteSpace(newValues[0]))
                 {
-                    // Add newline + indent before each element
-                    container.Add(new XText("\n" + baseIndent));
-                    container.Add(new XElement(valueElementName, value.Trim()));
+                    targetEntry.SetAttributeValue(attributeName, newValues[0].Trim());
+                }
+                else
+                {
+                    targetEntry.Attribute(attributeName)?.Remove();
                 }
             }
-
-            // Add closing indent if we have elements
-            if (newValues.Count > 0)
+            else if (valueElementName != null)
             {
-                container.Add(new XText("\n    ")); // 4 spaces for closing tag indent
-            }
+                // Find or create the container element
+                XElement container;
+                if (containerElementName != null)
+                {
+                    container = targetEntry.Element(containerElementName) ?? new XElement(containerElementName);
+                    if (container.Parent == null)
+                        targetEntry.Add(container);
+                }
+                else
+                {
+                    container = targetEntry;
+                }
 
-            // If container is now empty and it's a child element, remove it
-            if (containerElementName != null && !container.HasElements)
-            {
-                container.Remove();
+                // Remove existing value elements and any text nodes (whitespace)
+                container.Elements(valueElementName).Remove();
+                container.Nodes().OfType<XText>().Remove();
+
+                // Detect indentation from document (usually 2 spaces per level)
+                var baseIndent = "      "; // 6 spaces for ItemTrait level
+
+                // Add new value elements with proper formatting
+                foreach (var value in newValues)
+                {
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        // Add newline + indent before each element
+                        container.Add(new XText("\n" + baseIndent));
+                        container.Add(new XElement(valueElementName, value.Trim()));
+                    }
+                }
+
+                // Add closing indent if we have elements
+                if (newValues.Count > 0)
+                {
+                    container.Add(new XText("\n    ")); // 4 spaces for closing tag indent
+                }
+
+                // If container is now empty and it's a child element, remove it
+                if (containerElementName != null && !container.HasElements)
+                {
+                    container.Remove();
+                }
             }
 
             // Save the file with UTF-8 BOM and uppercase encoding declaration

@@ -111,6 +111,7 @@
                   IsReadOnly="False"
                   SelectionMode="Extended"
                   HeadersVisibility="Column"
+                  FrozenColumnCount="2"
                   LoadingRow="OnDataGridLoadingRow">
             <DataGrid.ContextMenu>
                 <ContextMenu>

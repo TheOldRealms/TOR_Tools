@@ -103,4 +103,89 @@ public class XmlEntry
         // Update the underlying XElement
         OriginalElement.SetAttributeValue(name, value);
     }
+
+    /// <summary>
+    /// Gets a value from a nested path.
+    /// Path formats:
+    /// - "ChildElement" - returns text content of child element
+    /// - "ChildElement/@AttributeName" - returns attribute value from child element
+    /// </summary>
+    public string? GetNestedValue(string nestedPath)
+    {
+        if (string.IsNullOrEmpty(nestedPath)) return null;
+
+        var parts = nestedPath.Split(new[] { "/@" }, StringSplitOptions.None);
+        var elementPath = parts[0];
+        var attributeName = parts.Length > 1 ? parts[1] : null;
+
+        // Navigate to child element
+        var childElement = OriginalElement.Element(elementPath);
+        if (childElement == null) return null;
+
+        if (attributeName != null)
+        {
+            // Return attribute value from child element
+            return childElement.Attribute(attributeName)?.Value;
+        }
+        else
+        {
+            // Return text content of child element
+            return childElement.Value;
+        }
+    }
+
+    /// <summary>
+    /// Sets a value at a nested path.
+    /// Path formats:
+    /// - "ChildElement" - sets text content of child element (creates if needed)
+    /// - "ChildElement/@AttributeName" - sets attribute value on child element (creates element if needed)
+    /// </summary>
+    public void SetNestedValue(string nestedPath, string? value)
+    {
+        if (string.IsNullOrEmpty(nestedPath)) return;
+
+        var parts = nestedPath.Split(new[] { "/@" }, StringSplitOptions.None);
+        var elementPath = parts[0];
+        var attributeName = parts.Length > 1 ? parts[1] : null;
+
+        // Get child element
+        var childElement = OriginalElement.Element(elementPath);
+
+        if (string.IsNullOrEmpty(value))
+        {
+            if (childElement == null) return; // Nothing to remove
+
+            if (attributeName != null)
+            {
+                // Remove just the attribute, not the whole element
+                childElement.SetAttributeValue(attributeName, null);
+            }
+            else
+            {
+                // Remove the element only if it's a text-content element
+                childElement.Remove();
+            }
+        }
+        else
+        {
+            if (childElement == null)
+            {
+                childElement = new XElement(elementPath);
+                OriginalElement.Add(childElement);
+            }
+
+            if (attributeName != null)
+            {
+                // Set attribute value on child element
+                childElement.SetAttributeValue(attributeName, value);
+            }
+            else
+            {
+                // Set text content of child element
+                childElement.Value = value;
+            }
+        }
+
+        IsModified = true;
+    }
 }

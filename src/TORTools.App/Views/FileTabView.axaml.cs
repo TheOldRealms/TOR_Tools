@@ -6,11 +6,14 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.Data;
 using Avalonia.Input;
+using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Avalonia.VisualTree;
 using TORTools.App.Helpers;
 using TORTools.App.ViewModels;
 using TORTools.Core.Schema;
+using TORTools.Core.Services;
 using TORTools.Core.Validation;
 
 namespace TORTools.App.Views;
@@ -123,8 +126,18 @@ public partial class FileTabView : UserControl
         };
         grid.Columns.Add(rowNumColumn);
 
-        // Get ordered column display info
-        var orderedColumns = ColumnDisplayMappings.GetOrderedDisplayInfo(vm.ColumnNames, vm.Title).ToList();
+        // Get ordered column display info, using schema Order if available
+        var orderedColumns = vm.ColumnNames
+            .Select(attr => {
+                var displayInfo = ColumnDisplayMappings.GetDisplayInfo(attr, vm.Title);
+                var fieldDef = vm.GetFieldDefinition(attr);
+                // Use schema order if defined, otherwise fall back to display mappings
+                var order = fieldDef?.Order ?? displayInfo.Order;
+                return new { Info = displayInfo, Order = order };
+            })
+            .OrderBy(x => x.Order)
+            .Select(x => x.Info)
+            .ToList();
         Console.WriteLine($"[FileTabView] Ordered columns count: {orderedColumns.Count}");
 
         foreach (var displayInfo in orderedColumns)
@@ -139,16 +152,31 @@ public partial class FileTabView : UserControl
                 continue;
             }
 
-            var isEnumField = fieldDef?.Type == "enum" && fieldDef.EnumValues?.Count > 0;
-            var isCrossRefField = (fieldDef?.Type == "crossReference" || fieldDef?.Type == "reverseCrossReference") && fieldDef?.CrossReference != null;
+            // CrossReference fields with enumValues should display as enum dropdowns (like RaceLock)
+            // CrossReference fields without enumValues display as tag editors (like ItemTraits)
+            var isCrossRefWithEnum = fieldDef?.Type == "crossReference" && fieldDef?.CrossReference != null && fieldDef.EnumValues?.Count > 0;
+            var isEnumField = (fieldDef?.Type == "enum" && fieldDef.EnumValues?.Count > 0) || isCrossRefWithEnum;
+            var isCrossRefField = (fieldDef?.Type == "crossReference" || fieldDef?.Type == "reverseCrossReference") && fieldDef?.CrossReference != null && !isCrossRefWithEnum;
+            var isIconField = fieldDef?.Type == "icon";
 
-            Console.WriteLine($"[FileTabView] Adding column: {displayInfo.DisplayName} ({displayInfo.AttributeName}) - Enum: {isEnumField}, CrossRef: {isCrossRefField}");
+            Console.WriteLine($"[FileTabView] Adding column: {displayInfo.DisplayName} ({displayInfo.AttributeName}) - Enum: {isEnumField}, CrossRef: {isCrossRefField}, Icon: {isIconField}");
 
             // Check if this is the ID column - if so, add lock toggle to header
             var isIdColumn = displayInfo.AttributeName.Equals("id", StringComparison.OrdinalIgnoreCase);
 
             DataGridColumn column;
-            if (isCrossRefField)
+            if (isIconField)
+            {
+                // Icon picker field
+                column = new DataGridTemplateColumn
+                {
+                    Header = CreateColumnHeader(displayInfo, fieldDef),
+                    Width = new DataGridLength(displayInfo.Width),
+                    IsReadOnly = false,
+                    CellTemplate = CreateIconCellTemplate(displayInfo.AttributeName, fieldDef!, vm)
+                };
+            }
+            else if (isCrossRefField)
             {
                 var isReverseCrossRef = fieldDef!.Type == "reverseCrossReference";
 
@@ -453,11 +481,8 @@ public partial class FileTabView : UserControl
         return new FuncDataTemplate<EntryRowViewModel>((rowVm, _) =>
         {
             // Outer border for modification highlighting
-            var border = new Border
-            {
-                Padding = new Thickness(2),
-                CornerRadius = new CornerRadius(2)
-            };
+            var border = new Border();
+            border.Classes.Add("dataCell");
 
             var panel = new StackPanel
             {
@@ -569,27 +594,22 @@ public partial class FileTabView : UserControl
                         invalidTrait);
                 }
 
-                // Update modification/error highlighting
-                if (hasInvalidTrait)
-                {
-                    border.Background = new SolidColorBrush(Color.FromRgb(255, 200, 200)); // Light red for errors
-                }
-                else if (vm.HasUnsavedChanges && rowVm.IsFieldModified(attributeName))
-                {
-                    border.Background = new SolidColorBrush(Color.FromRgb(255, 165, 0)); // Orange (matches tab asterisk)
-                }
-                else
-                {
-                    border.Background = Brushes.Transparent;
-                }
+                // Use centralized styling (handles all states: error, modified, saved, etc.)
+                CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
             }
 
             // Initial build
             RebuildLinks();
 
+            // Subscribe to centralized refresh event
+            vm.CellRefreshRequested += (s, args) =>
+            {
+                RebuildLinks();
+            };
+
             panel.Children.Add(linksPanel);
 
-            // Edit button - opens a simple text editor popup
+            // Edit button - opens a simple text editor popup (hidden for removed rows)
             var editButton = new Button
             {
                 Content = "...",
@@ -602,7 +622,8 @@ public partial class FileTabView : UserControl
                 BorderBrush = new SolidColorBrush(Color.FromRgb(200, 200, 200)),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(2),
-                Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand)
+                Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand),
+                IsVisible = !rowVm.IsRemoved  // Hide for removed rows
             };
             ToolTip.SetTip(editButton, "Edit traits (comma-separated)");
 
@@ -850,6 +871,20 @@ public partial class FileTabView : UserControl
     /// </summary>
     private static IDataTemplate CreateEnumCellTemplate(string attributeName, FieldDefinition fieldDef, FileTabViewModel vm)
     {
+        // Build lookup for value -> displayName
+        var displayNameLookup = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var enumValue in fieldDef.EnumValues ?? [])
+        {
+            displayNameLookup[enumValue.Value] = enumValue.DisplayName ?? enumValue.Value;
+        }
+
+        // Helper to get display name for a value
+        string GetDisplayName(string? value)
+        {
+            if (string.IsNullOrEmpty(value)) return "";
+            return displayNameLookup.TryGetValue(value, out var displayName) ? displayName : value;
+        }
+
         return new FuncDataTemplate<EntryRowViewModel>((rowVm, _) =>
         {
             var border = new Border();
@@ -873,7 +908,8 @@ public partial class FileTabView : UserControl
 
             if (rowVm != null)
             {
-                text.Bind(TextBlock.TextProperty, new Binding($"[{attributeName}]"));
+                // Show display name instead of raw value
+                text.Text = GetDisplayName(rowVm[attributeName]);
 
                 // Validate on render
                 var rowIndex = rowVm.RowNumber - 1;
@@ -889,8 +925,8 @@ public partial class FileTabView : UserControl
                 // Subscribe to centralized refresh event for all updates
                 vm.CellRefreshRequested += (s, args) =>
                 {
-                    // Re-read value from row and update text
-                    text.Text = rowVm[attributeName];
+                    // Re-read value from row and show display name
+                    text.Text = GetDisplayName(rowVm[attributeName]);
                     // Update styling
                     CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
                 };
@@ -940,6 +976,12 @@ public partial class FileTabView : UserControl
 
             if (rowVm != null)
             {
+                // Disable editing for removed rows
+                if (rowVm.IsRemoved)
+                {
+                    comboBox.IsEnabled = false;
+                }
+
                 // Set initial selection based on current value
                 var currentValue = rowVm[attributeName];
                 var selectedItem = items.FirstOrDefault(i => (string?)i.Tag == currentValue);
@@ -1039,11 +1081,445 @@ public partial class FileTabView : UserControl
 
             if (rowVm != null)
             {
+                // Disable editing for removed rows
+                if (rowVm.IsRemoved)
+                {
+                    textBox.IsReadOnly = true;
+                    textBox.IsEnabled = false;
+                }
                 textBox.Bind(TextBox.TextProperty, new Binding($"[{attributeName}]", BindingMode.TwoWay));
             }
 
             return textBox;
         });
+    }
+
+    /// <summary>
+    /// Creates a cell template for icon fields with thumbnail preview and picker button.
+    /// </summary>
+    private static IDataTemplate CreateIconCellTemplate(string attributeName, FieldDefinition fieldDef, FileTabViewModel vm)
+    {
+        return new FuncDataTemplate<EntryRowViewModel>((rowVm, _) =>
+        {
+            var border = new Border();
+            border.Classes.Add("dataCell");
+
+            var panel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 4
+            };
+
+            if (rowVm == null)
+            {
+                border.Child = panel;
+                return border;
+            }
+
+            // Icon thumbnail
+            var iconImage = new Image
+            {
+                Width = 24,
+                Height = 24,
+                Stretch = Stretch.Uniform,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(2, 0)
+            };
+
+            // Icon name text
+            var iconText = new TextBlock
+            {
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(4, 0),
+                FontSize = 12
+            };
+
+            // Helper to update the icon display
+            void UpdateIconDisplay()
+            {
+                var iconName = rowVm[attributeName];
+                iconText.Text = iconName ?? "";
+
+                if (!string.IsNullOrEmpty(iconName) && vm.IconService != null)
+                {
+                    var iconPath = vm.IconService.GetIconPath(iconName);
+                    if (!string.IsNullOrEmpty(iconPath) && File.Exists(iconPath))
+                    {
+                        try
+                        {
+                            iconImage.Source = new Bitmap(iconPath);
+                            iconImage.IsVisible = true;
+                        }
+                        catch
+                        {
+                            iconImage.IsVisible = false;
+                        }
+                    }
+                    else
+                    {
+                        iconImage.IsVisible = false;
+                    }
+                }
+                else
+                {
+                    iconImage.IsVisible = false;
+                }
+
+                CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
+            }
+
+            // Initial display
+            UpdateIconDisplay();
+
+            // Subscribe to refresh events
+            vm.CellRefreshRequested += (s, args) => UpdateIconDisplay();
+
+            panel.Children.Add(iconImage);
+            panel.Children.Add(iconText);
+
+            // Edit button (hidden for removed rows)
+            var editButton = new Button
+            {
+                Content = "...",
+                FontSize = 10,
+                Padding = new Thickness(4, 2),
+                MinWidth = 20,
+                MinHeight = 0,
+                Background = new SolidColorBrush(Color.FromRgb(240, 240, 240)),
+                Foreground = new SolidColorBrush(Color.FromRgb(80, 80, 80)),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(200, 200, 200)),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(2),
+                Cursor = new Cursor(StandardCursorType.Hand),
+                IsVisible = !rowVm.IsRemoved,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(4, 0, 0, 0)
+            };
+            ToolTip.SetTip(editButton, "Select icon");
+
+            editButton.Click += (s, e) =>
+            {
+                if (vm.IconService == null) return;
+
+                var currentValue = rowVm[attributeName] ?? "";
+                ShowIconPickerPopup(editButton, currentValue, vm.IconService, (result) =>
+                {
+                    if (result != null && result != currentValue)
+                    {
+                        rowVm[attributeName] = result;
+                        Console.WriteLine($"[IconPicker] Selected icon: {result}");
+                        UpdateIconDisplay();
+                    }
+                });
+            };
+
+            panel.Children.Add(editButton);
+            border.Child = panel;
+
+            return border;
+        });
+    }
+
+    /// <summary>
+    /// Shows a dialog for selecting an icon with visual preview and filtering.
+    /// </summary>
+    private static void ShowIconPickerPopup(Control anchor, string currentValue, IIconService iconService, Action<string?> onComplete)
+    {
+        Console.WriteLine("[IconPicker] Creating dialog...");
+
+        var topLevel = TopLevel.GetTopLevel(anchor);
+        if (topLevel == null)
+        {
+            Console.WriteLine("[IconPicker] ERROR: Could not find TopLevel");
+            onComplete(null);
+            return;
+        }
+
+        // Create a dialog window
+        var dialog = new Window
+        {
+            Title = "Select Icon",
+            Width = 600,
+            Height = 550,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = true,
+            ShowInTaskbar = false,
+            MinWidth = 400,
+            MinHeight = 400
+        };
+
+        var mainBorder = new Border
+        {
+            Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)),
+            Padding = new Thickness(16)
+        };
+
+        var mainStack = new StackPanel { Spacing = 12 };
+
+        // Current selection display
+        var currentPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8
+        };
+        var currentLabel = new TextBlock
+        {
+            Text = "Current:",
+            FontWeight = FontWeight.SemiBold,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var currentIcon = new Image
+        {
+            Width = 32,
+            Height = 32,
+            Stretch = Stretch.Uniform
+        };
+        var currentText = new TextBlock
+        {
+            Text = currentValue,
+            VerticalAlignment = VerticalAlignment.Center,
+            Foreground = new SolidColorBrush(Color.FromRgb(0, 180, 255))
+        };
+
+        // Show current icon
+        if (!string.IsNullOrEmpty(currentValue))
+        {
+            var iconPath = iconService.GetIconPath(currentValue);
+            if (!string.IsNullOrEmpty(iconPath) && File.Exists(iconPath))
+            {
+                try { currentIcon.Source = new Bitmap(iconPath); } catch { }
+            }
+        }
+
+        currentPanel.Children.Add(currentLabel);
+        currentPanel.Children.Add(currentIcon);
+        currentPanel.Children.Add(currentText);
+        mainStack.Children.Add(currentPanel);
+
+        // Search box
+        var searchBox = new TextBox
+        {
+            Watermark = "Type to filter icons...",
+            Margin = new Thickness(0, 8, 0, 0)
+        };
+        mainStack.Children.Add(searchBox);
+
+        // Icon grid in a scroll viewer
+        var scrollViewer = new ScrollViewer
+        {
+            Height = 350,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+        };
+
+        var iconWrapPanel = new WrapPanel
+        {
+            Orientation = Orientation.Horizontal
+        };
+
+        string? selectedIconName = null;
+        Button? selectedButton = null;
+
+        // Helper to populate icons
+        void PopulateIcons(string filter)
+        {
+            iconWrapPanel.Children.Clear();
+            var icons = iconService.SearchIcons(filter, 100);
+
+            foreach (var icon in icons)
+            {
+                var iconButton = new Button
+                {
+                    Width = 64,
+                    Height = 64,
+                    Padding = new Thickness(4),
+                    Margin = new Thickness(2),
+                    Background = new SolidColorBrush(Color.FromRgb(50, 50, 50)),
+                    BorderBrush = new SolidColorBrush(Color.FromRgb(80, 80, 80)),
+                    BorderThickness = new Thickness(1),
+                    Tag = icon.Name,
+                    Cursor = new Cursor(StandardCursorType.Hand)
+                };
+
+                var iconStack = new StackPanel
+                {
+                    HorizontalAlignment = HorizontalAlignment.Center
+                };
+
+                var img = new Image
+                {
+                    Width = 40,
+                    Height = 40,
+                    Stretch = Stretch.Uniform,
+                    HorizontalAlignment = HorizontalAlignment.Center
+                };
+
+                if (File.Exists(icon.FilePath))
+                {
+                    try { img.Source = new Bitmap(icon.FilePath); } catch { }
+                }
+
+                iconStack.Children.Add(img);
+
+                iconButton.Content = iconStack;
+                ToolTip.SetTip(iconButton, $"{icon.Name}\n({icon.Category})");
+
+                // Highlight if this is the current value
+                if (icon.Name.Equals(currentValue, StringComparison.OrdinalIgnoreCase))
+                {
+                    iconButton.BorderBrush = new SolidColorBrush(Color.FromRgb(0, 180, 255));
+                    iconButton.BorderThickness = new Thickness(2);
+                    selectedIconName = icon.Name;
+                    selectedButton = iconButton;
+                }
+
+                var capturedName = icon.Name;
+                iconButton.Click += (s, e) =>
+                {
+                    // Clear previous selection
+                    if (selectedButton != null)
+                    {
+                        selectedButton.BorderBrush = new SolidColorBrush(Color.FromRgb(80, 80, 80));
+                        selectedButton.BorderThickness = new Thickness(1);
+                    }
+
+                    // Set new selection
+                    selectedIconName = capturedName;
+                    selectedButton = iconButton;
+                    iconButton.BorderBrush = new SolidColorBrush(Color.FromRgb(0, 180, 255));
+                    iconButton.BorderThickness = new Thickness(2);
+
+                    // Update current display
+                    currentText.Text = capturedName;
+                    var path = iconService.GetIconPath(capturedName);
+                    if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                    {
+                        try { currentIcon.Source = new Bitmap(path); } catch { }
+                    }
+                };
+
+                // Double-click to select and close
+                iconButton.DoubleTapped += (s, e) =>
+                {
+                    selectedIconName = capturedName;
+                    dialog.Close();
+                };
+
+                iconWrapPanel.Children.Add(iconButton);
+            }
+        }
+
+        // Initial population
+        PopulateIcons("");
+
+        // Filter on search text change
+        searchBox.TextChanged += (s, e) =>
+        {
+            PopulateIcons(searchBox.Text ?? "");
+        };
+
+        scrollViewer.Content = iconWrapPanel;
+        mainStack.Children.Add(scrollViewer);
+
+        // Buttons
+        var buttonPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(0, 12, 0, 0)
+        };
+
+        string? result = null;
+        bool completed = false;
+
+        var clearButton = new Button
+        {
+            Content = "Clear",
+            Padding = new Thickness(16, 6),
+            Background = new SolidColorBrush(Color.FromRgb(80, 60, 60)),
+            Foreground = Brushes.White
+        };
+        clearButton.Click += (s, e) =>
+        {
+            if (!completed)
+            {
+                completed = true;
+                result = "";  // Clear the icon
+                dialog.Close();
+            }
+        };
+
+        var okButton = new Button
+        {
+            Content = "OK",
+            Padding = new Thickness(24, 6),
+            Background = new SolidColorBrush(Color.FromRgb(0, 120, 215)),
+            Foreground = Brushes.White
+        };
+        okButton.Click += (s, e) =>
+        {
+            if (!completed)
+            {
+                completed = true;
+                result = selectedIconName;
+                dialog.Close();
+            }
+        };
+
+        var cancelButton = new Button
+        {
+            Content = "Cancel",
+            Padding = new Thickness(24, 6),
+            Background = new SolidColorBrush(Color.FromRgb(60, 60, 60)),
+            Foreground = Brushes.White
+        };
+        cancelButton.Click += (s, e) =>
+        {
+            if (!completed)
+            {
+                completed = true;
+                dialog.Close();
+            }
+        };
+
+        buttonPanel.Children.Add(clearButton);
+        buttonPanel.Children.Add(cancelButton);
+        buttonPanel.Children.Add(okButton);
+        mainStack.Children.Add(buttonPanel);
+
+        mainBorder.Child = mainStack;
+        dialog.Content = mainBorder;
+
+        // Handle Escape key
+        dialog.KeyDown += (s, e) =>
+        {
+            if (e.Key == Key.Escape && !completed)
+            {
+                completed = true;
+                dialog.Close();
+                e.Handled = true;
+            }
+        };
+
+        // Handle dialog closed
+        dialog.Closed += (s, e) =>
+        {
+            Console.WriteLine($"[IconPicker] Dialog closed, result: {result}");
+            onComplete(result);
+        };
+
+        // Show the dialog
+        if (topLevel is Window parentWindow)
+        {
+            dialog.ShowDialog(parentWindow);
+        }
+        else
+        {
+            dialog.Show();
+        }
+
+        searchBox.Focus();
     }
 
     /// <summary>

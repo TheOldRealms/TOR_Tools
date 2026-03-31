@@ -29,17 +29,23 @@ public class XmlDocumentService : IXmlDocumentService
         // Detect original encoding string from XML declaration
         var originalEncodingString = DetectEncodingString(bytes);
 
+        // Read original content for text-based patching
+        var originalContent = encoding.GetString(hasBom ? bytes.Skip(3).ToArray() : bytes);
+
         // Load document preserving whitespace
         var doc = XDocument.Load(filePath, LoadOptions.PreserveWhitespace);
 
         // Detect indentation string
         var indentString = DetectIndentation(doc);
 
-        return new XmlDocumentWrapper(doc, filePath, hasBom, encoding, indentString, originalEncodingString);
+        var wrapper = new XmlDocumentWrapper(doc, filePath, hasBom, encoding, indentString, originalEncodingString);
+        wrapper.OriginalContent = originalContent;
+        return wrapper;
     }
 
     /// <summary>
-    /// Saves the XML document with minimal formatting changes.
+    /// Saves the XML document with multi-line attribute formatting.
+    /// Each attribute on its own line, aligned under the element name.
     /// </summary>
     public void Save(XmlDocumentWrapper document, string? filePath = null)
     {
@@ -48,57 +54,216 @@ public class XmlDocumentService : IXmlDocumentService
 
         try
         {
-            var encoding = document.HasBom
-                ? new UTF8Encoding(true)  // UTF-8 with BOM
-                : new UTF8Encoding(false); // UTF-8 without BOM
+            var sb = new StringBuilder();
+            var indent = document.IndentString;
 
+            // Write XML declaration
+            var decl = document.Document.Declaration;
+            if (decl != null)
+            {
+                var encodingStr = document.OriginalEncodingString ?? "UTF-8";
+                sb.AppendLine($"<?xml version=\"{decl.Version}\" encoding=\"{encodingStr}\"?>");
+            }
+
+            var root = document.Document.Root;
+            if (root != null)
+            {
+                // Write root element
+                sb.AppendLine($"<{root.Name.LocalName}>");
+
+                // Write each entry with multi-line attributes
+                foreach (var element in root.Elements())
+                {
+                    WriteElementWithMultiLineAttributes(sb, element, indent);
+                }
+
+                sb.AppendLine($"</{root.Name.LocalName}>");
+            }
+
+            var content = sb.ToString();
+
+            // Write with proper encoding and BOM
             using (var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write))
             {
-                // Write BOM explicitly if original had one
                 if (document.HasBom)
                 {
                     byte[] bom = { 0xEF, 0xBB, 0xBF };
                     stream.Write(bom, 0, bom.Length);
                 }
 
-                // Use UTF-8 without BOM for the writer (we already wrote BOM manually)
                 using var writer = new StreamWriter(stream, new UTF8Encoding(false));
-
-                // Write XML declaration manually to preserve original casing
-                var decl = document.Document.Declaration;
-                if (decl != null)
-                {
-                    // Preserve original encoding string if available, otherwise use UTF-8
-                    var encodingStr = document.OriginalEncodingString ?? "UTF-8";
-                    writer.Write($"<?xml version=\"{decl.Version}\" encoding=\"{encodingStr}\"?>");
-                }
-
-                // Write the rest of the document (Nodes() doesn't include the declaration)
-                // Don't add any extra newlines - preserve exactly what was there
-                foreach (var node in document.Document.Nodes())
-                {
-                    writer.Write(node.ToString(SaveOptions.DisableFormatting));
-                }
+                writer.Write(content);
             }
 
-            // Atomic replace: delete original, rename temp
+            // Atomic replace
             if (File.Exists(targetPath))
             {
                 File.Delete(targetPath);
             }
             File.Move(tempPath, targetPath);
 
+            document.OriginalContent = content;
             document.HasUnsavedChanges = false;
         }
         catch
         {
-            // Clean up temp file on failure
             if (File.Exists(tempPath))
             {
                 try { File.Delete(tempPath); } catch { }
             }
             throw;
         }
+    }
+
+    /// <summary>
+    /// Writes an element with each attribute on its own line.
+    /// </summary>
+    private static void WriteElementWithMultiLineAttributes(StringBuilder sb, XElement element, string baseIndent, int depth = 1)
+    {
+        var indent = string.Concat(Enumerable.Repeat(baseIndent, depth));
+        var elementName = element.Name.LocalName;
+        var attributes = element.Attributes().ToList();
+        var children = element.Elements().ToList();
+        var hasTextContent = !string.IsNullOrWhiteSpace(element.Value) && !children.Any();
+
+        // Calculate alignment padding (align under first attribute)
+        var alignPad = new string(' ', indent.Length + elementName.Length + 2); // +2 for "< "
+
+        sb.Append(indent);
+        sb.Append($"<{elementName}");
+
+        // Write attributes
+        for (int i = 0; i < attributes.Count; i++)
+        {
+            var attr = attributes[i];
+            var attrStr = $"{attr.Name.LocalName}=\"{EscapeXmlAttributeValue(attr.Value)}\"";
+
+            if (i == 0)
+            {
+                sb.Append($" {attrStr}");
+            }
+            else
+            {
+                sb.AppendLine();
+                sb.Append($"{alignPad}{attrStr}");
+            }
+        }
+
+        // Close element
+        if (children.Any())
+        {
+            sb.AppendLine(">");
+
+            // Write child elements
+            foreach (var child in children)
+            {
+                WriteElementWithMultiLineAttributes(sb, child, baseIndent, depth + 1);
+            }
+
+            sb.AppendLine($"{indent}</{elementName}>");
+        }
+        else if (hasTextContent)
+        {
+            sb.AppendLine($">{EscapeXmlText(element.Value)}</{elementName}>");
+        }
+        else
+        {
+            sb.AppendLine(" />");
+        }
+    }
+
+    /// <summary>
+    /// Escapes text content for XML.
+    /// </summary>
+    private static string EscapeXmlText(string value)
+    {
+        if (string.IsNullOrEmpty(value)) return value;
+        return value
+            .Replace("&", "&amp;")
+            .Replace("<", "&lt;")
+            .Replace(">", "&gt;");
+    }
+
+    /// <summary>
+    /// Patches attribute values in the original content for a specific element.
+    /// Preserves the original multi-line attribute formatting.
+    /// </summary>
+    private static string PatchElementAttributes(string content, XElement element)
+    {
+        // Find the element's ID or StringID to locate it in the text
+        var idAttr = element.Attribute("id") ?? element.Attribute("StringID") ?? element.Attribute("ItemTraitStringId");
+        if (idAttr == null)
+        {
+            Console.WriteLine($"[Patch] Element {element.Name.LocalName} has no id attribute, skipping");
+            return content;
+        }
+
+        var idValue = idAttr.Value;
+        var idName = idAttr.Name.LocalName;
+
+        // Find this element in the content by its ID attribute
+        // Pattern: <ElementName ... idName="idValue" ... > or />
+        var elementName = element.Name.LocalName;
+
+        // Look for the element start tag containing this ID
+        var searchPattern = $"<{elementName}[^>]*{idName}\\s*=\\s*\"{System.Text.RegularExpressions.Regex.Escape(idValue)}\"";
+        var match = System.Text.RegularExpressions.Regex.Match(content, searchPattern, System.Text.RegularExpressions.RegexOptions.Singleline);
+
+        if (!match.Success)
+        {
+            Console.WriteLine($"[Patch] Could not find element {elementName} with {idName}={idValue} in content");
+            return content;
+        }
+
+        // Find the full element tag (up to > or />)
+        var startIndex = match.Index;
+        var endIndex = content.IndexOf('>', startIndex);
+        if (endIndex < 0) return content;
+
+        // Check if it's a self-closing tag
+        var isSelfClosing = content[endIndex - 1] == '/';
+        var originalTag = content.Substring(startIndex, endIndex - startIndex + 1);
+
+        // For each attribute in the XElement, update its value in the original tag
+        var patchedTag = originalTag;
+        foreach (var attr in element.Attributes())
+        {
+            var attrName = attr.Name.LocalName;
+            var newValue = attr.Value;
+
+            // Pattern to find this attribute and replace its value
+            // Handles: attrName="value" or attrName = "value" with possible newlines
+            var attrPattern = $@"({attrName}\s*=\s*"")([^""]*)("")";
+            patchedTag = System.Text.RegularExpressions.Regex.Replace(
+                patchedTag,
+                attrPattern,
+                m => m.Groups[1].Value + EscapeXmlAttributeValue(newValue) + m.Groups[3].Value);
+        }
+
+        // Replace the original tag with the patched version
+        if (patchedTag != originalTag)
+        {
+            Console.WriteLine($"[Patch] Patched {elementName} {idName}={idValue}");
+            content = content.Substring(0, startIndex) + patchedTag + content.Substring(endIndex + 1);
+        }
+
+        return content;
+    }
+
+    /// <summary>
+    /// Escapes special characters for XML attribute values.
+    /// XElement.Value gives unescaped values, so we must escape them for XML text.
+    /// Order matters: & must be escaped first.
+    /// </summary>
+    private static string EscapeXmlAttributeValue(string value)
+    {
+        if (string.IsNullOrEmpty(value)) return value;
+
+        return value
+            .Replace("&", "&amp;")
+            .Replace("<", "&lt;")
+            .Replace(">", "&gt;")
+            .Replace("\"", "&quot;");
     }
 
     /// <summary>

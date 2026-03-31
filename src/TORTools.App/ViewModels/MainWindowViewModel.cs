@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using TORTools.Core.Models;
+using TORTools.Core.Services;
 using TORTools.Core.Workspace;
 
 namespace TORTools.App.ViewModels;
@@ -9,6 +10,7 @@ namespace TORTools.App.ViewModels;
 public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly IWorkspaceService _workspaceService;
+    private readonly IIconService? _iconService;
     private WorkspaceConfig _config;
 
     [ObservableProperty]
@@ -37,6 +39,17 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         _workspaceService = workspaceService;
         _config = _workspaceService.LoadConfig();
+
+        // Initialize icon service if TOR_Armory path is available
+        if (!string.IsNullOrEmpty(_config.TorArmoryPath))
+        {
+            var guiPath = Path.Combine(_config.TorArmoryPath, "GUI");
+            if (Directory.Exists(guiPath))
+            {
+                _iconService = new IconService(guiPath);
+            }
+        }
+
         LoadCatalogs();
     }
 
@@ -92,6 +105,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
         // Open new tab
         var newTab = new FileTabViewModel(filePath);
+
+        // Assign icon service if available
+        newTab.IconService = _iconService;
 
         // Subscribe to cross-reference navigation events
         newTab.NavigateToCrossReference += OnNavigateToCrossReference;

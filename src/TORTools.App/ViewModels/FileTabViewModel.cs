@@ -149,6 +149,11 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     public IUndoRedoService UndoRedoService => _undoRedoService;
 
     /// <summary>
+    /// Icon service for icon picker functionality. Set after construction by MainWindowViewModel.
+    /// </summary>
+    public IIconService? IconService { get; set; }
+
+    /// <summary>
     /// The schema definition for this file type, if available.
     /// </summary>
     public SchemaDefinition? Schema { get; private set; }
@@ -792,7 +797,7 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         // Add remaining columns in alphabetical order
         ColumnNames.AddRange(columnSet.OrderBy(c => c));
 
-        // Add cross-reference columns from schema (these are computed, not in XML)
+        // Add cross-reference and nested columns from schema (these may not be direct attributes)
         if (Schema != null)
         {
             foreach (var kvp in Schema.Fields)
@@ -800,7 +805,10 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
                 if (kvp.Value.CrossReference != null && !ColumnNames.Contains(kvp.Key))
                 {
                     ColumnNames.Add(kvp.Key);
-                    Console.WriteLine($"[DiscoverColumns] Added cross-reference column: {kvp.Key}");
+                }
+                else if (kvp.Value.Nested && !string.IsNullOrEmpty(kvp.Value.NestedPath) && !ColumnNames.Contains(kvp.Key))
+                {
+                    ColumnNames.Add(kvp.Key);
                 }
             }
         }
@@ -832,6 +840,9 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
 
             // Populate cross-reference values
             PopulateCrossReferenceValues(row, entry);
+
+            // Populate nested field values
+            PopulateNestedValues(row, entry);
 
             Rows.Add(row);
         }
@@ -868,13 +879,40 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         }
     }
 
+    /// <summary>
+    /// Populates nested field values for a row based on schema nested paths.
+    /// </summary>
+    private void PopulateNestedValues(EntryRowViewModel row, XmlEntry entry)
+    {
+        if (Schema == null) return;
+
+        foreach (var kvp in Schema.Fields)
+        {
+            var fieldName = kvp.Key;
+            var fieldDef = kvp.Value;
+
+            if (fieldDef.Nested && !string.IsNullOrEmpty(fieldDef.NestedPath))
+            {
+                var value = entry.GetNestedValue(fieldDef.NestedPath);
+                if (!string.IsNullOrEmpty(value))
+                {
+                    row.SetOriginalValue(fieldName, value);
+                }
+            }
+        }
+    }
+
     private void OnCellValueChanged(object? sender, CellValueChangedEventArgs e)
     {
         if (sender is not EntryRowViewModel rowVm) return;
         if (_document == null) return;
 
+        // Check if this is a nested field
+        var fieldDef = GetFieldDefinition(e.ColumnName);
+        var nestedPath = (fieldDef?.Nested == true) ? fieldDef.NestedPath : null;
+
         // Create and execute an edit command
-        var command = new CellEditUndoCommand(rowVm, e.ColumnName, e.OldValue, e.NewValue);
+        var command = new CellEditUndoCommand(rowVm, e.ColumnName, e.OldValue, e.NewValue, nestedPath);
 
         // Don't use Execute() here since the value is already changed
         // Just push to undo stack
@@ -1043,6 +1081,20 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
                     continue;
 
                 var currentValue = rowVm[columnName];
+
+                // Handle nested fields
+                if (fieldDef?.Nested == true && !string.IsNullOrEmpty(fieldDef.NestedPath))
+                {
+                    var existingValue = xmlEntry.GetNestedValue(fieldDef.NestedPath) ?? "";
+                    var normalizedCurrent = currentValue ?? "";
+                    if (existingValue != normalizedCurrent)
+                    {
+                        xmlEntry.SetNestedValue(fieldDef.NestedPath, currentValue);
+                        _document!.HasUnsavedChanges = true;
+                    }
+                    continue;
+                }
+
                 var attr = xmlEntry.GetAttribute(columnName);
 
                 if (attr != null)
@@ -1163,8 +1215,10 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         if (_document == null || SelectedIndex < 0 || SelectedIndex >= XmlEntries.Count)
             return;
 
+        var indexToDelete = SelectedIndex;
+
         // Store the row for "removed entries" display (only if not a new entry)
-        var rowToDelete = Rows[SelectedIndex];
+        var rowToDelete = Rows[indexToDelete];
         if (!rowToDelete.IsNew)
         {
             rowToDelete.IsRemoved = true;
@@ -1173,7 +1227,7 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         }
 
         var xmlEntryCollection = new ObservableCollection<XmlEntry>(XmlEntries);
-        var entryToDelete = xmlEntryCollection[SelectedIndex];
+        var entryToDelete = xmlEntryCollection[indexToDelete];
 
         // Remove from new entries tracking
         _newEntries.Remove(entryToDelete);
@@ -1185,8 +1239,23 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         XmlEntries.Clear();
         XmlEntries.AddRange(xmlEntryCollection);
 
-        // Recreate dynamic entries
-        RefreshRows();
+        // Remove just this row from the UI (preserves scroll position)
+        Rows.RemoveAt(indexToDelete);
+
+        // Update row numbers for remaining rows
+        for (int i = indexToDelete; i < Rows.Count; i++)
+        {
+            Rows[i].RowNumber = i + 1;
+        }
+
+        // If ShowRemovedEntries is true, immediately re-insert at original position
+        if (ShowRemovedEntries && !rowToDelete.IsNew)
+        {
+            RefreshRowsWithRemovedEntries();
+        }
+
+        // Notify cells to refresh styling
+        RequestCellRefresh();
         MarkAsModified();
     }
 
@@ -1339,13 +1408,15 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         // Recreate the rows (CreateRows handles IsNew tracking via _newEntries)
         CreateRows(XmlEntries);
 
-        // Add removed entries if toggle is on (at their original positions)
+        // Add removed entries at the end if toggle is on
         if (ShowRemovedEntries)
         {
-            foreach (var removedRow in _removedEntries.OrderBy(r => r.RowNumber))
+            foreach (var removedRow in _removedEntries)
             {
-                var insertIndex = Math.Min(removedRow.RowNumber - 1, Rows.Count);
-                Rows.Insert(insertIndex, removedRow);
+                if (!Rows.Contains(removedRow))
+                {
+                    Rows.Add(removedRow);
+                }
             }
         }
     }
@@ -1358,22 +1429,31 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         Console.WriteLine($"[Removed] RefreshRowsWithRemovedEntries called, ShowRemovedEntries={ShowRemovedEntries}, count={_removedEntries.Count}");
         if (ShowRemovedEntries)
         {
-            // Add removed entries at their original positions (by RowNumber)
+            // Insert removed entries at their original positions
+            // Sort by RowNumber to insert in correct order
             foreach (var removedRow in _removedEntries.OrderBy(r => r.RowNumber))
             {
                 if (!Rows.Contains(removedRow))
                 {
-                    // Insert at the original position (or at end if position is beyond current count)
-                    var insertIndex = Math.Min(removedRow.RowNumber - 1, Rows.Count);
+                    // Find insert position: count how many rows have lower RowNumber
+                    var insertIndex = 0;
+                    for (int i = 0; i < Rows.Count; i++)
+                    {
+                        if (Rows[i].RowNumber < removedRow.RowNumber)
+                            insertIndex = i + 1;
+                        else
+                            break;
+                    }
+                    insertIndex = Math.Min(insertIndex, Rows.Count);
                     Rows.Insert(insertIndex, removedRow);
-                    Console.WriteLine($"[Removed] Inserted removed entry at {insertIndex}: {removedRow["id"]}");
+                    Console.WriteLine($"[Removed] Inserted removed entry at {insertIndex}: {removedRow["id"]} (RowNumber={removedRow.RowNumber})");
                 }
             }
         }
         else
         {
             // Remove the removed entries from display
-            foreach (var removedRow in _removedEntries)
+            foreach (var removedRow in _removedEntries.ToList())
             {
                 Rows.Remove(removedRow);
             }
@@ -1414,15 +1494,17 @@ internal class CellEditUndoCommand : IEditCommand
     private readonly string _columnName;
     private readonly string _oldValue;
     private readonly string _newValue;
+    private readonly string? _nestedPath;
 
     public string Description => $"Edit {_columnName}";
 
-    public CellEditUndoCommand(EntryRowViewModel rowVm, string columnName, string oldValue, string newValue)
+    public CellEditUndoCommand(EntryRowViewModel rowVm, string columnName, string oldValue, string newValue, string? nestedPath = null)
     {
         _rowVm = rowVm;
         _columnName = columnName;
         _oldValue = oldValue;
         _newValue = newValue;
+        _nestedPath = nestedPath;
     }
 
     public void Execute()
@@ -1439,6 +1521,13 @@ internal class CellEditUndoCommand : IEditCommand
 
     private void UpdateXmlEntry(string value)
     {
+        // Handle nested fields
+        if (!string.IsNullOrEmpty(_nestedPath))
+        {
+            _rowVm.XmlEntry.SetNestedValue(_nestedPath, value);
+            return;
+        }
+
         var attr = _rowVm.XmlEntry.GetAttribute(_columnName);
         if (attr != null)
         {

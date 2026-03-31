@@ -176,6 +176,20 @@ public class FieldDefinition
     /// </summary>
     [JsonPropertyName("patternWarning")]
     public string? PatternWarning { get; set; }
+
+    /// <summary>
+    /// Whether this field is nested (stored in a child element rather than as an attribute).
+    /// </summary>
+    [JsonPropertyName("nested")]
+    public bool Nested { get; set; }
+
+    /// <summary>
+    /// Path to the nested value. Formats:
+    /// - "ChildElement" - text content of child element
+    /// - "ChildElement/@AttributeName" - attribute on child element
+    /// </summary>
+    [JsonPropertyName("nestedPath")]
+    public string? NestedPath { get; set; }
 }
 
 /// <summary>

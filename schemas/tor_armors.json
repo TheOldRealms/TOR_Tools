@@ -47,12 +47,51 @@
     },
     "culture": {
       "displayName": "Culture",
-      "description": "Cultural origin (e.g., Culture.empire).",
-      "type": "string",
+      "description": "Cultural origin of this item.",
+      "type": "enum",
       "order": 10,
       "width": 140,
-      "pattern": "^Culture\\.",
-      "patternWarning": "Should start with 'Culture.'"
+      "enumValues": [
+        { "value": "Culture.empire", "displayName": "Empire" },
+        { "value": "Culture.vlandia", "displayName": "Bretonnia" },
+        { "value": "Culture.khuzait", "displayName": "Sylvania" },
+        { "value": "Culture.mousillon", "displayName": "Mousillon" },
+        { "value": "Culture.battania", "displayName": "Asrai (Wood Elves)" },
+        { "value": "Culture.eonir", "displayName": "Eonir" },
+        { "value": "Culture.druchii", "displayName": "Druchii (Dark Elves)" },
+        { "value": "Culture.sturgia", "displayName": "Dawi (Dwarfs)" },
+        { "value": "Culture.aserai", "displayName": "Greenskin" },
+        { "value": "Culture.greenskin_bandit", "displayName": "Greenskin Bandit" },
+        { "value": "Culture.steppe_bandits", "displayName": "Beastmen" },
+        { "value": "Culture.desert_bandits", "displayName": "Herrimault" },
+        { "value": "Culture.chaos_culture", "displayName": "Chaos" },
+        { "value": "Culture.neutral_culture", "displayName": "Neutral" }
+      ]
+    },
+    "RaceLock": {
+      "displayName": "Race Lock",
+      "description": "Race restriction for this item (from extended properties).",
+      "type": "crossReference",
+      "order": 11,
+      "width": 100,
+      "crossReference": {
+        "sourceFile": "tor_extendeditemproperties.xml",
+        "sourceKeyField": "ItemStringId",
+        "sourceValuePath": "@RaceLock",
+        "localKeyField": "id"
+      },
+      "enumValues": [
+        { "value": "human", "displayName": "Human" },
+        { "value": "dwarf", "displayName": "Dwarf" },
+        { "value": "orc", "displayName": "Orc" },
+        { "value": "skeleton", "displayName": "Skeleton" },
+        { "value": "wraith", "displayName": "Wraith" },
+        { "value": "goblin", "displayName": "Goblin" },
+        { "value": "ungor", "displayName": "Ungor" },
+        { "value": "gor", "displayName": "Gor" },
+        { "value": "troll", "displayName": "Troll" },
+        { "value": "spirit_host", "displayName": "Spirit Host" }
+      ]
     },
     "is_merchandise": {
       "displayName": "Merchandise",
@@ -86,10 +125,8 @@
     },
     "appearance": {
       "displayName": "Appearance",
-      "description": "Visual appearance modifier (0-1 scale).",
+      "description": "Rarity/spawn frequency of the item.",
       "type": "float",
-      "min": 0,
-      "max": 1,
       "order": 50,
       "width": 90
     },

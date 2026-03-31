@@ -54,6 +54,11 @@ public class XmlDocumentWrapper
     /// </summary>
     public string? OriginalEncodingString { get; }
 
+    /// <summary>
+    /// The original raw content of the file (for text-based patching).
+    /// </summary>
+    public string OriginalContent { get; set; } = "";
+
     public XmlDocumentWrapper(
         XDocument document,
         string filePath,

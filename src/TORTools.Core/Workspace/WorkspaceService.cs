@@ -19,14 +19,14 @@ public class WorkspaceService : IWorkspaceService
         ["tor_armors.xml"] = ("Item Catalog", "Armors"),
         ["tor_meleeweapons.xml"] = ("Item Catalog", "Melee Weapons"),
         ["tor_rangedweapons.xml"] = ("Item Catalog", "Ranged Weapons"),
-        ["tor_shields.xml"] = ("Item Catalog", "Shields"),
+        ["tor_shields.xml"] = ("Item Catalog", "Shields and Offhand"),
         ["tor_projectiles.xml"] = ("Item Catalog", "Projectiles"),
         ["tor_other_items.xml"] = ("Item Catalog", "Other Items"),
         ["tor_horseandharness.xml"] = ("Item Catalog", "Horses & Harness"),
 
         // Item Catalog - TOR_Core (item extensions)
         ["tor_itemtraits.xml"] = ("Item Catalog", "Item Traits"),
-        ["tor_extendeditemproperties.xml"] = ("Item Catalog", "Extended Item Properties"),
+        // tor_extendeditemproperties.xml is accessed via cross-references, not directly edited
 
         // Unit Catalog - TOR_Core
         ["tor_heroes.xml"] = ("Unit Catalog", "Heroes"),
@@ -89,6 +89,24 @@ public class WorkspaceService : IWorkspaceService
         "Configuration",
         "Other"
     ];
+
+    /// <summary>
+    /// Defines the display order of files within each catalog.
+    /// Lower numbers appear first. Files not in this list get order 100.
+    /// </summary>
+    private static readonly Dictionary<string, int> FileOrder = new(StringComparer.OrdinalIgnoreCase)
+    {
+        // Item Catalog - main item types first
+        ["tor_armors.xml"] = 1,
+        ["tor_meleeweapons.xml"] = 2,
+        ["tor_rangedweapons.xml"] = 3,
+        ["tor_shields.xml"] = 4,
+        ["tor_projectiles.xml"] = 10,
+        ["tor_other_items.xml"] = 11,
+        ["tor_horseandharness.xml"] = 12,
+        ["tor_itemtraits.xml"] = 20,
+        ["tor_weapon_descriptions.xml"] = 21,
+    };
 
     public string ConfigFilePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -229,7 +247,8 @@ public class WorkspaceService : IWorkspaceService
             .Select(g => new CatalogGroup
             {
                 Name = g.Key,
-                Files = g.OrderBy(f => GetCatalogInfo(f.FileName).DisplayName).ToList()
+                Files = g.OrderBy(f => FileOrder.TryGetValue(f.FileName, out var order) ? order : 100)
+                         .ThenBy(f => GetCatalogInfo(f.FileName).DisplayName).ToList()
             })
             .OrderBy(c => Array.IndexOf(CatalogOrder, c.Name) is var idx && idx >= 0 ? idx : 999)
             .ToList();
