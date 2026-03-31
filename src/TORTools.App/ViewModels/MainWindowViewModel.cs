@@ -92,12 +92,95 @@ public partial class MainWindowViewModel : ViewModelBase
 
         // Open new tab
         var newTab = new FileTabViewModel(filePath);
+
+        // Subscribe to cross-reference navigation events
+        newTab.NavigateToCrossReference += OnNavigateToCrossReference;
+
         OpenTabs.Add(newTab);
         ActiveTab = newTab;
         OnPropertyChanged(nameof(HasOpenTabs));
 
         StatusMessage = $"Opened {newTab.Title}";
         RowCountText = $"{newTab.Rows.Count} entries";
+    }
+
+    /// <summary>
+    /// Handles navigation to a cross-referenced entry in another file.
+    /// Searches through multiple target files until the entry is found.
+    /// </summary>
+    private void OnNavigateToCrossReference(object? sender, CrossReferenceNavigationEventArgs e)
+    {
+        Console.WriteLine($"[Navigation] Navigating to [{string.Join(", ", e.TargetFiles)}], key {e.TargetKeyField} = {e.TargetValue}");
+
+        // Search through all target files until we find the entry
+        foreach (var targetFile in e.TargetFiles)
+        {
+            var targetFilePath = FindFileByName(targetFile);
+            if (targetFilePath == null)
+            {
+                Console.WriteLine($"[Navigation] File not found: {targetFile}, trying next...");
+                continue;
+            }
+
+            // Open or switch to the target file
+            OpenFile(targetFilePath);
+
+            // Find and select the matching row
+            if (ActiveTab != null)
+            {
+                var rowIndex = FindRowByKeyValue(ActiveTab, e.TargetKeyField, e.TargetValue);
+                if (rowIndex >= 0)
+                {
+                    ActiveTab.SelectedIndex = rowIndex;
+                    StatusMessage = $"Navigated to {e.TargetValue} in {targetFile}";
+                    Console.WriteLine($"[Navigation] Found in {targetFile}, selected row {rowIndex}");
+                    return; // Found it!
+                }
+                else
+                {
+                    Console.WriteLine($"[Navigation] Entry not found in {targetFile}, trying next...");
+                }
+            }
+        }
+
+        // Not found in any target file
+        StatusMessage = $"Entry not found: {e.TargetValue}";
+        Console.WriteLine($"[Navigation] Entry not found in any target file: {e.TargetValue}");
+    }
+
+    /// <summary>
+    /// Finds a file path by its file name across all catalogs.
+    /// </summary>
+    private string? FindFileByName(string fileName)
+    {
+        foreach (var catalog in Catalogs)
+        {
+            foreach (var file in catalog.Files)
+            {
+                if (Path.GetFileName(file.FilePath).Equals(fileName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return file.FilePath;
+                }
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Finds a row index by matching a key field value.
+    /// </summary>
+    private static int FindRowByKeyValue(FileTabViewModel tab, string keyField, string value)
+    {
+        for (int i = 0; i < tab.Rows.Count; i++)
+        {
+            var row = tab.Rows[i];
+            var cellValue = row[keyField];
+            if (cellValue?.Equals(value, StringComparison.OrdinalIgnoreCase) == true)
+            {
+                return i;
+            }
+        }
+        return -1;
     }
 
     partial void OnActiveTabChanged(FileTabViewModel? value)
@@ -239,9 +322,13 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         if (tab == null) return;
 
+        // Unsubscribe from events
+        tab.NavigateToCrossReference -= OnNavigateToCrossReference;
+
         // TODO: Check for unsaved changes
         var index = OpenTabs.IndexOf(tab);
         OpenTabs.Remove(tab);
+        tab.Dispose();
 
         // Select adjacent tab
         if (OpenTabs.Count > 0)

@@ -13,50 +13,41 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Build Commands
 
 ```bash
-# Restore dependencies
-dotnet restore TOREditor.sln
-
-# Build solution
-dotnet build TOREditor.sln
-
-# Build release
-dotnet build TOREditor.sln -c Release
+# Build the app
+dotnet build src/TORTools.App/TORTools.App.csproj
 
 # Run the app
-dotnet run --project src/TOREditor.App
+dotnet run --project src/TORTools.App/TORTools.App.csproj
+
+# Build release
+dotnet build src/TORTools.App/TORTools.App.csproj -c Release
 
 # Run tests
-dotnet test
-
-# Run specific test project
-dotnet test tests/TOREditor.Core.Tests
-dotnet test tests/TOREditor.Mcp.Tests
-
-# Run single test
-dotnet test --filter "FullyQualifiedName~TestMethodName"
+dotnet test tests/TORTools.Core.Tests
 ```
+
+## Claude Code Integration
+
+When running the app via `dotnet run`, use the **KillShell** tool to terminate the application when needed. The app runs as a background task and can be stopped using the shell ID provided when launched.
 
 ## Solution Structure
 
 ```
 TORTools/
-├── TOREditor.sln
 ├── src/
-│   ├── TOREditor.Core/       # Shared logic (no UI dependency)
+│   ├── TORTools.Core/        # Shared logic (no UI dependency)
 │   │   ├── Models/           # Data models for XML entities
 │   │   ├── Services/         # XML parsing, validation, cross-ref
-│   │   ├── Schemas/          # Schema definition loading & registry
+│   │   ├── Schema/           # Schema definition loading & registry
+│   │   ├── Validation/       # Validation service
 │   │   └── Workspace/        # Workspace management, repo discovery
-│   ├── TOREditor.App/        # Avalonia desktop application
-│   │   ├── ViewModels/       # MVVM ViewModels
-│   │   ├── Views/            # XAML Views
-│   │   ├── Controls/         # Custom controls (DataGrid, map canvas)
-│   │   └── Converters/       # Value converters
-│   ├── TOREditor.Mcp/        # MCP server (stdio transport)
-│   └── TOREditor.Preview3D/  # 3D viewport (Phase 7)
+│   └── TORTools.App/         # Avalonia desktop application
+│       ├── ViewModels/       # MVVM ViewModels
+│       ├── Views/            # AXAML Views
+│       └── Converters/       # Value converters
 ├── schemas/                  # JSON schema definitions per XML file type
-├── help/                     # Tooltip knowledge base (JSON per file type)
 └── tests/
+    └── TORTools.Core.Tests/
 ```
 
 ## Neighboring Repositories

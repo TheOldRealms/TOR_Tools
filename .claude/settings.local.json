@@ -8,7 +8,8 @@
       "Bash(dotnet new:*)",
       "Bash(cat:*)",
       "Bash(dotnet build:*)",
-      "Bash(dotnet publish:*)"
+      "Bash(dotnet publish:*)",
+      "Bash(dotnet run:*)"
     ]
   }
 }

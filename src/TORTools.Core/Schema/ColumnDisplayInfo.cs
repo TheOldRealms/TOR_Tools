@@ -127,11 +127,35 @@ public static class ColumnDisplayMappings
         // Check file-specific mappings based on filename
         var specificMappings = GetFileMappings(fileName);
         if (specificMappings != null && specificMappings.TryGetValue(attributeName, out var specific))
-            return specific;
+        {
+            // Return with original attribute name preserved (case matters for data binding)
+            return new ColumnDisplayInfo
+            {
+                AttributeName = attributeName, // Keep original case!
+                DisplayName = specific.DisplayName,
+                Description = specific.Description,
+                Width = specific.Width,
+                IsReadOnly = specific.IsReadOnly,
+                Order = specific.Order,
+                Group = specific.Group
+            };
+        }
 
         // Check common mappings
         if (CommonMappings.TryGetValue(attributeName, out var common))
-            return common;
+        {
+            // Return with original attribute name preserved (case matters for data binding)
+            return new ColumnDisplayInfo
+            {
+                AttributeName = attributeName, // Keep original case!
+                DisplayName = common.DisplayName,
+                Description = common.Description,
+                Width = common.Width,
+                IsReadOnly = common.IsReadOnly,
+                Order = common.Order,
+                Group = common.Group
+            };
+        }
 
         // Generate default display info
         return new ColumnDisplayInfo
