@@ -1,0 +1,103 @@
+{
+  "file": "tor_shields.xml",
+  "displayName": "Shields and Offhand",
+  "description": "Shields, banners, and offhand items (held in off-hand slot).",
+  "rootElement": "Items",
+  "entryElement": "Item",
+  "fields": {
+    "id": {
+      "displayName": "ID",
+      "description": "Unique identifier for this item.",
+      "type": "string",
+      "required": true,
+      "order": 1,
+      "width": 280
+    },
+    "name": {
+      "displayName": "Name",
+      "description": "Display name with localization key (e.g., {=str_id}Display Text).",
+      "type": "string",
+      "required": true,
+      "order": 2,
+      "width": 200
+    },
+    "Type": {
+      "displayName": "Type",
+      "description": "Item type category.",
+      "type": "enum",
+      "order": 3,
+      "width": 120,
+      "enumValues": [
+        { "value": "Shield", "displayName": "Shield" },
+        { "value": "Banner", "displayName": "Banner" },
+        { "value": "OneHandedWeapon", "displayName": "One-Handed" }
+      ]
+    },
+    "culture": {
+      "displayName": "Culture",
+      "description": "Cultural origin (e.g., Culture.empire).",
+      "type": "string",
+      "order": 10,
+      "width": 140
+    },
+    "is_merchandise": {
+      "displayName": "Merchandise",
+      "description": "Whether this item appears in shops.",
+      "type": "enum",
+      "order": 15,
+      "width": 90,
+      "default": "true",
+      "enumValues": [
+        { "value": "true", "displayName": "Yes" },
+        { "value": "false", "displayName": "No" }
+      ]
+    },
+    "value": {
+      "displayName": "Value (Price)",
+      "description": "Base price in denars.",
+      "type": "int",
+      "min": 0,
+      "max": 1000000,
+      "order": 20,
+      "width": 80
+    },
+    "weight": {
+      "displayName": "Weight",
+      "description": "Item weight in kg.",
+      "type": "float",
+      "min": 0,
+      "order": 21,
+      "width": 70
+    },
+    "appearance": {
+      "displayName": "Appearance",
+      "description": "Visual appearance multiplier.",
+      "type": "float",
+      "min": 0,
+      "order": 22,
+      "width": 80
+    },
+    "mesh": {
+      "displayName": "Mesh",
+      "description": "3D mesh asset name.",
+      "type": "string",
+      "order": 30,
+      "width": 200
+    },
+    "ItemTraits": {
+      "displayName": "Item Traits",
+      "description": "Traits assigned to this item (from extended properties). Ctrl+Click to navigate.",
+      "type": "crossReference",
+      "order": 70,
+      "width": 200,
+      "crossReference": {
+        "sourceFile": "tor_extendeditemproperties.xml",
+        "sourceKeyField": "ItemStringId",
+        "sourceValuePath": "ItemTraits/ItemTrait",
+        "targetFile": "tor_itemtraits.xml",
+        "targetKeyField": "ItemTraitStringId",
+        "localKeyField": "id"
+      }
+    }
+  }
+}
