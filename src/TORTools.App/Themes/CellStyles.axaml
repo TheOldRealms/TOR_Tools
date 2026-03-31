@@ -1,0 +1,105 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ============================================
+         Cell Styles using pseudo-classes
+         ============================================ -->
+
+    <!-- Base cell style -->
+    <Style Selector="Border.dataCell">
+        <Setter Property="Padding" Value="2"/>
+        <Setter Property="CornerRadius" Value="2"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+
+    <!-- Cell icon (hidden by default) -->
+    <Style Selector="TextBlock.cellIcon">
+        <Setter Property="IsVisible" Value="False"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="2,0,4,0"/>
+        <Setter Property="FontSize" Value="12"/>
+    </Style>
+
+    <!-- Cell text -->
+    <Style Selector="TextBlock.cellText">
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="4,0"/>
+    </Style>
+
+    <!-- ============================================
+         Removed: strikethrough with muted red
+         ============================================ -->
+    <Style Selector="Border.dataCell:removed">
+        <Setter Property="Background" Value="#3C1E1E"/>
+    </Style>
+    <Style Selector="Border.dataCell:removed TextBlock.cellText">
+        <Setter Property="Foreground" Value="#B46464"/>
+        <Setter Property="TextDecorations" Value="Strikethrough"/>
+    </Style>
+
+    <!-- ============================================
+         Error: red border + tint + icon
+         ============================================ -->
+    <Style Selector="Border.dataCell:error">
+        <Setter Property="BorderBrush" Value="#DC3232"/>
+        <Setter Property="BorderThickness" Value="2"/>
+        <Setter Property="Background" Value="#501E1E"/>
+    </Style>
+    <Style Selector="Border.dataCell:error TextBlock.cellText">
+        <Setter Property="Foreground" Value="#FF7878"/>
+    </Style>
+    <Style Selector="Border.dataCell:error TextBlock.cellIcon">
+        <Setter Property="IsVisible" Value="True"/>
+        <Setter Property="Text" Value="⚠"/>
+        <Setter Property="Foreground" Value="#FF5050"/>
+    </Style>
+
+    <!-- ============================================
+         Warning: orange border + icon
+         ============================================ -->
+    <Style Selector="Border.dataCell:warning">
+        <Setter Property="BorderBrush" Value="#FFB400"/>
+        <Setter Property="BorderThickness" Value="1.5"/>
+    </Style>
+    <Style Selector="Border.dataCell:warning TextBlock.cellIcon">
+        <Setter Property="IsVisible" Value="True"/>
+        <Setter Property="Text" Value="⚠"/>
+        <Setter Property="Foreground" Value="#FFB400"/>
+    </Style>
+
+    <!-- ============================================
+         New entry (unsaved): green background
+         ============================================ -->
+    <Style Selector="Border.dataCell:new">
+        <Setter Property="Background" Value="#327832"/>
+    </Style>
+    <Style Selector="Border.dataCell:new TextBlock.cellText">
+        <Setter Property="Foreground" Value="#FFFFFF"/>
+    </Style>
+
+    <!-- ============================================
+         Modified field (unsaved): orange background
+         ============================================ -->
+    <Style Selector="Border.dataCell:modified">
+        <Setter Property="Background" Value="#FFA500"/>
+    </Style>
+    <Style Selector="Border.dataCell:modified TextBlock.cellText">
+        <Setter Property="Foreground" Value="#000000"/>
+    </Style>
+
+    <!-- ============================================
+         Was new, now saved: green text
+         ============================================ -->
+    <Style Selector="Border.dataCell:wasNew TextBlock.cellText">
+        <Setter Property="Foreground" Value="#50C850"/>
+    </Style>
+
+    <!-- ============================================
+         Saved but not committed: orange text
+         ============================================ -->
+    <Style Selector="Border.dataCell:saved TextBlock.cellText">
+        <Setter Property="Foreground" Value="#FFA500"/>
+    </Style>
+
+</Styles>

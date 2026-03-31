@@ -13,6 +13,8 @@
     </UserControl.Resources>
 
     <UserControl.Styles>
+        <!-- Include cell styles from external file -->
+        <StyleInclude Source="/Themes/CellStyles.axaml"/>
         <!-- Style for new entry rows (Discord green) -->
         <Style Selector="DataGridRow.newEntry">
             <Setter Property="Background" Value="#2d3d2d"/>

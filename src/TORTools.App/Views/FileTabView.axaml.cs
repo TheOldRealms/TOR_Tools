@@ -676,7 +676,7 @@ public partial class FileTabView : UserControl
 
         var border = new Border
         {
-            Background = Brushes.White,
+            Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)), // Dark theme background
             Padding = new Thickness(16)
         };
 
@@ -791,7 +791,9 @@ public partial class FileTabView : UserControl
         var cancelButton = new Button
         {
             Content = "Cancel",
-            Padding = new Thickness(24, 6)
+            Padding = new Thickness(24, 6),
+            Background = new SolidColorBrush(Color.FromRgb(60, 60, 60)),
+            Foreground = Brushes.White
         };
         cancelButton.Click += (s, e) =>
         {
@@ -844,38 +846,28 @@ public partial class FileTabView : UserControl
 
     /// <summary>
     /// Creates a display template for enum cells (shows current value as text with validation).
+    /// Uses AXAML styles via pseudo-classes (defined in CellStyles.axaml).
     /// </summary>
     private static IDataTemplate CreateEnumCellTemplate(string attributeName, FieldDefinition fieldDef, FileTabViewModel vm)
     {
         return new FuncDataTemplate<EntryRowViewModel>((rowVm, _) =>
         {
-            var border = new Border
-            {
-                Padding = new Thickness(2),
-                CornerRadius = new CornerRadius(2)
-            };
+            var border = new Border();
+            border.Classes.Add("dataCell");
 
             var grid = new Grid
             {
                 ColumnDefinitions = new ColumnDefinitions("*,Auto")
             };
 
-            var text = new TextBlock
-            {
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                Margin = new Thickness(4, 0)
-            };
+            var text = new TextBlock();
+            text.Classes.Add("cellText");
             Grid.SetColumn(text, 0);
             grid.Children.Add(text);
 
-            // Warning/error icon (initially hidden)
-            var icon = new TextBlock
-            {
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                Margin = new Thickness(2, 0, 4, 0),
-                FontSize = 12,
-                IsVisible = false
-            };
+            // Warning/error icon (styled via pseudo-classes)
+            var icon = new TextBlock();
+            icon.Classes.Add("cellIcon");
             Grid.SetColumn(icon, 1);
             grid.Children.Add(icon);
 
@@ -891,8 +883,8 @@ public partial class FileTabView : UserControl
                 CellValidationHelper.ValidateAndRegister(
                     vm.ValidationManager, rowIndex, attributeName, value, fieldDef, entryId);
 
-                // Update background, text color, icon, and tooltip based on validation state
-                UpdateCellBackground(border, rowVm, attributeName, vm, text, icon);
+                // Initial styling via pseudo-classes
+                CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
 
                 // Subscribe to property changes for dynamic styling updates
                 rowVm.PropertyChanged += (s, args) =>
@@ -903,7 +895,7 @@ public partial class FileTabView : UserControl
                         args.PropertyName == nameof(EntryRowViewModel.IsNew) ||
                         args.PropertyName == nameof(EntryRowViewModel.IsRemoved))
                     {
-                        UpdateCellBackground(border, rowVm, attributeName, vm, text, icon);
+                        CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
                     }
                 };
             }
@@ -976,39 +968,28 @@ public partial class FileTabView : UserControl
 
     /// <summary>
     /// Creates a text cell template that handles validation and dynamic styling.
-    /// Subscribes to property changes to update styling when SavedFields changes.
+    /// Uses AXAML styles via pseudo-classes (defined in CellStyles.axaml).
     /// </summary>
     private static IDataTemplate CreateTextCellTemplate(string attributeName, FieldDefinition? fieldDef, FileTabViewModel vm)
     {
         return new FuncDataTemplate<EntryRowViewModel>((rowVm, _) =>
         {
-            var border = new Border
-            {
-                Padding = new Thickness(2),
-                CornerRadius = new CornerRadius(2)
-            };
+            var border = new Border();
+            border.Classes.Add("dataCell");
 
             var grid = new Grid
             {
                 ColumnDefinitions = new ColumnDefinitions("*,Auto")
             };
 
-            var text = new TextBlock
-            {
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                Margin = new Thickness(4, 0)
-            };
+            var text = new TextBlock();
+            text.Classes.Add("cellText");
             Grid.SetColumn(text, 0);
             grid.Children.Add(text);
 
-            // Warning/error icon (initially hidden)
-            var icon = new TextBlock
-            {
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                Margin = new Thickness(2, 0, 4, 0),
-                FontSize = 12,
-                IsVisible = false
-            };
+            // Warning/error icon (styled via pseudo-classes)
+            var icon = new TextBlock();
+            icon.Classes.Add("cellIcon");
             Grid.SetColumn(icon, 1);
             grid.Children.Add(icon);
 
@@ -1027,8 +1008,8 @@ public partial class FileTabView : UserControl
                         vm.ValidationManager, rowIndex, attributeName, value, fieldDef, entryId);
                 }
 
-                // Initial styling
-                UpdateCellBackground(border, rowVm, attributeName, vm, text, icon);
+                // Initial styling via pseudo-classes
+                CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
 
                 // Subscribe to property changes for dynamic styling updates
                 rowVm.PropertyChanged += (s, args) =>
@@ -1039,7 +1020,7 @@ public partial class FileTabView : UserControl
                         args.PropertyName == nameof(EntryRowViewModel.IsNew) ||
                         args.PropertyName == nameof(EntryRowViewModel.IsRemoved))
                     {
-                        UpdateCellBackground(border, rowVm, attributeName, vm, text, icon);
+                        CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
                     }
                 };
             }
@@ -1071,114 +1052,6 @@ public partial class FileTabView : UserControl
 
             return textBox;
         });
-    }
-
-    /// <summary>
-    /// Updates cell background and text color based on validation state.
-    /// </summary>
-    private static void UpdateCellBackground(Border border, EntryRowViewModel rowVm, string attributeName, FileTabViewModel vm, TextBlock? text = null, TextBlock? icon = null)
-    {
-        var rowIndex = rowVm.RowNumber - 1;
-        var issues = vm.ValidationManager.Issues
-            .Where(i => i.RowIndex == rowIndex && i.AttributeName == attributeName)
-            .ToList();
-
-        // Reset border styling
-        border.BorderThickness = new Thickness(0);
-        border.BorderBrush = null;
-
-        // Reset icon and text decorations
-        if (icon != null)
-        {
-            icon.IsVisible = false;
-            ToolTip.SetTip(border, null);
-        }
-        if (text != null)
-        {
-            text.TextDecorations = null;
-        }
-
-        // Removed entries: strikethrough with red/grey styling (highest priority)
-        if (rowVm.IsRemoved)
-        {
-            border.Background = new SolidColorBrush(Color.FromRgb(60, 30, 30)); // Dark red tint
-            if (text != null)
-            {
-                text.Foreground = new SolidColorBrush(Color.FromRgb(180, 100, 100)); // Muted red text
-                text.TextDecorations = TextDecorations.Strikethrough;
-            }
-            return;
-        }
-
-        if (issues.Any(i => i.Severity == ValidationSeverity.Error))
-        {
-            // Error: red outline with visible red tint
-            border.BorderBrush = new SolidColorBrush(Color.FromRgb(220, 50, 50)); // Red border
-            border.BorderThickness = new Thickness(2);
-            border.Background = new SolidColorBrush(Color.FromRgb(80, 30, 30)); // Dark red tint for dark theme
-            if (text != null) text.Foreground = new SolidColorBrush(Color.FromRgb(255, 120, 120)); // Light red text
-
-            // Show error icon and tooltip
-            if (icon != null)
-            {
-                icon.Text = "⚠";
-                icon.Foreground = new SolidColorBrush(Color.FromRgb(255, 80, 80));
-                icon.IsVisible = true;
-                var errorMsg = string.Join("\n", issues.Where(i => i.Severity == ValidationSeverity.Error).Select(i => i.Message));
-                ToolTip.SetTip(border, errorMsg);
-            }
-        }
-        else if (issues.Any(i => i.Severity == ValidationSeverity.Warning))
-        {
-            // Warning: orange outline, no fill
-            border.BorderBrush = new SolidColorBrush(Color.FromRgb(255, 180, 0)); // Orange border
-            border.BorderThickness = new Thickness(1.5);
-            border.Background = Brushes.Transparent;
-            // Keep default text color for warnings
-
-            // Show warning icon and tooltip
-            if (icon != null)
-            {
-                icon.Text = "⚠";
-                icon.Foreground = new SolidColorBrush(Color.FromRgb(255, 180, 0));
-                icon.IsVisible = true;
-                var warnMsg = string.Join("\n", issues.Where(i => i.Severity == ValidationSeverity.Warning).Select(i => i.Message));
-                ToolTip.SetTip(border, warnMsg);
-            }
-        }
-        else if (vm.HasUnsavedChanges && rowVm.IsNew)
-        {
-            // New entry (unsaved): green background
-            border.Background = new SolidColorBrush(Color.FromRgb(50, 120, 50)); // Green background
-            if (text != null) text.Foreground = new SolidColorBrush(Color.FromRgb(255, 255, 255)); // White text on green
-        }
-        else if (vm.HasUnsavedChanges && rowVm.IsFieldModified(attributeName))
-        {
-            border.Background = new SolidColorBrush(Color.FromRgb(255, 165, 0)); // Orange (matches tab asterisk)
-            if (text != null) text.Foreground = new SolidColorBrush(Color.FromRgb(0, 0, 0)); // Black text on orange
-        }
-        else if (rowVm.WasNew)
-        {
-            // New entry saved but not committed: green text
-            border.Background = Brushes.Transparent;
-            if (text != null) text.Foreground = new SolidColorBrush(Color.FromRgb(80, 200, 80)); // Green text
-        }
-        else if (rowVm.IsFieldSaved(attributeName))
-        {
-            border.Background = Brushes.Transparent;
-            if (text != null) text.Foreground = new SolidColorBrush(Color.FromRgb(255, 165, 0)); // Orange text (saved but not committed)
-            Console.WriteLine($"[Style] Orange text for saved field: {attributeName} in row {rowVm.RowNumber}");
-        }
-        else
-        {
-            border.Background = Brushes.Transparent;
-            // Leave text as default (inherited)
-            // Debug: check savedFields count
-            if (rowVm.SavedFields.Count > 0)
-            {
-                Console.WriteLine($"[Style] Default style but row has {rowVm.SavedFields.Count} saved fields, checking {attributeName}: inSaved={rowVm.SavedFields.Contains(attributeName)}");
-            }
-        }
     }
 
     /// <summary>
