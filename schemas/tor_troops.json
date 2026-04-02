@@ -73,7 +73,10 @@
         { "value": "Culture.steppe_bandits", "displayName": "Beastmen" },
         { "value": "Culture.desert_bandits", "displayName": "Herrimault" },
         { "value": "Culture.chaos_culture", "displayName": "Chaos" },
-        { "value": "Culture.neutral_culture", "displayName": "Neutral" }
+        { "value": "Culture.neutral_culture", "displayName": "Neutral" },
+        { "value": "Culture.sea_raiders", "displayName": "Sea Raiders" },
+        { "value": "Culture.looters", "displayName": "Goblin Bandits" },
+        { "value": "Culture.mountain_bandits", "displayName": "Deserters" }
       ]
     },
     "occupation": {
@@ -96,7 +99,8 @@
         { "value": "GangLeader", "displayName": "Gang Leader" },
         { "value": "Gangster", "displayName": "Gangster" },
         { "value": "RuralNotable", "displayName": "Rural Notable" },
-        { "value": "Preacher", "displayName": "Preacher" }
+        { "value": "Preacher", "displayName": "Preacher" },
+        { "value": "Bandit", "displayName": "Bandit" }
       ]
     },
     "is_basic_troop": {
@@ -112,7 +116,7 @@
     },
     "skill_template": {
       "displayName": "Skill Template",
-      "description": "Required! Reference to skill set definition. Game crashes if empty.",
+      "description": "Required! Skill set for this troop. Use t0-t9 to match the troop's tier (e.g., t3 for Tier 3 troops).",
       "type": "crossReference",
       "required": true,
       "order": 8,

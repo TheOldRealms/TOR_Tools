@@ -101,23 +101,22 @@ public class ValidationService : IValidationService
             return result;
 
         // Type-specific validation
-        // NOTE: Disabled int/float/bool/enum validation for now - too noisy with existing data
-        // Only cross-reference validation (invalid traits) is shown in the UI
-        // switch (fieldDef.Type.ToLowerInvariant())
-        // {
-        //     case "int":
-        //         ValidateInt(value!, fieldName, fieldDef, rowIndex, entryId, result);
-        //         break;
-        //     case "float":
-        //         ValidateFloat(value!, fieldName, fieldDef, rowIndex, entryId, result);
-        //         break;
-        //     case "bool":
-        //         ValidateBool(value!, fieldName, fieldDef, rowIndex, entryId, result);
-        //         break;
-        //     case "enum":
-        //         ValidateEnum(value!, fieldName, fieldDef, rowIndex, entryId, result);
-        //         break;
-        // }
+        switch (fieldDef.Type.ToLowerInvariant())
+        {
+            case "enum":
+                ValidateEnum(value!, fieldName, fieldDef, rowIndex, entryId, result);
+                break;
+            // NOTE: int/float/bool validation disabled for now - can be noisy with existing data
+            // case "int":
+            //     ValidateInt(value!, fieldName, fieldDef, rowIndex, entryId, result);
+            //     break;
+            // case "float":
+            //     ValidateFloat(value!, fieldName, fieldDef, rowIndex, entryId, result);
+            //     break;
+            // case "bool":
+            //     ValidateBool(value!, fieldName, fieldDef, rowIndex, entryId, result);
+            //     break;
+        }
 
         return result;
     }
@@ -181,7 +180,7 @@ public class ValidationService : IValidationService
             if (validValues.Count > 5)
                 validList += $", ... ({validValues.Count - 5} more)";
 
-            result.AddWarning(rowIndex, fieldName, $"'{value}' is not a recognized value. Valid: {validList}", entryId, value);
+            result.AddError(rowIndex, fieldName, $"'{value}' is not a valid value. Valid: {validList}", entryId, value);
         }
     }
 

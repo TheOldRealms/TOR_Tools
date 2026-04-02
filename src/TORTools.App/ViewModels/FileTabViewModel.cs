@@ -508,78 +508,98 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     public void RunValidation()
     {
-        // Clear only basic validation issues (preserve cell-registered cross-ref errors)
-        ValidationManager.ClearByPrefix("basic_");
-        ValidationManager.ClearByPrefix("upgrade_");
-
-        // Convert rows to dictionaries for basic validation
-        var entries = Rows.Select(r => (IDictionary<string, string>)ColumnNames.ToDictionary(
-            col => col,
-            col => r[col] ?? ""
-        )).ToList();
-
-        // Run basic validation (required fields, duplicate IDs)
-        var result = _validationService.ValidateAll(entries, Schema);
-        foreach (var issue in result.Issues)
-        {
-            var key = $"basic_{issue.RowIndex}_{issue.AttributeName}_{issue.CurrentValue ?? "empty"}";
-            ValidationManager.RegisterError(key, issue);
-        }
-
-        // Run upgrade target validation for troop files
-        ValidateUpgradeTargets();
-
-        // Note: Cross-reference validation is done by cells themselves
-        // when they render and call RegisterError/UnregisterErrors
+        // Run validation asynchronously on background thread
+        Task.Run(() => RunValidationAsync());
     }
 
     /// <summary>
-    /// Validates upgrade targets for troop definitions:
-    /// - ERROR: upgrade target ID must exist within this file
-    /// - WARNING: upgrade target has level that's not higher than source
+    /// Runs full file validation asynchronously on a background thread.
     /// </summary>
-    private void ValidateUpgradeTargets()
+    private async Task RunValidationAsync()
+    {
+        Console.WriteLine($"[Validation] Starting validation of {Rows.Count} entries...");
+
+        // Clear previous validation issues on UI thread
+        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            ValidationManager.ClearByPrefix("basic_");
+            ValidationManager.ClearByPrefix("upgrade_");
+            ValidationManager.ClearByPrefix("crossref_");
+        });
+
+        // Capture row data for thread-safe processing
+        var rowData = new List<(int index, string id, Dictionary<string, string> values)>();
+        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            for (int i = 0; i < Rows.Count; i++)
+            {
+                var row = Rows[i];
+                var values = new Dictionary<string, string>();
+                foreach (var col in ColumnNames)
+                {
+                    values[col] = row[col] ?? "";
+                }
+                rowData.Add((i, row["id"] ?? "", values));
+            }
+        });
+
+        // Run basic validation
+        var entries = rowData.Select(r => (IDictionary<string, string>)r.values).ToList();
+        var result = _validationService.ValidateAll(entries, Schema);
+
+        // Register basic validation issues
+        foreach (var issue in result.Issues)
+        {
+            var key = $"basic_{issue.RowIndex}_{issue.AttributeName}_{issue.CurrentValue ?? "empty"}";
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                ValidationManager.RegisterError(key, issue);
+            });
+        }
+
+        // Run upgrade target validation
+        await ValidateUpgradeTargetsAsync(rowData);
+
+        // Run skill template tier validation
+        await ValidateSkillTemplateTiersAsync(rowData);
+
+        // Run cross-reference validation for all crossRef fields
+        await ValidateCrossReferencesAsync(rowData);
+
+        Console.WriteLine($"[Validation] Completed validation. Errors: {ValidationManager.ErrorCount}, Warnings: {ValidationManager.WarningCount}");
+    }
+
+    /// <summary>
+    /// Validates upgrade targets asynchronously.
+    /// </summary>
+    private async Task ValidateUpgradeTargetsAsync(List<(int index, string id, Dictionary<string, string> values)> rowData)
     {
         // Check if this file has upgrade target fields
         var hasUpgradeTargets = Schema?.Fields.ContainsKey("upgrade_target_1") == true;
         if (!hasUpgradeTargets) return;
 
-        // Build a lookup of all IDs in this file and their levels
+        // Build lookups
         var idToLevel = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        var idToRowIndex = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-
-        for (int i = 0; i < Rows.Count; i++)
+        foreach (var (index, id, values) in rowData)
         {
-            var row = Rows[i];
-            var id = row["id"] ?? "";
-            if (!string.IsNullOrEmpty(id))
+            if (!string.IsNullOrEmpty(id) && int.TryParse(values.GetValueOrDefault("level", "0"), out var level))
             {
-                idToRowIndex[id] = i;
-                if (int.TryParse(row["level"] ?? "0", out var level))
-                {
-                    idToLevel[id] = level;
-                }
+                idToLevel[id] = level;
             }
         }
 
-        // Track which upgrade targets have level issues, so we only warn once per problematic target
-        // Key: targetId, Value: (sourceRowIndex, sourceFieldName, sourceId, sourceLevel)
         var problemTargets = new Dictionary<string, (int sourceRowIndex, string fieldName, string sourceId, int sourceLevel)>(StringComparer.OrdinalIgnoreCase);
 
-        // First pass: find all upgrade relationships and identify problems
-        for (int rowIndex = 0; rowIndex < Rows.Count; rowIndex++)
+        // Process all rows
+        foreach (var (rowIndex, sourceId, values) in rowData)
         {
-            var row = Rows[rowIndex];
-            var sourceId = row["id"] ?? "";
             var sourceLevel = idToLevel.GetValueOrDefault(sourceId, 0);
 
-            // Check all upgrade targets
             for (int i = 1; i <= 3; i++)
             {
                 var fieldName = $"upgrade_target_{i}";
-                var targetId = row[fieldName] ?? "";
+                var targetId = values.GetValueOrDefault(fieldName, "");
 
-                // Strip the prefix if present
                 var fieldDef = GetFieldDefinition(fieldName);
                 if (fieldDef?.PrefixToStrip != null && targetId.StartsWith(fieldDef.PrefixToStrip, StringComparison.OrdinalIgnoreCase))
                 {
@@ -588,27 +608,27 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
 
                 if (!string.IsNullOrEmpty(targetId))
                 {
-                    // Check if target exists - ERROR if not
                     if (!idToLevel.ContainsKey(targetId))
                     {
                         var key = $"upgrade_{rowIndex}_{fieldName}_notfound";
-                        ValidationManager.RegisterError(key, new TORTools.Core.Validation.ValidationIssue
+                        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
                         {
-                            Severity = TORTools.Core.Validation.ValidationSeverity.Error,
-                            RowIndex = rowIndex,
-                            AttributeName = fieldName,
-                            Message = $"Upgrade target '{targetId}' not found in this file",
-                            EntryId = sourceId,
-                            CurrentValue = targetId
+                            ValidationManager.RegisterError(key, new TORTools.Core.Validation.ValidationIssue
+                            {
+                                Severity = TORTools.Core.Validation.ValidationSeverity.Error,
+                                RowIndex = rowIndex,
+                                AttributeName = fieldName,
+                                Message = $"Upgrade target '{targetId}' not found in this file",
+                                EntryId = sourceId,
+                                CurrentValue = targetId
+                            });
                         });
                     }
                     else
                     {
-                        // Check tier progression - target should have higher level
                         var targetLevel = idToLevel[targetId];
                         if (targetLevel <= sourceLevel)
                         {
-                            // Track this problem - keep the one with highest source level
                             if (!problemTargets.TryGetValue(targetId, out var existing) || sourceLevel > existing.sourceLevel)
                             {
                                 problemTargets[targetId] = (rowIndex, fieldName, sourceId, sourceLevel);
@@ -619,7 +639,7 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
             }
         }
 
-        // Second pass: register warnings on the upgrade_target cells that point to problematic targets
+        // Register tier warnings
         foreach (var kvp in problemTargets)
         {
             var targetId = kvp.Key;
@@ -627,15 +647,183 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
             var targetLevel = idToLevel.GetValueOrDefault(targetId, 0);
 
             var key = $"upgrade_{sourceRowIndex}_{fieldName}_tier";
-            ValidationManager.RegisterError(key, new TORTools.Core.Validation.ValidationIssue
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
             {
-                Severity = TORTools.Core.Validation.ValidationSeverity.Warning,
-                RowIndex = sourceRowIndex,
-                AttributeName = fieldName,
-                Message = $"'{targetId}' has level {targetLevel}, should be higher than {sourceLevel}",
-                EntryId = sourceId,
-                CurrentValue = targetId
+                ValidationManager.RegisterError(key, new TORTools.Core.Validation.ValidationIssue
+                {
+                    Severity = TORTools.Core.Validation.ValidationSeverity.Warning,
+                    RowIndex = sourceRowIndex,
+                    AttributeName = fieldName,
+                    Message = $"'{targetId}' has level {targetLevel}, should be higher than {sourceLevel}",
+                    EntryId = sourceId,
+                    CurrentValue = targetId
+                });
             });
+        }
+    }
+
+    /// <summary>
+    /// Validates skill template tiers asynchronously.
+    /// </summary>
+    private async Task ValidateSkillTemplateTiersAsync(List<(int index, string id, Dictionary<string, string> values)> rowData)
+    {
+        var hasSkillTemplate = Schema?.Fields.ContainsKey("skill_template") == true;
+        if (!hasSkillTemplate) return;
+
+        int checkedCount = 0;
+        int skippedNoLevel = 0;
+        int mismatchCount = 0;
+
+        foreach (var (rowIndex, entryId, values) in rowData)
+        {
+            var levelStr = values.GetValueOrDefault("level", "1");
+            var skillTemplate = values.GetValueOrDefault("skill_template", "");
+
+            if (string.IsNullOrEmpty(skillTemplate)) continue;
+            if (!int.TryParse(levelStr, out var level)) continue;
+
+            var expectedTier = (level - 1) / 5;
+
+            // Try to extract tier from skill template name
+            // Pattern 1: tor_skills_levelNN (e.g., tor_skills_level11)
+            // Pattern 2: _tN_ (e.g., _t2_)
+            int? templateTier = null;
+
+            var levelMatch = System.Text.RegularExpressions.Regex.Match(skillTemplate, @"level(\d+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (levelMatch.Success && int.TryParse(levelMatch.Groups[1].Value, out var templateLevel))
+            {
+                templateTier = (templateLevel - 1) / 5;
+            }
+            else
+            {
+                var tierMatch = System.Text.RegularExpressions.Regex.Match(skillTemplate, @"_t(\d+)_");
+                if (tierMatch.Success && int.TryParse(tierMatch.Groups[1].Value, out var parsedTier))
+                {
+                    templateTier = parsedTier;
+                }
+            }
+
+            if (!templateTier.HasValue)
+            {
+                skippedNoLevel++;
+                continue;
+            }
+
+            checkedCount++;
+
+            if (templateTier.Value != expectedTier)
+            {
+                mismatchCount++;
+                var key = $"upgrade_{rowIndex}_skill_template_tier";
+                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    ValidationManager.RegisterError(key, new TORTools.Core.Validation.ValidationIssue
+                    {
+                        Severity = TORTools.Core.Validation.ValidationSeverity.Warning,
+                        RowIndex = rowIndex,
+                        AttributeName = "skill_template",
+                        Message = $"Skill template is Tier {templateTier.Value} but troop is Tier {expectedTier} (level {level})",
+                        EntryId = entryId,
+                        CurrentValue = skillTemplate
+                    });
+                });
+            }
+        }
+
+        Console.WriteLine($"[Validation] Skill template tier check: {checkedCount} checked, {skippedNoLevel} skipped (no level pattern), {mismatchCount} mismatches");
+    }
+
+    /// <summary>
+    /// Validates cross-reference fields asynchronously.
+    /// </summary>
+    private async Task ValidateCrossReferencesAsync(List<(int index, string id, Dictionary<string, string> values)> rowData)
+    {
+        if (Schema == null) return;
+
+        // Find all crossReference fields
+        var crossRefFields = Schema.Fields
+            .Where(f => f.Value.Type == "crossReference" && f.Value.CrossReference != null)
+            .ToList();
+
+        if (!crossRefFields.Any()) return;
+
+        Console.WriteLine($"[Validation] Cross-ref fields to validate: {crossRefFields.Count}");
+
+        foreach (var (fieldName, fieldDef) in crossRefFields)
+        {
+            var crossRef = fieldDef.CrossReference!;
+
+            // Get available IDs from the already-loaded cache
+            if (!_availableIds.TryGetValue(fieldName, out var availableIdsList) || availableIdsList.Count == 0)
+            {
+                Console.WriteLine($"[Validation] No available IDs for {fieldName}, skipping");
+                continue;
+            }
+
+            Console.WriteLine($"[Validation] Validating {fieldName} with {availableIdsList.Count} valid IDs");
+            Console.WriteLine($"[Validation] Sample valid IDs: {string.Join(", ", availableIdsList.Take(5))}");
+            Console.WriteLine($"[Validation] PrefixToStrip: '{crossRef.PrefixToStrip ?? "(none)"}'");
+
+            // Debug: check for specific IDs that might be missing
+            var debugIds = new[] { "tor_skills_level21", "tor_skills_dwarf_irondrake", "tor_skills_level1", "tor_skills_level16" };
+            foreach (var debugId in debugIds)
+            {
+                var exists = availableIdsList.Any(id => id.Equals(debugId, StringComparison.OrdinalIgnoreCase));
+                Console.WriteLine($"[Validation] Debug: '{debugId}' exists in valid IDs: {exists}");
+            }
+
+            var validIdsSet = new HashSet<string>(availableIdsList, StringComparer.OrdinalIgnoreCase);
+
+            // Debug: log some sample values from the data
+            var sampleValues = rowData.Take(5).Select(r => r.values.GetValueOrDefault(fieldName, "(empty)")).ToList();
+            Console.WriteLine($"[Validation] Sample data values: {string.Join(", ", sampleValues)}");
+
+            int invalidCount = 0;
+            foreach (var (rowIndex, entryId, values) in rowData)
+            {
+                var rawValue = values.GetValueOrDefault(fieldName, "");
+                if (string.IsNullOrEmpty(rawValue)) continue;
+
+                // Handle multi-value fields (colon-separated)
+                var ids = rawValue.Split(':');
+
+                foreach (var id in ids)
+                {
+                    var cleanId = id.Trim();
+                    if (string.IsNullOrEmpty(cleanId)) continue;
+
+                    // Strip prefix if configured
+                    if (!string.IsNullOrEmpty(crossRef.PrefixToStrip) &&
+                        cleanId.StartsWith(crossRef.PrefixToStrip, StringComparison.OrdinalIgnoreCase))
+                    {
+                        cleanId = cleanId.Substring(crossRef.PrefixToStrip.Length);
+                    }
+
+                    if (!validIdsSet.Contains(cleanId))
+                    {
+                        invalidCount++;
+                        if (invalidCount <= 5)
+                        {
+                            Console.WriteLine($"[Validation] Invalid crossref: row {rowIndex}, {fieldName}='{cleanId}' (original: '{id}')");
+                        }
+                        var key = $"crossref_{rowIndex}_{fieldName}_{cleanId}";
+                        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                        {
+                            ValidationManager.RegisterError(key, new TORTools.Core.Validation.ValidationIssue
+                            {
+                                Severity = TORTools.Core.Validation.ValidationSeverity.Error,
+                                RowIndex = rowIndex,
+                                AttributeName = fieldName,
+                                Message = $"'{cleanId}' not found in {crossRef.TargetFile}",
+                                EntryId = entryId,
+                                CurrentValue = cleanId
+                            });
+                        });
+                    }
+                }
+            }
+
+            Console.WriteLine($"[Validation] CrossRef {fieldName}: {invalidCount} invalid entries found");
         }
     }
 
@@ -730,6 +918,9 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
 
             HasError = false;
             ErrorMessage = "";
+
+            // Run validation on file load
+            RunValidation();
         }
         catch (Exception ex)
         {

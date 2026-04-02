@@ -1,5 +1,3 @@
-using System.Globalization;
-using System.Text.RegularExpressions;
 using TORTools.Core.Schema;
 using TORTools.Core.Validation;
 
@@ -7,12 +5,15 @@ namespace TORTools.App.Helpers;
 
 /// <summary>
 /// Static helper for cell-level validation.
-/// Cells call this to validate their values and register errors/warnings with the ValidationManager.
+/// Delegates to ValidationService for actual validation logic to ensure consistency.
 /// </summary>
 public static class CellValidationHelper
 {
+    private static readonly ValidationService _validationService = new();
+
     /// <summary>
     /// Validates a cell value and registers any errors/warnings with the ValidationManager.
+    /// Uses the same ValidationService as the async file-load validation for consistency.
     /// </summary>
     /// <param name="manager">The validation manager to register issues with.</param>
     /// <param name="rowIndex">The row index (0-based).</param>
@@ -20,116 +21,38 @@ public static class CellValidationHelper
     /// <param name="value">The current value to validate.</param>
     /// <param name="fieldDef">The field definition from schema.</param>
     /// <param name="entryId">Optional entry ID for error context.</param>
+    /// <param name="forceRevalidate">If true, clears existing errors first. Use for edits.</param>
     public static void ValidateAndRegister(
         ValidationManager manager,
         int rowIndex,
         string fieldName,
         string? value,
         FieldDefinition? fieldDef,
-        string? entryId)
+        string? entryId,
+        bool forceRevalidate = false)
     {
-        // Unregister previous errors for this cell
-        manager.UnregisterErrors(rowIndex, fieldName);
-
         if (fieldDef == null) return;
 
-        // Skip cross-reference fields - they have their own validation logic
+        // Skip cross-reference fields - they have their own validation logic in RebuildLinks
         if (fieldDef.CrossReference != null) return;
 
-        var isEmpty = IsEmpty(value);
-
-        // Required check (ERROR)
-        if (fieldDef.Required && isEmpty)
+        // Only revalidate if forced (e.g., after an edit)
+        // Otherwise, async validation on file load has already validated this cell
+        if (forceRevalidate)
         {
-            manager.RegisterError(rowIndex, fieldName,
-                $"Required field is empty", entryId, value);
-            return; // Don't do further validation on empty required fields
-        }
+            // Clear existing errors for this cell before re-validating
+            manager.UnregisterErrors(rowIndex, fieldName);
 
-        if (isEmpty) return;
+            // Use ValidationService for actual validation (same as async validation)
+            var result = _validationService.ValidateField(value, fieldName, fieldDef, rowIndex, entryId);
 
-        // Enum check (ERROR)
-        if (fieldDef.Type == "enum" && fieldDef.EnumValues?.Count > 0)
-        {
-            var validValues = fieldDef.EnumValues.Select(e => e.Value).ToList();
-            if (!validValues.Contains(value, StringComparer.OrdinalIgnoreCase))
+            // Register any issues found
+            foreach (var issue in result.Issues)
             {
-                var validList = string.Join(", ", validValues.Take(5));
-                if (validValues.Count > 5)
-                    validList += $", ... ({validValues.Count - 5} more)";
-
-                manager.RegisterError(rowIndex, fieldName,
-                    $"'{value}' is not a valid option. Valid: {validList}", entryId, value);
+                var key = $"cell_{rowIndex}_{fieldName}_{issue.CurrentValue ?? "empty"}";
+                manager.RegisterError(key, issue);
             }
         }
-
-        // Int check (ERROR)
-        if (fieldDef.Type == "int")
-        {
-            if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var intVal))
-            {
-                manager.RegisterError(rowIndex, fieldName,
-                    $"'{value}' is not a valid integer", entryId, value);
-            }
-            else
-            {
-                if (fieldDef.Min.HasValue && intVal < fieldDef.Min.Value)
-                    manager.RegisterError(rowIndex, fieldName,
-                        $"Value {intVal} is below minimum {fieldDef.Min.Value}", entryId, value);
-                if (fieldDef.Max.HasValue && intVal > fieldDef.Max.Value)
-                    manager.RegisterError(rowIndex, fieldName,
-                        $"Value {intVal} is above maximum {fieldDef.Max.Value}", entryId, value);
-            }
-        }
-
-        // Float check (ERROR)
-        if (fieldDef.Type == "float")
-        {
-            if (!double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var floatVal))
-            {
-                manager.RegisterError(rowIndex, fieldName,
-                    $"'{value}' is not a valid number", entryId, value);
-            }
-            else
-            {
-                if (fieldDef.Min.HasValue && floatVal < fieldDef.Min.Value)
-                    manager.RegisterError(rowIndex, fieldName,
-                        $"Value {floatVal} is below minimum {fieldDef.Min.Value}", entryId, value);
-                if (fieldDef.Max.HasValue && floatVal > fieldDef.Max.Value)
-                    manager.RegisterError(rowIndex, fieldName,
-                        $"Value {floatVal} is above maximum {fieldDef.Max.Value}", entryId, value);
-            }
-        }
-
-        // Pattern check (WARNING)
-        if (!string.IsNullOrEmpty(fieldDef.Pattern))
-        {
-            try
-            {
-                var regex = new Regex(fieldDef.Pattern);
-                if (!regex.IsMatch(value!))
-                {
-                    manager.RegisterWarning(rowIndex, fieldName,
-                        fieldDef.PatternWarning ?? $"Value doesn't match expected pattern '{fieldDef.Pattern}'",
-                        entryId, value);
-                }
-            }
-            catch (ArgumentException)
-            {
-                // Invalid regex pattern in schema - ignore
-            }
-        }
-    }
-
-    /// <summary>
-    /// Check if a value is considered empty (null, whitespace, "-", "none").
-    /// </summary>
-    private static bool IsEmpty(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return true;
-
-        var normalized = value.Trim().ToLowerInvariant();
-        return normalized == "-" || normalized == "none";
+        // If not forced, validation was already done by async RunValidationAsync on file load
     }
 }
