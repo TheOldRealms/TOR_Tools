@@ -1,0 +1,40 @@
+{
+  "file": "tor_equipment_sets.xml",
+  "displayName": "Equipment Sets",
+  "description": "Equipment loadout templates for troops. Each roster contains multiple variations.",
+  "rootElement": "EquipmentRosters",
+  "entryElement": "EquipmentRoster",
+  "fields": {
+    "id": {
+      "displayName": "ID",
+      "description": "Unique identifier for this equipment roster.",
+      "type": "string",
+      "required": true,
+      "order": 1,
+      "width": 280
+    },
+    "culture": {
+      "displayName": "Culture",
+      "description": "Culture this equipment belongs to.",
+      "type": "enum",
+      "order": 2,
+      "width": 130,
+      "enumValues": [
+        { "value": "Culture.empire", "displayName": "Empire" },
+        { "value": "Culture.vlandia", "displayName": "Bretonnia" },
+        { "value": "Culture.khuzait", "displayName": "Sylvania" },
+        { "value": "Culture.mousillon", "displayName": "Mousillon" },
+        { "value": "Culture.battania", "displayName": "Asrai (Wood Elves)" },
+        { "value": "Culture.eonir", "displayName": "Eonir" },
+        { "value": "Culture.druchii", "displayName": "Druchii (Dark Elves)" },
+        { "value": "Culture.sturgia", "displayName": "Dawi (Dwarfs)" },
+        { "value": "Culture.aserai", "displayName": "Greenskin" },
+        { "value": "Culture.greenskin_bandit", "displayName": "Greenskin Bandit" },
+        { "value": "Culture.steppe_bandits", "displayName": "Beastmen" },
+        { "value": "Culture.desert_bandits", "displayName": "Herrimault" },
+        { "value": "Culture.chaos_culture", "displayName": "Chaos" },
+        { "value": "Culture.neutral_culture", "displayName": "Neutral" }
+      ]
+    }
+  }
+}

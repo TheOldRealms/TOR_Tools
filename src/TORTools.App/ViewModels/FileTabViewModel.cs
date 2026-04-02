@@ -264,40 +264,60 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
             {
                 var config = fieldDef.CrossReference;
 
-                // Find the source file - look in same directory and parent directories
-                var sourceFilePath = FindSourceFile(baseDir, config.SourceFile);
-                if (sourceFilePath != null)
+                // Check if this is a "direct" cross-reference (value stored on entry, no source file)
+                // vs "indirect" cross-reference (values in a separate mapping file)
+                if (string.IsNullOrEmpty(config.SourceFile))
                 {
-                    Dictionary<string, List<string>> crossRefData;
-
-                    if (fieldDef.Type == "reverseCrossReference")
+                    // Direct cross-reference: load available IDs from target file for validation/autocomplete
+                    var targetFilePath = FindSourceFile(baseDir, config.TargetFile);
+                    if (targetFilePath != null && !string.IsNullOrEmpty(config.TargetKeyField))
                     {
-                        // Reverse lookup: trait ID -> list of item IDs that use it
-                        crossRefData = _crossRefService.LoadReverseCrossReferences(sourceFilePath, config);
-                        Console.WriteLine($"[CrossRef] Loaded {crossRefData.Count} reverse references for {fieldName} from {config.SourceFile}");
+                        var availableIds = _crossRefService.LoadTargetKeys(targetFilePath, config.TargetKeyField);
+                        _availableIds[fieldName] = availableIds;
+                        Console.WriteLine($"[CrossRef] Loaded {availableIds.Count} available IDs for direct crossref {fieldName} from {config.TargetFile}");
                     }
                     else
                     {
-                        // Forward lookup: item ID -> list of trait IDs
-                        crossRefData = _crossRefService.LoadCrossReferences(sourceFilePath, config);
-                        Console.WriteLine($"[CrossRef] Loaded {crossRefData.Count} references for {fieldName} from {config.SourceFile}");
-
-                        // For editable cross-references, load available target IDs for autocomplete
-                        var targetFilePath = FindSourceFile(baseDir, config.TargetFile);
-                        if (targetFilePath != null && !string.IsNullOrEmpty(config.TargetKeyField))
-                        {
-                            var availableIds = _crossRefService.LoadTargetKeys(targetFilePath, config.TargetKeyField);
-                            _availableIds[fieldName] = availableIds;
-                            Console.WriteLine($"[CrossRef] Loaded {availableIds.Count} available IDs for {fieldName} autocomplete");
-                        }
+                        Console.WriteLine($"[CrossRef] Target file not found for direct crossref: {config.TargetFile}");
                     }
-
-                    _crossRefData[fieldName] = crossRefData;
-                    _crossRefSourcePaths[fieldName] = sourceFilePath;
                 }
                 else
                 {
-                    Console.WriteLine($"[CrossRef] Source file not found: {config.SourceFile}");
+                    // Indirect cross-reference: load from mapping file
+                    var sourceFilePath = FindSourceFile(baseDir, config.SourceFile);
+                    if (sourceFilePath != null)
+                    {
+                        Dictionary<string, List<string>> crossRefData;
+
+                        if (fieldDef.Type == "reverseCrossReference")
+                        {
+                            // Reverse lookup: trait ID -> list of item IDs that use it
+                            crossRefData = _crossRefService.LoadReverseCrossReferences(sourceFilePath, config);
+                            Console.WriteLine($"[CrossRef] Loaded {crossRefData.Count} reverse references for {fieldName} from {config.SourceFile}");
+                        }
+                        else
+                        {
+                            // Forward lookup: item ID -> list of trait IDs
+                            crossRefData = _crossRefService.LoadCrossReferences(sourceFilePath, config);
+                            Console.WriteLine($"[CrossRef] Loaded {crossRefData.Count} references for {fieldName} from {config.SourceFile}");
+
+                            // For editable cross-references, load available target IDs for autocomplete
+                            var targetFilePath = FindSourceFile(baseDir, config.TargetFile);
+                            if (targetFilePath != null && !string.IsNullOrEmpty(config.TargetKeyField))
+                            {
+                                var availableIds = _crossRefService.LoadTargetKeys(targetFilePath, config.TargetKeyField);
+                                _availableIds[fieldName] = availableIds;
+                                Console.WriteLine($"[CrossRef] Loaded {availableIds.Count} available IDs for {fieldName} autocomplete");
+                            }
+                        }
+
+                        _crossRefData[fieldName] = crossRefData;
+                        _crossRefSourcePaths[fieldName] = sourceFilePath;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[CrossRef] Source file not found: {config.SourceFile}");
+                    }
                 }
             }
         }
@@ -490,6 +510,7 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     {
         // Clear only basic validation issues (preserve cell-registered cross-ref errors)
         ValidationManager.ClearByPrefix("basic_");
+        ValidationManager.ClearByPrefix("upgrade_");
 
         // Convert rows to dictionaries for basic validation
         var entries = Rows.Select(r => (IDictionary<string, string>)ColumnNames.ToDictionary(
@@ -505,8 +526,117 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
             ValidationManager.RegisterError(key, issue);
         }
 
+        // Run upgrade target validation for troop files
+        ValidateUpgradeTargets();
+
         // Note: Cross-reference validation is done by cells themselves
         // when they render and call RegisterError/UnregisterErrors
+    }
+
+    /// <summary>
+    /// Validates upgrade targets for troop definitions:
+    /// - ERROR: upgrade target ID must exist within this file
+    /// - WARNING: upgrade target has level that's not higher than source
+    /// </summary>
+    private void ValidateUpgradeTargets()
+    {
+        // Check if this file has upgrade target fields
+        var hasUpgradeTargets = Schema?.Fields.ContainsKey("upgrade_target_1") == true;
+        if (!hasUpgradeTargets) return;
+
+        // Build a lookup of all IDs in this file and their levels
+        var idToLevel = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var idToRowIndex = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+        for (int i = 0; i < Rows.Count; i++)
+        {
+            var row = Rows[i];
+            var id = row["id"] ?? "";
+            if (!string.IsNullOrEmpty(id))
+            {
+                idToRowIndex[id] = i;
+                if (int.TryParse(row["level"] ?? "0", out var level))
+                {
+                    idToLevel[id] = level;
+                }
+            }
+        }
+
+        // Track which upgrade targets have level issues, so we only warn once per problematic target
+        // Key: targetId, Value: (sourceRowIndex, sourceFieldName, sourceId, sourceLevel)
+        var problemTargets = new Dictionary<string, (int sourceRowIndex, string fieldName, string sourceId, int sourceLevel)>(StringComparer.OrdinalIgnoreCase);
+
+        // First pass: find all upgrade relationships and identify problems
+        for (int rowIndex = 0; rowIndex < Rows.Count; rowIndex++)
+        {
+            var row = Rows[rowIndex];
+            var sourceId = row["id"] ?? "";
+            var sourceLevel = idToLevel.GetValueOrDefault(sourceId, 0);
+
+            // Check all upgrade targets
+            for (int i = 1; i <= 3; i++)
+            {
+                var fieldName = $"upgrade_target_{i}";
+                var targetId = row[fieldName] ?? "";
+
+                // Strip the prefix if present
+                var fieldDef = GetFieldDefinition(fieldName);
+                if (fieldDef?.PrefixToStrip != null && targetId.StartsWith(fieldDef.PrefixToStrip, StringComparison.OrdinalIgnoreCase))
+                {
+                    targetId = targetId.Substring(fieldDef.PrefixToStrip.Length);
+                }
+
+                if (!string.IsNullOrEmpty(targetId))
+                {
+                    // Check if target exists - ERROR if not
+                    if (!idToLevel.ContainsKey(targetId))
+                    {
+                        var key = $"upgrade_{rowIndex}_{fieldName}_notfound";
+                        ValidationManager.RegisterError(key, new TORTools.Core.Validation.ValidationIssue
+                        {
+                            Severity = TORTools.Core.Validation.ValidationSeverity.Error,
+                            RowIndex = rowIndex,
+                            AttributeName = fieldName,
+                            Message = $"Upgrade target '{targetId}' not found in this file",
+                            EntryId = sourceId,
+                            CurrentValue = targetId
+                        });
+                    }
+                    else
+                    {
+                        // Check tier progression - target should have higher level
+                        var targetLevel = idToLevel[targetId];
+                        if (targetLevel <= sourceLevel)
+                        {
+                            // Track this problem - keep the one with highest source level
+                            if (!problemTargets.TryGetValue(targetId, out var existing) || sourceLevel > existing.sourceLevel)
+                            {
+                                problemTargets[targetId] = (rowIndex, fieldName, sourceId, sourceLevel);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Second pass: register warnings on the upgrade_target cells that point to problematic targets
+        foreach (var kvp in problemTargets)
+        {
+            var targetId = kvp.Key;
+            var (sourceRowIndex, fieldName, sourceId, sourceLevel) = kvp.Value;
+            var targetLevel = idToLevel.GetValueOrDefault(targetId, 0);
+
+            var key = $"upgrade_{sourceRowIndex}_{fieldName}_tier";
+            ValidationManager.RegisterError(key, new TORTools.Core.Validation.ValidationIssue
+            {
+                Severity = TORTools.Core.Validation.ValidationSeverity.Warning,
+                RowIndex = sourceRowIndex,
+                AttributeName = fieldName,
+                Message = $"'{targetId}' has level {targetLevel}, should be higher than {sourceLevel}",
+                EntryId = sourceId,
+                CurrentValue = targetId
+            });
+        }
     }
 
     /// <summary>
@@ -1036,7 +1166,9 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
             // Sync changes from dynamic entries back to XmlEntries
             SyncChangesToXml();
 
-            _xmlService.Save(_document);
+            // Use compact format by default, unless schema explicitly disables it
+            var compactFormat = Schema?.CompactFormat ?? true;
+            _xmlService.Save(_document, null, compactFormat);
             HasUnsavedChanges = false;
             HasError = false;
             ErrorMessage = "";

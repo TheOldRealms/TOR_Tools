@@ -9,7 +9,13 @@
       "Bash(cat:*)",
       "Bash(dotnet build:*)",
       "Bash(dotnet publish:*)",
-      "Bash(dotnet run:*)"
+      "Bash(dotnet run:*)",
+      "Bash(powershell -Command \"Stop-Process -Name ''TORTools.App'' -Force -ErrorAction SilentlyContinue; Write-Host ''Process stopped''\")",
+      "Bash(powershell -Command \"Stop-Process -Name ''TORTools.App'' -Force -ErrorAction SilentlyContinue\")",
+      "Bash(powershell -Command \"Get-Process -Name TORTools.App -ErrorAction SilentlyContinue | Stop-Process -Force\")",
+      "Bash(powershell:*)",
+      "Bash(grep:*)",
+      "Bash(taskkill:*)"
     ]
   }
 }

@@ -21,6 +21,8 @@ namespace TORTools.App.Views;
 public partial class FileTabView : UserControl
 {
     private bool _columnsGenerated;
+    private object? _pendingScrollTarget;
+    private bool _scrollPending;
 
     public FileTabView()
     {
@@ -41,11 +43,29 @@ public partial class FileTabView : UserControl
         if (grid == null) return;
 
         // Subscribe to selection changes to scroll into view
+        // Use debouncing to avoid jumps during row refresh (multiple selection changes)
         grid.SelectionChanged += (s, e) =>
         {
             if (grid.SelectedItem != null)
             {
-                grid.ScrollIntoView(grid.SelectedItem, null);
+                // Store the target and schedule a scroll if not already pending
+                _pendingScrollTarget = grid.SelectedItem;
+
+                if (!_scrollPending)
+                {
+                    _scrollPending = true;
+                    // Defer scroll until after all layout updates have settled
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    {
+                        _scrollPending = false;
+                        // Scroll to the most recent target
+                        if (_pendingScrollTarget != null && grid.SelectedItem == _pendingScrollTarget)
+                        {
+                            grid.ScrollIntoView(_pendingScrollTarget, null);
+                        }
+                        _pendingScrollTarget = null;
+                    }, Avalonia.Threading.DispatcherPriority.Background);
+                }
             }
         };
     }
@@ -63,15 +83,55 @@ public partial class FileTabView : UserControl
     {
         if (DataContext is not FileTabViewModel vm) return;
 
-        var ctrl = e.KeyModifiers.HasFlag(KeyModifiers.Control);
-        if (!ctrl) return;
-
-        // Check if we're editing a cell - if so, let normal copy/paste work
+        // Check if we're editing a cell - if so, let normal text editing work
         var focusedElement = TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement();
         if (focusedElement is TextBox)
         {
             return;
         }
+
+        var ctrl = e.KeyModifiers.HasFlag(KeyModifiers.Control);
+
+        // Delete key (without Ctrl): Clear selected cell contents
+        if (e.Key == Key.Delete && !ctrl)
+        {
+            var grid = sender as DataGrid;
+            if (grid?.CurrentColumn != null && vm.SelectedIndex >= 0 && vm.SelectedIndex < vm.Rows.Count)
+            {
+                var selectedRow = vm.Rows[vm.SelectedIndex];
+
+                // Get the column's binding path (attribute name)
+                var column = grid.CurrentColumn;
+                string? attributeName = null;
+
+                // Try to get the attribute name from the column tag
+                if (column.Tag is string tag)
+                {
+                    attributeName = tag;
+                }
+                else if (column.Header is string header)
+                {
+                    // Try to find field by display name
+                    var field = vm.Schema?.Fields.FirstOrDefault(f =>
+                        f.Value.DisplayName == header || f.Key == header);
+                    if (field.HasValue)
+                    {
+                        attributeName = field.Value.Key;
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(attributeName))
+                {
+                    Console.WriteLine($"[KeyDown] Delete - Clearing cell: {attributeName}");
+                    selectedRow[attributeName] = "";
+                    vm.RequestCellRefresh();
+                    e.Handled = true;
+                }
+            }
+            return;
+        }
+
+        if (!ctrl) return;
 
         if (e.Key == Key.C)
         {
@@ -224,9 +284,12 @@ public partial class FileTabView : UserControl
                     Width = new DataGridLength(displayInfo.Width),
                     IsReadOnly = displayInfo.IsReadOnly,
                     CellTemplate = CreateTextCellTemplate(displayInfo.AttributeName, fieldDef, vm),
-                    CellEditingTemplate = CreateTextEditingTemplate(displayInfo.AttributeName)
+                    CellEditingTemplate = CreateTextEditingTemplate(displayInfo.AttributeName, fieldDef)
                 };
             }
+
+            // Store attribute name in Tag for keyboard handling (Delete key)
+            column.Tag = displayInfo.AttributeName;
 
             grid.Columns.Add(column);
         }
@@ -307,55 +370,11 @@ public partial class FileTabView : UserControl
     /// <summary>
     /// Creates the ID column header with a lock toggle button.
     /// </summary>
-    private object CreateIdColumnHeader(ColumnDisplayInfo info, FileTabViewModel vm)
+    private static object CreateIdColumnHeader(ColumnDisplayInfo info, FileTabViewModel vm)
     {
-        var panel = new StackPanel
-        {
-            Orientation = Avalonia.Layout.Orientation.Horizontal,
-            Spacing = 6
-        };
-
-        // Main display name
-        var displayText = new TextBlock
-        {
-            Text = info.DisplayName,
-            FontWeight = FontWeight.SemiBold,
-            FontSize = 12,
-            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
-        };
-        panel.Children.Add(displayText);
-
-        // Lock toggle button
-        var lockButton = new Button
-        {
-            Content = vm.IsIdColumnLocked ? "🔒" : "🔓",
-            FontSize = 12,
-            Padding = new Thickness(4, 2),
-            Background = Brushes.Transparent,
-            BorderThickness = new Thickness(0),
-            Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand),
-            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
-        };
-        ToolTip.SetTip(lockButton, vm.IsIdColumnLocked
-            ? "IDs are locked. Click to unlock for editing."
-            : "IDs are unlocked. Click to lock.");
-
-        lockButton.Click += (s, e) =>
-        {
-            vm.IsIdColumnLocked = !vm.IsIdColumnLocked;
-            lockButton.Content = vm.IsIdColumnLocked ? "🔒" : "🔓";
-            ToolTip.SetTip(lockButton, vm.IsIdColumnLocked
-                ? "IDs are locked. Click to unlock for editing."
-                : "IDs are unlocked. Click to lock.");
-            Console.WriteLine($"[IdColumnHeader] ID lock toggled: {vm.IsIdColumnLocked}");
-        };
-
-        panel.Children.Add(lockButton);
-
-        // Tooltip for the header
-        ToolTip.SetTip(panel, "XML Attribute: id\nClick lock icon to enable/disable ID editing.");
-
-        return panel;
+        // Use string header to avoid control reuse issues
+        // The lock toggle functionality is moved to context menu or toolbar
+        return vm.IsIdColumnLocked ? $"{info.DisplayName} 🔒" : info.DisplayName;
     }
 
     /// <summary>
@@ -363,51 +382,21 @@ public partial class FileTabView : UserControl
     /// </summary>
     private static object CreateColumnHeader(ColumnDisplayInfo info, FieldDefinition? fieldDef = null)
     {
-        var panel = new StackPanel
-        {
-            Orientation = Avalonia.Layout.Orientation.Vertical,
-            Spacing = 0
-        };
-
-        // Main display name (prefer schema displayName if available)
+        // Use string header to avoid control reuse issues with StackPanel
+        // The display name with optional attribute name suffix
         var displayName = fieldDef?.DisplayName ?? info.DisplayName;
-        var displayText = new TextBlock
-        {
-            Text = displayName,
-            FontWeight = FontWeight.SemiBold,
-            FontSize = 12
-        };
 
-        panel.Children.Add(displayText);
-
-        // Show underlying attribute name if different from display name
+        // Check if attribute name is significantly different from display name
         var normalizedDisplay = displayName.Replace(" ", "").ToLowerInvariant();
         var normalizedAttr = info.AttributeName.Replace("_", "").ToLowerInvariant();
 
         if (normalizedDisplay != normalizedAttr)
         {
-            var attrText = new TextBlock
-            {
-                Text = info.AttributeName,
-                FontSize = 9,
-                Foreground = new SolidColorBrush(Color.FromRgb(128, 128, 128)),
-                Margin = new Thickness(0, -2, 0, 0)
-            };
-            panel.Children.Add(attrText);
+            // Show both display name and attribute name
+            return $"{displayName}\n({info.AttributeName})";
         }
 
-        // Add tooltip with description (prefer schema description)
-        var description = fieldDef?.Description ?? info.Description;
-        if (!string.IsNullOrEmpty(description))
-        {
-            ToolTip.SetTip(panel, description);
-        }
-        else
-        {
-            ToolTip.SetTip(panel, $"XML Attribute: {info.AttributeName}");
-        }
-
-        return panel;
+        return displayName;
     }
 
     /// <summary>
@@ -505,6 +494,9 @@ public partial class FileTabView : UserControl
             // Get available IDs for validation
             var availableIdsSet = new HashSet<string>(vm.GetAvailableIds(attributeName), StringComparer.OrdinalIgnoreCase);
 
+            // Get prefix to strip for validation (e.g., "SkillSet." for skill_template)
+            var prefixToStrip = fieldDef.CrossReference?.PrefixToStrip;
+
             // Helper to rebuild links and register validation errors
             void RebuildLinks()
             {
@@ -520,6 +512,18 @@ public partial class FileTabView : UserControl
                 vm.ValidationManager.UnregisterErrors(rowIndex, attributeName);
 
                 var value = rowVm[attributeName];
+
+                // Check if required field is empty
+                if (string.IsNullOrEmpty(value) && fieldDef.Required)
+                {
+                    vm.ValidationManager.RegisterError(
+                        rowIndex,
+                        attributeName,
+                        "Required field is empty - game will crash!",
+                        entryId,
+                        "");
+                }
+
                 if (!string.IsNullOrEmpty(value))
                 {
                     var ids = value.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
@@ -529,7 +533,18 @@ public partial class FileTabView : UserControl
                         if (string.IsNullOrEmpty(trimmedId)) continue;
 
                         var capturedId = trimmedId;
-                        var isValid = availableIdsSet.Contains(trimmedId);
+
+                        // Strip prefix for validation AND display if configured
+                        var idForValidation = trimmedId;
+                        var displayId = trimmedId;
+                        if (!string.IsNullOrEmpty(prefixToStrip) &&
+                            trimmedId.StartsWith(prefixToStrip, StringComparison.OrdinalIgnoreCase))
+                        {
+                            idForValidation = trimmedId.Substring(prefixToStrip.Length);
+                            displayId = idForValidation; // Show without prefix
+                        }
+
+                        var isValid = availableIdsSet.Contains(idForValidation);
                         if (!isValid)
                         {
                             hasInvalidTrait = true;
@@ -546,7 +561,7 @@ public partial class FileTabView : UserControl
 
                             var linkButton = new Button
                             {
-                                Content = trimmedId,
+                                Content = displayId, // Show without prefix
                                 Padding = new Thickness(4, 2),
                                 Margin = new Thickness(0, 0, 4, 0),
                                 Background = Brushes.Transparent,
@@ -557,7 +572,7 @@ public partial class FileTabView : UserControl
                                 MinHeight = 0,
                                 MinWidth = 0
                             };
-                            ToolTip.SetTip(linkButton, $"Click to navigate to: {trimmedId}");
+                            ToolTip.SetTip(linkButton, $"Click to navigate to: {capturedId}");
                             linkButton.Click += (s, e) =>
                             {
                                 vm.NavigateToReferenceForField(attributeName, capturedId);
@@ -566,10 +581,10 @@ public partial class FileTabView : UserControl
                         }
                         else
                         {
-                            // Invalid trait - non-clickable text
+                            // Invalid trait - non-clickable text (show without prefix)
                             var invalidText = new TextBlock
                             {
-                                Text = trimmedId,
+                                Text = displayId,
                                 Padding = new Thickness(4, 2),
                                 Margin = new Thickness(0, 0, 4, 0),
                                 Background = new SolidColorBrush(Color.FromRgb(255, 220, 220)),
@@ -577,7 +592,7 @@ public partial class FileTabView : UserControl
                                 FontSize = 12,
                                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
                             };
-                            ToolTip.SetTip(invalidText, $"ERROR: Trait '{trimmedId}' does not exist!");
+                            ToolTip.SetTip(invalidText, $"ERROR: '{displayId}' does not exist in skill sets!");
                             linksPanel.Children.Add(invalidText);
                         }
                     }
@@ -609,10 +624,15 @@ public partial class FileTabView : UserControl
 
             panel.Children.Add(linksPanel);
 
+            // Check if this is a skill_template field for custom UI
+            var isSkillTemplate = attributeName.Equals("skill_template", StringComparison.OrdinalIgnoreCase);
+            var buttonText = isSkillTemplate ? "Edit" : "...";
+            var tooltipText = isSkillTemplate ? "Edit skill set" : "Edit traits (comma-separated)";
+
             // Edit button - opens a simple text editor popup (hidden for removed rows)
             var editButton = new Button
             {
-                Content = "...",
+                Content = buttonText,
                 FontSize = 10,
                 Padding = new Thickness(4, 2),
                 MinWidth = 20,
@@ -625,7 +645,7 @@ public partial class FileTabView : UserControl
                 Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand),
                 IsVisible = !rowVm.IsRemoved  // Hide for removed rows
             };
-            ToolTip.SetTip(editButton, "Edit traits (comma-separated)");
+            ToolTip.SetTip(editButton, tooltipText);
 
             editButton.Click += (s, e) =>
             {
@@ -638,7 +658,19 @@ public partial class FileTabView : UserControl
                 var localKeyField = fieldDef.CrossReference?.LocalKeyField ?? "id";
                 var localKey = rowVm[localKeyField] ?? "";
 
-                ShowTraitEditorPopup(editButton, currentValue, availableIds, (result) =>
+                // Custom title for skill template
+                var dialogTitle = isSkillTemplate ? "Edit Skill Set" : "Edit Traits";
+
+                // Get level for skill template default calculation
+                int? troopLevel = null;
+                if (isSkillTemplate)
+                {
+                    var levelStr = rowVm["level"] ?? "1";
+                    if (int.TryParse(levelStr, out var level))
+                        troopLevel = level;
+                }
+
+                ShowTraitEditorPopup(editButton, currentValue, availableIds, dialogTitle, prefixToStrip, troopLevel, (result) =>
                 {
                     if (result != null && result != currentValue)
                     {
@@ -668,9 +700,9 @@ public partial class FileTabView : UserControl
     }
 
     /// <summary>
-    /// Shows a dialog window for editing traits with autocomplete support.
+    /// Shows a dialog window for editing traits/skills with autocomplete support.
     /// </summary>
-    private static void ShowTraitEditorPopup(Control anchor, string currentValue, List<string> availableIds, Action<string?> onComplete)
+    private static void ShowTraitEditorPopup(Control anchor, string currentValue, List<string> availableIds, string title, string? prefixToStrip, int? troopLevel, Action<string?> onComplete)
     {
         Console.WriteLine("[TraitEditor] Creating dialog...");
 
@@ -682,10 +714,25 @@ public partial class FileTabView : UserControl
             return;
         }
 
+        // Determine if this is a skill editor (single selection) vs trait editor (multi)
+        var isSkillEditor = title.Contains("Skill", StringComparison.OrdinalIgnoreCase);
+        var labelText = isSkillEditor ? "Skill Set:" : "Traits (comma-separated):";
+
+        // For skill editor, calculate the default skill set based on level
+        var defaultSkillSet = troopLevel.HasValue ? $"tor_skills_level{troopLevel.Value}" : null;
+
+        // Check if current value matches the default (use default toggle should be ON)
+        var currentWithoutPrefix = currentValue;
+        if (!string.IsNullOrEmpty(prefixToStrip) && currentValue.StartsWith(prefixToStrip, StringComparison.OrdinalIgnoreCase))
+        {
+            currentWithoutPrefix = currentValue.Substring(prefixToStrip.Length);
+        }
+        var isUsingDefault = isSkillEditor && (string.IsNullOrEmpty(currentValue) || currentWithoutPrefix == defaultSkillSet);
+
         // Create a dialog window
         var dialog = new Window
         {
-            Title = "Edit Traits",
+            Title = title,
             Width = 450,
             Height = 450,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
@@ -703,81 +750,192 @@ public partial class FileTabView : UserControl
 
         var stack = new StackPanel { Spacing = 8 };
 
-        // Current value editor
-        var label = new TextBlock
-        {
-            Text = "Traits (comma-separated):",
-            FontSize = 12,
-            FontWeight = FontWeight.SemiBold,
-            Margin = new Thickness(0, 0, 0, 4)
-        };
-        stack.Children.Add(label);
+        // For skill editor, add "Use Default" toggle
+        CheckBox? useDefaultCheckBox = null;
+        TextBox? textBox = null;
+        StackPanel? customSection = null;
 
-        var textBox = new TextBox
+        if (isSkillEditor && defaultSkillSet != null)
         {
-            Text = currentValue,
-            Watermark = "Enter trait IDs...",
-            Height = 60,
-            AcceptsReturn = true,
-            TextWrapping = TextWrapping.Wrap
-        };
-        stack.Children.Add(textBox);
-
-        // Autocomplete section
-        var acLabel = new TextBlock
-        {
-            Text = "Available traits (double-click to add):",
-            FontSize = 12,
-            FontWeight = FontWeight.SemiBold,
-            Margin = new Thickness(0, 12, 0, 4)
-        };
-        stack.Children.Add(acLabel);
-
-        var searchBox = new TextBox
-        {
-            Watermark = "Type to filter..."
-        };
-        stack.Children.Add(searchBox);
-
-        var listBox = new ListBox
-        {
-            Height = 180,
-            ItemsSource = availableIds.Take(50).ToList()
-        };
-        stack.Children.Add(listBox);
-
-        // Filter suggestions
-        searchBox.TextChanged += (s, e) =>
-        {
-            var searchText = searchBox.Text ?? "";
-            var currentIds = (textBox.Text ?? "")
-                .Split(new[] { ',', ' ', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
-                .Select(x => x.Trim().ToLowerInvariant())
-                .ToHashSet();
-
-            var filtered = availableIds
-                .Where(id => !currentIds.Contains(id.ToLowerInvariant()))
-                .Where(id => string.IsNullOrEmpty(searchText) ||
-                             id.Contains(searchText, StringComparison.OrdinalIgnoreCase))
-                .Take(50)
-                .ToList();
-            listBox.ItemsSource = filtered;
-        };
-
-        // Double-click to add
-        listBox.DoubleTapped += (s, e) =>
-        {
-            if (listBox.SelectedItem is string selected)
+            useDefaultCheckBox = new CheckBox
             {
-                var current = textBox.Text?.Trim() ?? "";
-                if (string.IsNullOrEmpty(current))
+                Content = $"Use default for level {troopLevel} (tor_skills_level{troopLevel})",
+                IsChecked = isUsingDefault,
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+            stack.Children.Add(useDefaultCheckBox);
+
+            // Custom skill set section (hidden when using default)
+            customSection = new StackPanel { Spacing = 8, IsVisible = !isUsingDefault };
+
+            var label = new TextBlock
+            {
+                Text = "Custom Skill Set:",
+                FontSize = 12,
+                FontWeight = FontWeight.SemiBold,
+                Margin = new Thickness(0, 0, 0, 4)
+            };
+            customSection.Children.Add(label);
+
+            // Strip prefix from current value for display
+            var displayValue = isUsingDefault ? "" : currentWithoutPrefix;
+
+            textBox = new TextBox
+            {
+                Text = displayValue,
+                Watermark = "Enter skill set ID...",
+                Height = 30,
+                AcceptsReturn = false,
+                TextWrapping = TextWrapping.NoWrap
+            };
+            customSection.Children.Add(textBox);
+
+            // Autocomplete section
+            var acLabel = new TextBlock
+            {
+                Text = "Available skill sets (double-click to select):",
+                FontSize = 12,
+                FontWeight = FontWeight.SemiBold,
+                Margin = new Thickness(0, 12, 0, 4)
+            };
+            customSection.Children.Add(acLabel);
+
+            var searchBox = new TextBox
+            {
+                Watermark = "Type to filter..."
+            };
+            customSection.Children.Add(searchBox);
+
+            var listBox = new ListBox
+            {
+                Height = 180,
+                ItemsSource = availableIds.Take(50).ToList()
+            };
+            customSection.Children.Add(listBox);
+
+            // Filter suggestions
+            searchBox.TextChanged += (s, e) =>
+            {
+                var searchText = searchBox.Text ?? "";
+                var filtered = availableIds
+                    .Where(id => string.IsNullOrEmpty(searchText) ||
+                                 id.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+                    .Take(50)
+                    .ToList();
+                listBox.ItemsSource = filtered;
+            };
+
+            // Double-click to select - also turns off the default toggle
+            listBox.DoubleTapped += (s, e) =>
+            {
+                if (listBox.SelectedItem is string selected)
+                {
                     textBox.Text = selected;
-                else
-                    textBox.Text = current + ", " + selected;
-                searchBox.Text = "";
-                Console.WriteLine($"[TraitEditor] Added trait: {selected}");
+                    useDefaultCheckBox.IsChecked = false;
+                    customSection.IsVisible = true;
+                    Console.WriteLine($"[TraitEditor] Selected skill set: {selected}");
+                    searchBox.Text = "";
+                }
+            };
+
+            // Toggle handler
+            useDefaultCheckBox.IsCheckedChanged += (s, e) =>
+            {
+                var useDefault = useDefaultCheckBox.IsChecked == true;
+                customSection.IsVisible = !useDefault;
+                if (useDefault)
+                {
+                    textBox.Text = "";
+                }
+            };
+
+            stack.Children.Add(customSection);
+        }
+        else
+        {
+            // Regular trait editor (original code)
+            var label = new TextBlock
+            {
+                Text = labelText,
+                FontSize = 12,
+                FontWeight = FontWeight.SemiBold,
+                Margin = new Thickness(0, 0, 0, 4)
+            };
+            stack.Children.Add(label);
+
+            // Strip prefix from current value for display
+            var displayValue = currentValue;
+            if (!string.IsNullOrEmpty(prefixToStrip) && displayValue.StartsWith(prefixToStrip, StringComparison.OrdinalIgnoreCase))
+            {
+                displayValue = displayValue.Substring(prefixToStrip.Length);
             }
-        };
+
+            textBox = new TextBox
+            {
+                Text = displayValue,
+                Watermark = "Enter trait IDs...",
+                Height = 60,
+                AcceptsReturn = true,
+                TextWrapping = TextWrapping.Wrap
+            };
+            stack.Children.Add(textBox);
+
+            // Autocomplete section
+            var acLabel = new TextBlock
+            {
+                Text = "Available traits (double-click to add):",
+                FontSize = 12,
+                FontWeight = FontWeight.SemiBold,
+                Margin = new Thickness(0, 12, 0, 4)
+            };
+            stack.Children.Add(acLabel);
+
+            var searchBox = new TextBox
+            {
+                Watermark = "Type to filter..."
+            };
+            stack.Children.Add(searchBox);
+
+            var listBox = new ListBox
+            {
+                Height = 180,
+                ItemsSource = availableIds.Take(50).ToList()
+            };
+            stack.Children.Add(listBox);
+
+            // Filter suggestions
+            searchBox.TextChanged += (s, e) =>
+            {
+                var searchText = searchBox.Text ?? "";
+                var currentIds = (textBox.Text ?? "")
+                    .Split(new[] { ',', ' ', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(x => x.Trim().ToLowerInvariant())
+                    .ToHashSet();
+
+                var filtered = availableIds
+                    .Where(id => !currentIds.Contains(id.ToLowerInvariant()))
+                    .Where(id => string.IsNullOrEmpty(searchText) ||
+                                 id.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+                    .Take(50)
+                    .ToList();
+                listBox.ItemsSource = filtered;
+            };
+
+            // Double-click to add
+            listBox.DoubleTapped += (s, e) =>
+            {
+                if (listBox.SelectedItem is string selected)
+                {
+                    var current = textBox.Text?.Trim() ?? "";
+                    if (string.IsNullOrEmpty(current))
+                        textBox.Text = selected;
+                    else
+                        textBox.Text = current + ", " + selected;
+                    Console.WriteLine($"[TraitEditor] Added trait: {selected}");
+                    searchBox.Text = "";
+                }
+            };
+        }
 
         // Buttons
         var buttonPanel = new StackPanel
@@ -803,7 +961,28 @@ public partial class FileTabView : UserControl
             if (!completed)
             {
                 completed = true;
-                result = textBox.Text;
+
+                // Check if using default skill set
+                if (useDefaultCheckBox?.IsChecked == true && defaultSkillSet != null)
+                {
+                    result = defaultSkillSet;
+                    Console.WriteLine($"[SkillTemplate] Setting default: {result} (level={troopLevel})");
+                }
+                else
+                {
+                    result = textBox?.Text?.Trim() ?? "";
+                }
+
+                // Add prefix back for skill template if needed
+                if (!string.IsNullOrEmpty(prefixToStrip) && !string.IsNullOrEmpty(result))
+                {
+                    // Only add prefix if not already present
+                    if (!result.StartsWith(prefixToStrip, StringComparison.OrdinalIgnoreCase))
+                    {
+                        result = prefixToStrip + result;
+                    }
+                }
+
                 Console.WriteLine($"[TraitEditor] OK clicked, value: {result}");
                 dialog.Close();
             }
@@ -862,7 +1041,7 @@ public partial class FileTabView : UserControl
             dialog.Show();
         }
 
-        textBox.Focus();
+        textBox?.Focus();
     }
 
     /// <summary>
@@ -1010,6 +1189,19 @@ public partial class FileTabView : UserControl
     /// </summary>
     private static IDataTemplate CreateTextCellTemplate(string attributeName, FieldDefinition? fieldDef, FileTabViewModel vm)
     {
+        // Get prefix to strip for display
+        var prefixToStrip = fieldDef?.PrefixToStrip;
+
+        // Helper to strip prefix from value for display
+        string StripPrefix(string? value)
+        {
+            if (string.IsNullOrEmpty(value) || string.IsNullOrEmpty(prefixToStrip))
+                return value ?? "";
+            if (value.StartsWith(prefixToStrip, StringComparison.OrdinalIgnoreCase))
+                return value.Substring(prefixToStrip.Length);
+            return value;
+        }
+
         return new FuncDataTemplate<EntryRowViewModel>((rowVm, _) =>
         {
             var border = new Border();
@@ -1033,7 +1225,8 @@ public partial class FileTabView : UserControl
 
             if (rowVm != null)
             {
-                text.Bind(TextBlock.TextProperty, new Binding($"[{attributeName}]"));
+                // Set initial text (with prefix stripped for display)
+                text.Text = StripPrefix(rowVm[attributeName]);
 
                 // Validate on render if we have field definition
                 if (fieldDef != null)
@@ -1052,8 +1245,8 @@ public partial class FileTabView : UserControl
                 // Subscribe to centralized refresh event for all updates
                 vm.CellRefreshRequested += (s, args) =>
                 {
-                    // Re-read value from row and update text
-                    text.Text = rowVm[attributeName];
+                    // Re-read value from row and update text (with prefix stripped)
+                    text.Text = StripPrefix(rowVm[attributeName]);
                     // Update styling
                     CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
                 };
@@ -1066,9 +1259,13 @@ public partial class FileTabView : UserControl
 
     /// <summary>
     /// Creates a text editing template for validated text cells.
+    /// Handles prefix stripping for display and adding when saving.
     /// </summary>
-    private static IDataTemplate CreateTextEditingTemplate(string attributeName)
+    private static IDataTemplate CreateTextEditingTemplate(string attributeName, FieldDefinition? fieldDef)
     {
+        var prefixToStrip = fieldDef?.PrefixToStrip;
+        var prefixToAdd = fieldDef?.PrefixToAdd;
+
         return new FuncDataTemplate<EntryRowViewModel>((rowVm, _) =>
         {
             var textBox = new TextBox
@@ -1087,7 +1284,41 @@ public partial class FileTabView : UserControl
                     textBox.IsReadOnly = true;
                     textBox.IsEnabled = false;
                 }
-                textBox.Bind(TextBox.TextProperty, new Binding($"[{attributeName}]", BindingMode.TwoWay));
+
+                // If we have a prefix to handle, manage the value manually
+                if (!string.IsNullOrEmpty(prefixToStrip))
+                {
+                    // Get raw value and strip prefix for display
+                    var rawValue = rowVm[attributeName] ?? "";
+                    if (rawValue.StartsWith(prefixToStrip, StringComparison.OrdinalIgnoreCase))
+                    {
+                        textBox.Text = rawValue.Substring(prefixToStrip.Length);
+                    }
+                    else
+                    {
+                        textBox.Text = rawValue;
+                    }
+
+                    // When editing ends, add prefix back
+                    textBox.LostFocus += (s, e) =>
+                    {
+                        var newValue = textBox.Text?.Trim() ?? "";
+                        if (!string.IsNullOrEmpty(newValue) && !string.IsNullOrEmpty(prefixToAdd))
+                        {
+                            // Add prefix if not already present
+                            if (!newValue.StartsWith(prefixToAdd, StringComparison.OrdinalIgnoreCase))
+                            {
+                                newValue = prefixToAdd + newValue;
+                            }
+                        }
+                        rowVm[attributeName] = newValue;
+                    };
+                }
+                else
+                {
+                    // No prefix handling, use standard binding
+                    textBox.Bind(TextBox.TextProperty, new Binding($"[{attributeName}]", BindingMode.TwoWay));
+                }
             }
 
             return textBox;

@@ -1,0 +1,235 @@
+{
+  "file": "tor_troopdefinitions.xml",
+  "displayName": "Troops",
+  "description": "Troop and NPC character definitions with upgrade paths and equipment references.",
+  "rootElement": "NPCCharacters",
+  "entryElement": "NPCCharacter",
+  "fields": {
+    "id": {
+      "displayName": "ID",
+      "description": "Unique identifier for this troop.",
+      "type": "string",
+      "required": true,
+      "order": 1,
+      "width": 220
+    },
+    "name": {
+      "displayName": "Name",
+      "description": "Display name with localization key.",
+      "type": "string",
+      "required": true,
+      "order": 2,
+      "width": 200
+    },
+    "level": {
+      "displayName": "Level",
+      "description": "Troop tier level.",
+      "type": "enum",
+      "order": 3,
+      "width": 100,
+      "enumValues": [
+        { "value": "1", "displayName": "1 (Tier 0)" },
+        { "value": "6", "displayName": "6 (Tier 1)" },
+        { "value": "11", "displayName": "11 (Tier 2)" },
+        { "value": "16", "displayName": "16 (Tier 3)" },
+        { "value": "21", "displayName": "21 (Tier 4)" },
+        { "value": "26", "displayName": "26 (Tier 5)" },
+        { "value": "31", "displayName": "31 (Tier 6)" },
+        { "value": "36", "displayName": "36 (Tier 7)" },
+        { "value": "41", "displayName": "41 (Tier 8)" },
+        { "value": "46", "displayName": "46 (Tier 9)" }
+      ]
+    },
+    "default_group": {
+      "displayName": "Group",
+      "description": "Default formation group.",
+      "type": "enum",
+      "order": 4,
+      "width": 100,
+      "enumValues": [
+        { "value": "infantry", "displayName": "Infantry" },
+        { "value": "ranged", "displayName": "Ranged" },
+        { "value": "cavalry", "displayName": "Cavalry" },
+        { "value": "horsearcher", "displayName": "Horse Archer" }
+      ]
+    },
+    "culture": {
+      "displayName": "Culture",
+      "description": "Culture affiliation.",
+      "type": "enum",
+      "order": 5,
+      "width": 130,
+      "enumValues": [
+        { "value": "Culture.empire", "displayName": "Empire" },
+        { "value": "Culture.vlandia", "displayName": "Bretonnia" },
+        { "value": "Culture.khuzait", "displayName": "Sylvania" },
+        { "value": "Culture.mousillon", "displayName": "Mousillon" },
+        { "value": "Culture.battania", "displayName": "Asrai (Wood Elves)" },
+        { "value": "Culture.eonir", "displayName": "Eonir" },
+        { "value": "Culture.druchii", "displayName": "Druchii (Dark Elves)" },
+        { "value": "Culture.sturgia", "displayName": "Dawi (Dwarfs)" },
+        { "value": "Culture.aserai", "displayName": "Greenskin" },
+        { "value": "Culture.greenskin_bandit", "displayName": "Greenskin Bandit" },
+        { "value": "Culture.steppe_bandits", "displayName": "Beastmen" },
+        { "value": "Culture.desert_bandits", "displayName": "Herrimault" },
+        { "value": "Culture.chaos_culture", "displayName": "Chaos" },
+        { "value": "Culture.neutral_culture", "displayName": "Neutral" }
+      ]
+    },
+    "occupation": {
+      "displayName": "Occupation",
+      "description": "Character occupation type.",
+      "type": "enum",
+      "order": 6,
+      "width": 110,
+      "enumValues": [
+        { "value": "Soldier", "displayName": "Soldier" },
+        { "value": "Villager", "displayName": "Villager" },
+        { "value": "CaravanGuard", "displayName": "Caravan Guard" },
+        { "value": "Wanderer", "displayName": "Wanderer" },
+        { "value": "Mercenary", "displayName": "Mercenary" },
+        { "value": "Lord", "displayName": "Lord" },
+        { "value": "Lady", "displayName": "Lady" },
+        { "value": "Merchant", "displayName": "Merchant" },
+        { "value": "Artisan", "displayName": "Artisan" },
+        { "value": "Headman", "displayName": "Headman" },
+        { "value": "GangLeader", "displayName": "Gang Leader" },
+        { "value": "Gangster", "displayName": "Gangster" },
+        { "value": "RuralNotable", "displayName": "Rural Notable" },
+        { "value": "Preacher", "displayName": "Preacher" }
+      ]
+    },
+    "is_basic_troop": {
+      "displayName": "Basic",
+      "description": "Is this a starting/recruitable troop.",
+      "type": "enum",
+      "order": 7,
+      "width": 60,
+      "enumValues": [
+        { "value": "true", "displayName": "Yes" },
+        { "value": "false", "displayName": "No" }
+      ]
+    },
+    "skill_template": {
+      "displayName": "Skill Template",
+      "description": "Required! Reference to skill set definition. Game crashes if empty.",
+      "type": "crossReference",
+      "required": true,
+      "order": 8,
+      "width": 200,
+      "crossReference": {
+        "targetFile": "tor_skillsets.xml",
+        "targetKeyField": "id",
+        "localKeyField": "skill_template",
+        "prefixToStrip": "SkillSet.",
+        "prefixToAdd": "SkillSet."
+      }
+    },
+    "face_key_template": {
+      "displayName": "Face Template",
+      "description": "Body/face appearance template.",
+      "type": "string",
+      "order": 9,
+      "width": 200,
+      "nested": true,
+      "nestedPath": "face/face_key_template/@value",
+      "prefixToStrip": "BodyProperty.",
+      "prefixToAdd": "BodyProperty."
+    },
+    "upgrade_target_1": {
+      "displayName": "Upgrade 1",
+      "description": "First upgrade path target.",
+      "type": "string",
+      "order": 10,
+      "width": 200,
+      "nested": true,
+      "nestedPath": "upgrade_targets/upgrade_target[1]/@id",
+      "prefixToStrip": "NPCCharacter.",
+      "prefixToAdd": "NPCCharacter."
+    },
+    "upgrade_target_2": {
+      "displayName": "Upgrade 2",
+      "description": "Second upgrade path target.",
+      "type": "string",
+      "order": 11,
+      "width": 200,
+      "nested": true,
+      "nestedPath": "upgrade_targets/upgrade_target[2]/@id",
+      "prefixToStrip": "NPCCharacter.",
+      "prefixToAdd": "NPCCharacter."
+    },
+    "upgrade_target_3": {
+      "displayName": "Upgrade 3",
+      "description": "Third upgrade path target.",
+      "type": "string",
+      "order": 12,
+      "width": 200,
+      "nested": true,
+      "nestedPath": "upgrade_targets/upgrade_target[3]/@id",
+      "prefixToStrip": "NPCCharacter.",
+      "prefixToAdd": "NPCCharacter."
+    },
+    "EquipmentRosterId": {
+      "displayName": "Equipment Set",
+      "description": "Reference to equipment roster template.",
+      "type": "string",
+      "order": 20,
+      "width": 240,
+      "nested": true,
+      "nestedPath": "Equipments/EquipmentSet[1]/@id"
+    },
+    "is_female": {
+      "displayName": "Female",
+      "description": "Is this a female character.",
+      "type": "enum",
+      "order": 30,
+      "width": 60,
+      "enumValues": [
+        { "value": "true", "displayName": "Yes" },
+        { "value": "false", "displayName": "No" }
+      ]
+    },
+    "voice": {
+      "displayName": "Voice",
+      "description": "Voice type for dialogue.",
+      "type": "enum",
+      "order": 31,
+      "width": 100,
+      "enumValues": [
+        { "value": "curt", "displayName": "Curt" },
+        { "value": "softspoken", "displayName": "Soft Spoken" },
+        { "value": "earnest", "displayName": "Earnest" },
+        { "value": "ironic", "displayName": "Ironic" }
+      ]
+    },
+    "age": {
+      "displayName": "Age",
+      "description": "Character age.",
+      "type": "int",
+      "order": 32,
+      "width": 50
+    },
+    "is_template": {
+      "displayName": "Template",
+      "description": "Is this a template character.",
+      "type": "enum",
+      "order": 33,
+      "width": 70,
+      "enumValues": [
+        { "value": "true", "displayName": "Yes" },
+        { "value": "false", "displayName": "No" }
+      ]
+    },
+    "is_hero": {
+      "displayName": "Hero",
+      "description": "Is this a hero character.",
+      "type": "enum",
+      "order": 34,
+      "width": 60,
+      "enumValues": [
+        { "value": "true", "displayName": "Yes" },
+        { "value": "false", "displayName": "No" }
+      ]
+    }
+  }
+}

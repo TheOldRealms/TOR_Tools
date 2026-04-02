@@ -44,10 +44,12 @@ public class XmlDocumentService : IXmlDocumentService
     }
 
     /// <summary>
-    /// Saves the XML document with multi-line attribute formatting.
-    /// Each attribute on its own line, aligned under the element name.
+    /// Saves the XML document with configurable attribute formatting.
     /// </summary>
-    public void Save(XmlDocumentWrapper document, string? filePath = null)
+    /// <param name="document">The document to save.</param>
+    /// <param name="filePath">Optional path override.</param>
+    /// <param name="compactFormat">If true, write all attributes on single line; if false, each on new line.</param>
+    public void Save(XmlDocumentWrapper document, string? filePath = null, bool compactFormat = false)
     {
         var targetPath = filePath ?? document.FilePath;
         var tempPath = targetPath + ".tmp";
@@ -71,13 +73,16 @@ public class XmlDocumentService : IXmlDocumentService
                 // Write root element
                 sb.AppendLine($"<{root.Name.LocalName}>");
 
-                // Write each entry with multi-line attributes
+                // Write each entry with appropriate formatting
                 foreach (var element in root.Elements())
                 {
-                    WriteElementWithMultiLineAttributes(sb, element, indent);
+                    if (compactFormat)
+                        WriteElementCompact(sb, element, indent);
+                    else
+                        WriteElementWithMultiLineAttributes(sb, element, indent);
                 }
 
-                sb.AppendLine($"</{root.Name.LocalName}>");
+                sb.Append($"</{root.Name.LocalName}>");
             }
 
             var content = sb.ToString();
@@ -158,6 +163,49 @@ public class XmlDocumentService : IXmlDocumentService
             foreach (var child in children)
             {
                 WriteElementWithMultiLineAttributes(sb, child, baseIndent, depth + 1);
+            }
+
+            sb.AppendLine($"{indent}</{elementName}>");
+        }
+        else if (hasTextContent)
+        {
+            sb.AppendLine($">{EscapeXmlText(element.Value)}</{elementName}>");
+        }
+        else
+        {
+            sb.AppendLine(" />");
+        }
+    }
+
+    /// <summary>
+    /// Writes an element with all attributes on a single line (compact format).
+    /// </summary>
+    private static void WriteElementCompact(StringBuilder sb, XElement element, string baseIndent, int depth = 1)
+    {
+        var indent = string.Concat(Enumerable.Repeat(baseIndent, depth));
+        var elementName = element.Name.LocalName;
+        var attributes = element.Attributes().ToList();
+        var children = element.Elements().ToList();
+        var hasTextContent = !string.IsNullOrWhiteSpace(element.Value) && !children.Any();
+
+        sb.Append(indent);
+        sb.Append($"<{elementName}");
+
+        // Write all attributes on one line
+        foreach (var attr in attributes)
+        {
+            sb.Append($" {attr.Name.LocalName}=\"{EscapeXmlAttributeValue(attr.Value)}\"");
+        }
+
+        // Close element
+        if (children.Any())
+        {
+            sb.AppendLine(">");
+
+            // Write child elements (also compact)
+            foreach (var child in children)
+            {
+                WriteElementCompact(sb, child, baseIndent, depth + 1);
             }
 
             sb.AppendLine($"{indent}</{elementName}>");

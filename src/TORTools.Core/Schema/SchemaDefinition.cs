@@ -44,6 +44,13 @@ public class SchemaDefinition
     public Dictionary<string, FieldDefinition> Fields { get; set; } = new();
 
     /// <summary>
+    /// If true (default), write all attributes on a single line (compact format).
+    /// If false, write each attribute on its own line (multi-line format).
+    /// </summary>
+    [JsonPropertyName("compactFormat")]
+    public bool CompactFormat { get; set; } = true;
+
+    /// <summary>
     /// Gets a field definition by name (case-insensitive).
     /// </summary>
     public FieldDefinition? GetField(string attributeName)
@@ -190,6 +197,18 @@ public class FieldDefinition
     /// </summary>
     [JsonPropertyName("nestedPath")]
     public string? NestedPath { get; set; }
+
+    /// <summary>
+    /// Prefix to strip from values for display (e.g., "NPCCharacter." for upgrade targets).
+    /// </summary>
+    [JsonPropertyName("prefixToStrip")]
+    public string? PrefixToStrip { get; set; }
+
+    /// <summary>
+    /// Prefix to automatically add when saving values.
+    /// </summary>
+    [JsonPropertyName("prefixToAdd")]
+    public string? PrefixToAdd { get; set; }
 }
 
 /// <summary>
@@ -256,6 +275,20 @@ public class CrossReferenceConfig
     /// </summary>
     [JsonPropertyName("localKeyField")]
     public string LocalKeyField { get; set; } = "";
+
+    /// <summary>
+    /// Prefix to strip from values before looking up (e.g., "SkillSet." for skill_template).
+    /// Also used for display - values are shown without this prefix.
+    /// </summary>
+    [JsonPropertyName("prefixToStrip")]
+    public string? PrefixToStrip { get; set; }
+
+    /// <summary>
+    /// Prefix to automatically add when saving values (e.g., "SkillSet." for skill_template).
+    /// If set, values entered without this prefix will have it added automatically.
+    /// </summary>
+    [JsonPropertyName("prefixToAdd")]
+    public string? PrefixToAdd { get; set; }
 }
 
 /// <summary>

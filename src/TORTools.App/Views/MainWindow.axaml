@@ -19,7 +19,7 @@
         <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}"/>
         <KeyBinding Gesture="Ctrl+N" Command="{Binding AddRowCommand}"/>
         <KeyBinding Gesture="Ctrl+D" Command="{Binding DuplicateRowCommand}"/>
-        <KeyBinding Gesture="Delete" Command="{Binding DeleteRowCommand}"/>
+        <KeyBinding Gesture="Ctrl+Delete" Command="{Binding DeleteRowCommand}"/>
     </Window.KeyBindings>
 
     <Window.DataTemplates>
@@ -50,7 +50,7 @@
                 <Separator/>
                 <MenuItem Header="_Add Row" InputGesture="Ctrl+N" Command="{Binding AddRowCommand}"/>
                 <MenuItem Header="_Duplicate Row" InputGesture="Ctrl+D" Command="{Binding DuplicateRowCommand}"/>
-                <MenuItem Header="De_lete Row" InputGesture="Delete" Command="{Binding DeleteRowCommand}"/>
+                <MenuItem Header="De_lete Row" InputGesture="Ctrl+Delete" Command="{Binding DeleteRowCommand}"/>
             </MenuItem>
             <MenuItem Header="_View">
                 <MenuItem Header="_Workspace Settings" Command="{Binding OpenWorkspaceSettingsCommand}"/>

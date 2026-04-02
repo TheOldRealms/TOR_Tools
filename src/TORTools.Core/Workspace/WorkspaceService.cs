@@ -61,7 +61,7 @@ public class WorkspaceService : IWorkspaceService
         // Configuration
         ["tor_config.xml"] = ("Configuration", "Config"),
         ["tor_cc_options.xml"] = ("Configuration", "Character Creation Options"),
-        ["tor_skillsets.xml"] = ("Configuration", "Skill Sets"),
+        ["tor_skillsets.xml"] = ("Unit Catalog", "Skill Sets"),
         ["tor_specialization_options.xml"] = ("Configuration", "Specialization Options"),
 
         // Armory Metadata

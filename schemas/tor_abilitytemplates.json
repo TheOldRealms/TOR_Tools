@@ -4,6 +4,7 @@
   "description": "Magic ability and spell definitions.",
   "rootElement": "AbilityTemplates",
   "entryElement": "AbilityTemplate",
+  "compactFormat": false,
   "fields": {
     "StringID": {
       "displayName": "ID",

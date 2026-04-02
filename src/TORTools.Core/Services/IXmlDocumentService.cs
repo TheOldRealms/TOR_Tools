@@ -16,7 +16,10 @@ public interface IXmlDocumentService
     /// Saves the XML document to the specified file path with minimal formatting changes.
     /// Uses atomic write (temp file + rename) for safety.
     /// </summary>
-    void Save(XmlDocumentWrapper document, string? filePath = null);
+    /// <param name="document">The document to save.</param>
+    /// <param name="filePath">Optional path override.</param>
+    /// <param name="compactFormat">If true, write attributes on single line; if false, each on new line.</param>
+    void Save(XmlDocumentWrapper document, string? filePath = null, bool compactFormat = false);
 
     /// <summary>
     /// Gets all top-level entries from the document.

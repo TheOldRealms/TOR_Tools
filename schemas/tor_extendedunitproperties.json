@@ -1,0 +1,17 @@
+{
+  "file": "tor_extendedunitproperties.xml",
+  "displayName": "Extended Unit Properties",
+  "description": "Extended combat properties for troops: damage types, resistances, abilities, and resource costs.",
+  "rootElement": "ArrayOfCharacterExtendedInfo",
+  "entryElement": "CharacterExtendedInfo",
+  "fields": {
+    "id": {
+      "displayName": "ID",
+      "description": "Character ID this info applies to.",
+      "type": "string",
+      "required": true,
+      "order": 1,
+      "width": 260
+    }
+  }
+}

@@ -68,7 +68,7 @@
                         Padding="8,4"/>
                 <Button Content="Delete"
                         Command="{Binding DeleteRowCommand}"
-                        ToolTip.Tip="Delete selected row (Del)"
+                        ToolTip.Tip="Delete selected row (Ctrl+Del)"
                         Padding="8,4"
                         Background="#ed4245"
                         Foreground="#ffffff"/>
