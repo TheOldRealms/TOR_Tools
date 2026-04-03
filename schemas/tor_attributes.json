@@ -13,18 +13,25 @@
       "order": 1,
       "width": 180
     },
-    "description": {
+    "display_description": {
       "displayName": "Description",
-      "description": "What this attribute does.",
+      "description": "Player-friendly description of what this attribute does.",
       "type": "string",
       "order": 2,
-      "width": 400
+      "width": 350
+    },
+    "implementation_note": {
+      "displayName": "Implementation",
+      "description": "Technical implementation details and code references.",
+      "type": "string",
+      "order": 3,
+      "width": 300
     },
     "LinkedUnits": {
       "displayName": "Used By",
       "description": "Units that have this attribute. Click to navigate to unit.",
       "type": "reverseCrossReference",
-      "order": 3,
+      "order": 4,
       "width": 300,
       "crossReference": {
         "sourceFile": "tor_extendedunitproperties.xml",

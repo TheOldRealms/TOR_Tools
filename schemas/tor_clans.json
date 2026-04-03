@@ -1,0 +1,173 @@
+{
+  "file": "tor_clans.xml",
+  "displayName": "Clans",
+  "description": "Faction/clan definitions including bandit factions, minor factions, and noble clans.",
+  "rootElement": "Factions",
+  "entryElement": "Faction",
+  "fields": {
+    "id": {
+      "displayName": "ID",
+      "description": "Unique identifier for this faction/clan.",
+      "type": "string",
+      "required": true,
+      "order": 1,
+      "width": 180
+    },
+    "name": {
+      "displayName": "Name",
+      "description": "Display name with localization key.",
+      "type": "string",
+      "required": true,
+      "order": 2,
+      "width": 200
+    },
+    "owner": {
+      "displayName": "Owner",
+      "description": "Hero who owns/leads this faction (Hero.* reference).",
+      "type": "string",
+      "order": 3,
+      "width": 220
+    },
+    "culture": {
+      "displayName": "Culture",
+      "description": "Culture affiliation.",
+      "type": "enum",
+      "order": 4,
+      "width": 130,
+      "enumValues": [
+        { "value": "Culture.empire", "displayName": "Empire" },
+        { "value": "Culture.vlandia", "displayName": "Bretonnia" },
+        { "value": "Culture.khuzait", "displayName": "Sylvania" },
+        { "value": "Culture.mousillon", "displayName": "Mousillon" },
+        { "value": "Culture.battania", "displayName": "Asrai (Wood Elves)" },
+        { "value": "Culture.eonir", "displayName": "Eonir" },
+        { "value": "Culture.druchii", "displayName": "Druchii (Dark Elves)" },
+        { "value": "Culture.sturgia", "displayName": "Dawi (Dwarfs)" },
+        { "value": "Culture.aserai", "displayName": "Greenskin" },
+        { "value": "Culture.greenskin_bandit", "displayName": "Greenskin Bandit" },
+        { "value": "Culture.steppe_bandits", "displayName": "Beastmen" },
+        { "value": "Culture.forest_bandits", "displayName": "Chaos Cultists" },
+        { "value": "Culture.desert_bandits", "displayName": "Herrimault" },
+        { "value": "Culture.chaos_culture", "displayName": "Chaos" },
+        { "value": "Culture.neutral_culture", "displayName": "Neutral" },
+        { "value": "Culture.sea_raiders", "displayName": "Sea Raiders" },
+        { "value": "Culture.looters", "displayName": "Goblin Bandits" },
+        { "value": "Culture.mountain_bandits", "displayName": "Deserters" }
+      ]
+    },
+    "super_faction": {
+      "displayName": "Kingdom",
+      "description": "Parent kingdom for noble clans (Kingdom.* reference).",
+      "type": "string",
+      "order": 5,
+      "width": 150
+    },
+    "tier": {
+      "displayName": "Tier",
+      "description": "Faction tier level (0-6).",
+      "type": "enum",
+      "order": 6,
+      "width": 60,
+      "enumValues": [
+        { "value": "0", "displayName": "0" },
+        { "value": "1", "displayName": "1" },
+        { "value": "2", "displayName": "2" },
+        { "value": "3", "displayName": "3" },
+        { "value": "4", "displayName": "4" },
+        { "value": "5", "displayName": "5" },
+        { "value": "6", "displayName": "6" }
+      ]
+    },
+    "banner_key": {
+      "displayName": "Banner",
+      "description": "Banner definition with optional :kingdom_* suffix for custom texture.",
+      "type": "banner",
+      "order": 7,
+      "width": 80
+    },
+    "is_noble": {
+      "displayName": "Noble",
+      "description": "Whether this is a noble faction (belongs to a kingdom).",
+      "type": "boolean",
+      "order": 8,
+      "width": 60
+    },
+    "is_minor_faction": {
+      "displayName": "Minor",
+      "description": "Whether this is a minor faction.",
+      "type": "boolean",
+      "order": 9,
+      "width": 60
+    },
+    "is_bandit": {
+      "displayName": "Bandit",
+      "description": "Whether this is a bandit faction.",
+      "type": "boolean",
+      "order": 10,
+      "width": 60
+    },
+    "is_outlaw": {
+      "displayName": "Outlaw",
+      "description": "Whether this is an outlaw faction.",
+      "type": "boolean",
+      "order": 11,
+      "width": 60
+    },
+    "color": {
+      "displayName": "Color",
+      "description": "Primary faction color (hex format: FFRRGGBB).",
+      "type": "color",
+      "order": 12,
+      "width": 80
+    },
+    "color2": {
+      "displayName": "Color 2",
+      "description": "Secondary faction color (hex format: FFRRGGBB).",
+      "type": "color",
+      "order": 13,
+      "width": 80
+    },
+    "alternative_color": {
+      "displayName": "Alt Color",
+      "description": "Alternative primary color (hex format: FFRRGGBB).",
+      "type": "color",
+      "order": 14,
+      "width": 80
+    },
+    "alternative_color2": {
+      "displayName": "Alt Color 2",
+      "description": "Alternative secondary color (hex format: FFRRGGBB).",
+      "type": "color",
+      "order": 15,
+      "width": 80
+    },
+    "label_color": {
+      "displayName": "Label Color",
+      "description": "Color used for faction labels (hex format: FFRRGGBB).",
+      "type": "color",
+      "order": 16,
+      "width": 80
+    },
+    "default_party_template": {
+      "displayName": "Party Template",
+      "description": "Default party template for this faction (PartyTemplate.* reference).",
+      "type": "string",
+      "order": 17,
+      "width": 200
+    },
+    "settlement_banner_mesh": {
+      "displayName": "Banner Mesh",
+      "description": "Settlement banner mesh name.",
+      "type": "string",
+      "order": 18,
+      "width": 140
+    },
+    "text": {
+      "displayName": "Description",
+      "description": "Faction description text with localization key.",
+      "type": "string",
+      "order": 19,
+      "width": 300
+    }
+  }
+}
