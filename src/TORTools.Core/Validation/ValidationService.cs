@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 using TORTools.Core.Schema;
 
 namespace TORTools.Core.Validation;
@@ -121,6 +122,12 @@ public class ValidationService : IValidationService
             //     break;
         }
 
+        // Pattern validation (generates warnings, not errors)
+        if (!string.IsNullOrEmpty(fieldDef.Pattern))
+        {
+            ValidatePattern(value!, fieldName, fieldDef, rowIndex, entryId, result);
+        }
+
         return result;
     }
 
@@ -184,6 +191,27 @@ public class ValidationService : IValidationService
                 validList += $", ... ({validValues.Count - 5} more)";
 
             result.AddError(rowIndex, fieldName, $"'{value}' is not a valid value. Valid: {validList}", entryId, value);
+        }
+    }
+
+    private void ValidatePattern(string value, string fieldName, FieldDefinition fieldDef, int rowIndex, string? entryId, ValidationResult result)
+    {
+        try
+        {
+            var regex = new Regex(fieldDef.Pattern!, RegexOptions.None, TimeSpan.FromSeconds(1));
+            if (!regex.IsMatch(value))
+            {
+                var message = fieldDef.PatternWarning ?? $"Value doesn't match expected pattern: {fieldDef.Pattern}";
+                result.AddWarning(rowIndex, fieldName, message, entryId, value);
+            }
+        }
+        catch (RegexMatchTimeoutException)
+        {
+            // Pattern took too long - skip validation
+        }
+        catch (ArgumentException)
+        {
+            // Invalid regex pattern - skip validation
         }
     }
 

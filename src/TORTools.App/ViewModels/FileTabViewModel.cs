@@ -19,6 +19,7 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     private readonly IValidationService _validationService;
     private readonly CrossReferenceService _crossRefService;
     private readonly TupleListService _tupleListService;
+    private readonly IGitValueService _gitValueService;
     private XmlDocumentWrapper? _document;
     private FileSystemWatcher? _fileWatcher;
     private bool _isReloading;
@@ -64,7 +65,7 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     /// Git committed values for comparison.
     /// Key is entryId, value is dictionary of fieldName -> committedValue.
     /// </summary>
-    private readonly Dictionary<string, Dictionary<string, string>> _gitCommittedValues = new();
+    private Dictionary<string, Dictionary<string, string>> _gitCommittedValues = new();
 
     /// <summary>
     /// Entries that have been removed during this session.
@@ -253,14 +254,15 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         }
     }
 
-    public FileTabViewModel(string filePath) : this(filePath, new XmlDocumentService(), new UndoRedoService(), new SchemaService(), new ValidationService(), new CrossReferenceService(), new TupleListService())
+    public FileTabViewModel(string filePath) : this(filePath, new XmlDocumentService(), new UndoRedoService(), new SchemaService(), new ValidationService(), new CrossReferenceService(), new TupleListService(), new GitValueService())
     {
     }
 
-    public FileTabViewModel(string filePath, IXmlDocumentService xmlService, IUndoRedoService undoRedoService, ISchemaService schemaService, IValidationService validationService, CrossReferenceService crossRefService, TupleListService tupleListService)
+    public FileTabViewModel(string filePath, IXmlDocumentService xmlService, IUndoRedoService undoRedoService, ISchemaService schemaService, IValidationService validationService, CrossReferenceService crossRefService, TupleListService tupleListService, IGitValueService gitValueService)
     {
         _xmlService = xmlService;
         _undoRedoService = undoRedoService;
+        _gitValueService = gitValueService;
         _schemaService = schemaService;
         _validationService = validationService;
         _crossRefService = crossRefService;
@@ -1156,7 +1158,7 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
                 XmlEntries.AddRange(entries);
 
                 // Load git committed values for comparison
-                LoadGitCommittedValues();
+                _gitCommittedValues = _gitValueService.LoadGitCommittedValues(FilePath);
 
                 // Check if this is an equipment set file with nested variations
                 if (Schema?.HasNestedVariations == true && !string.IsNullOrEmpty(Schema.VariationElement))
@@ -1253,7 +1255,7 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         XmlEntries.AddRange(allEntries);
 
         // Load git committed values for comparison
-        LoadGitCommittedValues();
+        _gitCommittedValues = _gitValueService.LoadGitCommittedValues(FilePath);
 
         // Normal loading
         DiscoverColumns(allEntries);
@@ -1478,158 +1480,6 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         row.CellValueChanged += OnCellValueChanged;
 
         return row;
-    }
-
-    /// <summary>
-    /// Loads the git committed version of the file for comparison.
-    /// </summary>
-    private void LoadGitCommittedValues()
-    {
-        _gitCommittedValues.Clear();
-
-        try
-        {
-            // Find the git repository root
-            var directory = Path.GetDirectoryName(FilePath);
-            if (string.IsNullOrEmpty(directory)) return;
-
-            // Get relative path from git root
-            var relativePath = GetGitRelativePath(directory, FilePath);
-            if (string.IsNullOrEmpty(relativePath)) return;
-
-            // Run git show HEAD:<path> to get committed content
-            var gitContent = RunGitShow(directory, relativePath);
-            if (string.IsNullOrEmpty(gitContent)) return;
-
-            // Parse the XML content and extract values
-            ParseGitContent(gitContent);
-
-            Console.WriteLine($"[Git] Loaded {_gitCommittedValues.Count} entries from git for comparison");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[Git] Failed to load git committed values: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Gets the relative path of a file from the git repository root.
-    /// </summary>
-    private static string? GetGitRelativePath(string workingDir, string filePath)
-    {
-        try
-        {
-            var psi = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = "git",
-                Arguments = "rev-parse --show-toplevel",
-                WorkingDirectory = workingDir,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using var process = System.Diagnostics.Process.Start(psi);
-            if (process == null) return null;
-
-            var gitRoot = process.StandardOutput.ReadToEnd().Trim();
-            process.WaitForExit();
-
-            if (process.ExitCode != 0 || string.IsNullOrEmpty(gitRoot))
-                return null;
-
-            // Normalize paths for comparison
-            gitRoot = gitRoot.Replace('/', Path.DirectorySeparatorChar);
-            var normalizedFilePath = Path.GetFullPath(filePath);
-
-            if (normalizedFilePath.StartsWith(gitRoot, StringComparison.OrdinalIgnoreCase))
-            {
-                var relative = normalizedFilePath.Substring(gitRoot.Length).TrimStart(Path.DirectorySeparatorChar);
-                // Git uses forward slashes
-                return relative.Replace(Path.DirectorySeparatorChar, '/');
-            }
-
-            return null;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    /// <summary>
-    /// Runs git show HEAD:<path> and returns the content.
-    /// </summary>
-    private static string? RunGitShow(string workingDir, string relativePath)
-    {
-        try
-        {
-            var psi = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = "git",
-                Arguments = $"show HEAD:{relativePath}",
-                WorkingDirectory = workingDir,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using var process = System.Diagnostics.Process.Start(psi);
-            if (process == null) return null;
-
-            var content = process.StandardOutput.ReadToEnd();
-            process.WaitForExit();
-
-            if (process.ExitCode != 0)
-                return null;
-
-            return content;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    /// <summary>
-    /// Parses git XML content and extracts values into _gitCommittedValues.
-    /// </summary>
-    private void ParseGitContent(string xmlContent)
-    {
-        try
-        {
-            var doc = System.Xml.Linq.XDocument.Parse(xmlContent);
-            var root = doc.Root;
-            if (root == null) return;
-
-            // Find all entry elements (usually direct children of root)
-            foreach (var element in root.Elements())
-            {
-                // Get the ID attribute to use as the key
-                var idAttr = element.Attribute("id");
-                if (idAttr == null) continue;
-
-                var entryId = idAttr.Value;
-                var values = new Dictionary<string, string>();
-
-                // Extract all attributes
-                foreach (var attr in element.Attributes())
-                {
-                    // Store display value (unwrap localization if present)
-                    var rawValue = attr.Value;
-                    var (_, displayValue) = LocalizationHelper.Unwrap(rawValue);
-                    values[attr.Name.LocalName] = displayValue;
-                }
-
-                _gitCommittedValues[entryId] = values;
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[Git] Failed to parse git content: {ex.Message}");
-        }
     }
 
     /// <summary>
