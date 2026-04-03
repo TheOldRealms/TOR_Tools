@@ -1184,11 +1184,11 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     private void LoadEquipmentSetVariations(IReadOnlyList<XmlEntry> rosterEntries)
     {
         // Build column list: roster fields + variation attributes + equipment slots
+        // Note: civilian column removed - civilian sets are auto-generated on save
         ColumnNames.Clear();
         ColumnNames.Add("id");           // Roster ID
         ColumnNames.Add("culture");      // Roster culture
         ColumnNames.Add("_variation");   // Variation index (internal tracking)
-        ColumnNames.Add("civilian");     // Variation attribute
 
         // Add equipment slots from schema
         if (Schema?.EquipmentSlots != null)
@@ -1231,6 +1231,11 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
                 {
                     var isCivilian = variation.GetAttributeValue("civilian")?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
 
+                    // TODO: Future consideration - allow editing separate civilian equipment.
+                    // Currently civilian sets are always clones of combat sets (per XmlGenerator behavior).
+                    // Skip civilian variations - they will be auto-generated on save.
+                    if (isCivilian) continue;
+
                     // Extract equipment from this variation
                     var equipment = new Dictionary<string, string>();
                     foreach (var equipItem in variation.Children.Where(c => c.ElementName == equipmentElementName))
@@ -1243,7 +1248,7 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
                         }
                     }
 
-                    var row = CreateEquipmentRow(roster, variation, rosterId, rosterCulture, variationIndex, isCivilian, equipment, rowNum++);
+                    var row = CreateEquipmentRow(roster, variation, rosterId, rosterCulture, variationIndex, false, equipment, rowNum++);
                     Rows.Add(row);
                     variationIndex++;
                 }
@@ -1829,6 +1834,12 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
             // Sync changes from dynamic entries back to XmlEntries
             SyncChangesToXml();
 
+            // For equipment sets: auto-generate civilian clones before saving
+            if (Schema?.HasNestedVariations == true)
+            {
+                GenerateCivilianClones();
+            }
+
             // Use compact format by default, unless schema explicitly disables it
             var compactFormat = Schema?.CompactFormat ?? true;
             _xmlService.Save(_document, null, compactFormat);
@@ -1860,6 +1871,53 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
             // Delay resetting flag to avoid catching our own save event
             Task.Delay(500).ContinueWith(_ => _isSaving = false);
         }
+    }
+
+    /// <summary>
+    /// Auto-generates civilian clone EquipmentSets for each combat EquipmentSet.
+    /// This matches XmlGenerator behavior where civilian sets are identical clones.
+    /// TODO: Future consideration - allow editing separate civilian equipment.
+    /// </summary>
+    private void GenerateCivilianClones()
+    {
+        if (XmlEntries.Count == 0) return;
+
+        var variationElementName = Schema?.VariationElement ?? "EquipmentSet";
+        var cloneCount = 0;
+
+        foreach (var roster in XmlEntries)
+        {
+            // Remove existing civilian clones first
+            var civilianSets = roster.Children
+                .Where(c => c.ElementName == variationElementName &&
+                            c.GetAttributeValue("civilian")?.Equals("true", StringComparison.OrdinalIgnoreCase) == true)
+                .ToList();
+
+            foreach (var civilianSet in civilianSets)
+            {
+                civilianSet.OriginalElement.Remove();
+                roster.Children.Remove(civilianSet);
+            }
+
+            // Get all combat sets (no civilian attribute)
+            var combatSets = roster.Children
+                .Where(c => c.ElementName == variationElementName &&
+                            c.GetAttributeValue("civilian")?.Equals("true", StringComparison.OrdinalIgnoreCase) != true)
+                .ToList();
+
+            // Clone each combat set as civilian
+            foreach (var combatSet in combatSets)
+            {
+                var civilianClone = new System.Xml.Linq.XElement(combatSet.OriginalElement);
+                civilianClone.SetAttributeValue("civilian", "true");
+
+                // Add after the combat set
+                combatSet.OriginalElement.AddAfterSelf(civilianClone);
+                cloneCount++;
+            }
+        }
+
+        Console.WriteLine($"[EquipmentSets] Generated {cloneCount} civilian clones");
     }
 
     private void SyncChangesToXml()
@@ -2114,6 +2172,9 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         {
             _copiedRowData[col] = row[col];
         }
+
+        // Notify that copied row data is available
+        OnPropertyChanged(nameof(HasCopiedRow));
     }
 
     /// <summary>

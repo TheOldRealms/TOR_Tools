@@ -35,23 +35,9 @@
       "order": 4,
       "width": 80
     },
-    "color": {
-      "displayName": "Color",
-      "description": "Primary culture color (hex format: 0xFFRRGGBB).",
-      "type": "color",
-      "order": 5,
-      "width": 90
-    },
-    "color2": {
-      "displayName": "Color 2",
-      "description": "Secondary culture color (hex format: 0xFFRRGGBB).",
-      "type": "color",
-      "order": 6,
-      "width": 90
-    },
     "faction_banner_key": {
-      "displayName": "Banner Key",
-      "description": "Default faction banner definition.",
+      "displayName": "Banner",
+      "description": "Default faction banner definition. Click to edit banner and colors.",
       "type": "banner",
       "order": 3,
       "width": 120

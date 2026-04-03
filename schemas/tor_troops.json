@@ -332,11 +332,17 @@
       "type": "crossReference",
       "order": 58,
       "width": 100,
+      "enumValues": [
+        { "value": "", "displayName": "(None)" },
+        { "value": "Prestige", "displayName": "Prestige" },
+        { "value": "OathGold", "displayName": "OathGold" }
+      ],
       "crossReference": {
         "sourceFile": "tor_extendedunitproperties.xml",
         "sourceKeyField": "id",
         "sourceValuePath": "ResourceCost/@ResourceType",
-        "localKeyField": "id"
+        "localKeyField": "id",
+        "valueType": "enum"
       }
     },
     "ext_UpgradeCost": {
@@ -349,7 +355,8 @@
         "sourceFile": "tor_extendedunitproperties.xml",
         "sourceKeyField": "id",
         "sourceValuePath": "ResourceCost/@UpgradeCost",
-        "localKeyField": "id"
+        "localKeyField": "id",
+        "valueType": "int"
       }
     },
     "ext_UpkeepCost": {
@@ -362,7 +369,8 @@
         "sourceFile": "tor_extendedunitproperties.xml",
         "sourceKeyField": "id",
         "sourceValuePath": "ResourceCost/@UpkeepCost",
-        "localKeyField": "id"
+        "localKeyField": "id",
+        "valueType": "int"
       }
     },
     "beard_tags": {

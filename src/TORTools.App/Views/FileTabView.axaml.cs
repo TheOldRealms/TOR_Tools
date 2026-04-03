@@ -289,13 +289,13 @@ public partial class FileTabView : UserControl
 
         grid.Columns.Clear();
 
-        // Add row number column
+        // Add row number column with paste button
         var rowNumColumn = new DataGridTemplateColumn
         {
             Header = "#",
-            Width = new DataGridLength(40),
+            Width = new DataGridLength(60),
             IsReadOnly = true,
-            CellTemplate = CreateRowNumberTemplate()
+            CellTemplate = CreateRowNumberTemplate(vm)
         };
         grid.Columns.Add(rowNumColumn);
 
@@ -377,8 +377,33 @@ public partial class FileTabView : UserControl
             else if (isCrossRefField)
             {
                 var isReverseCrossRef = fieldDef!.Type == "reverseCrossReference";
+                var valueType = fieldDef.CrossReference?.ValueType ?? "crossRef";
 
-                if (isReverseCrossRef)
+                if (valueType == "enum" && fieldDef.EnumValues?.Count > 0)
+                {
+                    // External value with enum rendering
+                    column = new DataGridTemplateColumn
+                    {
+                        Header = CreateColumnHeader(displayInfo, fieldDef),
+                        Width = new DataGridLength(displayInfo.Width),
+                        IsReadOnly = false,
+                        CellTemplate = CreateExternalEnumCellTemplate(displayInfo.AttributeName, fieldDef, vm),
+                        CellEditingTemplate = CreateEnumEditingTemplate(displayInfo.AttributeName, fieldDef)
+                    };
+                }
+                else if (valueType == "int" || valueType == "string")
+                {
+                    // External value with simple text/int rendering
+                    column = new DataGridTemplateColumn
+                    {
+                        Header = CreateColumnHeader(displayInfo, fieldDef),
+                        Width = new DataGridLength(displayInfo.Width),
+                        IsReadOnly = false,
+                        CellTemplate = CreateExternalValueCellTemplate(displayInfo.AttributeName, fieldDef, vm),
+                        CellEditingTemplate = CreateTextEditingTemplate(displayInfo.AttributeName, fieldDef)
+                    };
+                }
+                else if (isReverseCrossRef)
                 {
                     // Read-only: clickable links with single-click navigation
                     column = new DataGridTemplateColumn
@@ -441,6 +466,19 @@ public partial class FileTabView : UserControl
             column.Tag = displayInfo.AttributeName;
 
             grid.Columns.Add(column);
+
+            // For Equipment Sets: add a paste button column right after "_variation"
+            if (displayInfo.AttributeName == "_variation" && vm.Schema?.HasNestedVariations == true)
+            {
+                var pasteColumn = new DataGridTemplateColumn
+                {
+                    Header = "📋",
+                    Width = new DataGridLength(36),
+                    IsReadOnly = true,
+                    CellTemplate = CreateClipboardPasteTemplate(vm)
+                };
+                grid.Columns.Add(pasteColumn);
+            }
         }
 
         Console.WriteLine($"[FileTabView] Final column count: {grid.Columns.Count}");
@@ -509,12 +547,61 @@ public partial class FileTabView : UserControl
     }
 
     /// <summary>
-    /// Creates the cell template for the row number column.
+    /// Creates the cell template for the row number column with paste button.
     /// </summary>
-    private IDataTemplate CreateRowNumberTemplate()
+    private IDataTemplate CreateRowNumberTemplate(FileTabViewModel vm)
     {
         return new FuncDataTemplate<EntryRowViewModel>((rowVm, _) =>
         {
+            var grid = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitions("Auto,*")
+            };
+
+            // Paste button (only visible when there's copied data)
+            var pasteButton = new Button
+            {
+                Content = "📋",
+                FontSize = 10,
+                Padding = new Thickness(2),
+                MinWidth = 20,
+                MinHeight = 16,
+                Background = Brushes.Transparent,
+                BorderThickness = new Thickness(0),
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand),
+                IsVisible = vm.HasCopiedRow
+            };
+            ToolTip.SetTip(pasteButton, "Paste copied row data here");
+            Grid.SetColumn(pasteButton, 0);
+
+            if (rowVm != null)
+            {
+                pasteButton.Click += (s, e) =>
+                {
+                    // Find the row index and select it, then paste
+                    var rowIndex = vm.Rows.IndexOf(rowVm);
+                    if (rowIndex >= 0)
+                    {
+                        vm.SelectedIndex = rowIndex;
+                        vm.PasteRow();
+                    }
+                };
+            }
+
+            // Update visibility when copy state changes
+            vm.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(FileTabViewModel.HasCopiedRow))
+                {
+                    pasteButton.IsVisible = vm.HasCopiedRow;
+                }
+            };
+
+            grid.Children.Add(pasteButton);
+
+            // Row number text
             var text = new TextBlock
             {
                 FontSize = 11,
@@ -522,13 +609,100 @@ public partial class FileTabView : UserControl
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center
             };
+            Grid.SetColumn(text, 1);
 
             if (rowVm != null)
             {
                 text.Bind(TextBlock.TextProperty, new Binding(nameof(EntryRowViewModel.RowNumber)));
             }
 
-            return text;
+            grid.Children.Add(text);
+
+            return grid;
+        });
+    }
+
+    /// <summary>
+    /// Creates a paste button template for Equipment Sets that reads from system clipboard
+    /// and pastes into equipment slot columns.
+    /// </summary>
+    private IDataTemplate CreateClipboardPasteTemplate(FileTabViewModel vm)
+    {
+        // Equipment slot column names in order
+        var equipmentSlots = new[] { "Item0", "Item1", "Item2", "Item3", "Head", "Body", "Cape", "Gloves", "Leg", "Horse", "HorseHarness" };
+
+        return new FuncDataTemplate<EntryRowViewModel>((rowVm, _) =>
+        {
+            var pasteButton = new Button
+            {
+                Content = "📋",
+                FontSize = 12,
+                Padding = new Thickness(4, 2),
+                MinWidth = 28,
+                Background = new SolidColorBrush(Color.FromRgb(70, 70, 70)),
+                Foreground = Brushes.White,
+                BorderThickness = new Thickness(0),
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand)
+            };
+            ToolTip.SetTip(pasteButton, "Paste equipment from clipboard (tab or newline separated)");
+
+            if (rowVm != null)
+            {
+                pasteButton.Click += async (s, e) =>
+                {
+                    try
+                    {
+                        var clipboard = TopLevel.GetTopLevel(pasteButton)?.Clipboard;
+                        if (clipboard == null) return;
+
+                        var clipboardText = await clipboard.GetTextAsync();
+                        if (string.IsNullOrWhiteSpace(clipboardText)) return;
+
+                        // Parse clipboard - support tab-separated, newline-separated, or comma-separated
+                        var values = clipboardText
+                            .Split(new[] { '\t', '\n', '\r', ',' }, StringSplitOptions.RemoveEmptyEntries)
+                            .Select(v => v.Trim())
+                            .Where(v => !string.IsNullOrEmpty(v))
+                            .ToArray();
+
+                        Console.WriteLine($"[ClipboardPaste] Parsed {values.Length} values from clipboard");
+
+                        // Paste values into equipment slots
+                        for (int i = 0; i < Math.Min(values.Length, equipmentSlots.Length); i++)
+                        {
+                            var slotName = equipmentSlots[i];
+                            var value = values[i];
+
+                            // Skip empty/dash values
+                            if (value == "-" || value.ToLower() == "none")
+                            {
+                                rowVm[slotName] = "";
+                            }
+                            else
+                            {
+                                // Strip "Item." prefix if present (display without prefix, saved with prefix via prefixToAdd)
+                                if (value.StartsWith("Item.", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    value = value.Substring(5);
+                                }
+                                rowVm[slotName] = value;
+                            }
+                            Console.WriteLine($"[ClipboardPaste] Set {slotName} = {rowVm[slotName]}");
+                        }
+
+                        vm.MarkAsModified();
+                        vm.RequestCellRefresh();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[ClipboardPaste] Error: {ex.Message}");
+                    }
+                };
+            }
+
+            return pasteButton;
         });
     }
 
@@ -821,21 +995,21 @@ public partial class FileTabView : UserControl
 
             // Check if this is a skill_template field for custom UI
             var isSkillTemplate = attributeName.Equals("skill_template", StringComparison.OrdinalIgnoreCase);
-            var buttonText = isSkillTemplate ? "Edit" : "...";
-            var tooltipText = isSkillTemplate ? "Edit skill set" : "Edit traits (comma-separated)";
+            var fieldDisplayName = fieldDef.DisplayName ?? attributeName;
+            var buttonText = "...";
+            var tooltipText = $"Edit {fieldDisplayName}";
 
             // Edit button - opens a simple text editor popup (hidden for removed rows)
             var editButton = new Button
             {
                 Content = buttonText,
-                FontSize = 10,
-                Padding = new Thickness(4, 2),
-                MinWidth = 20,
+                FontSize = 11,
+                Padding = new Thickness(6, 2),
+                MinWidth = 28,
                 MinHeight = 0,
-                Background = new SolidColorBrush(Color.FromRgb(240, 240, 240)),
-                Foreground = new SolidColorBrush(Color.FromRgb(80, 80, 80)),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(200, 200, 200)),
-                BorderThickness = new Thickness(1),
+                Background = new SolidColorBrush(Color.FromRgb(70, 70, 70)),
+                Foreground = Brushes.White,
+                BorderThickness = new Thickness(0),
                 CornerRadius = new CornerRadius(2),
                 Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand),
                 IsVisible = !rowVm.IsRemoved  // Hide for removed rows
@@ -1404,6 +1578,81 @@ public partial class FileTabView : UserControl
     }
 
     /// <summary>
+    /// Creates a display template for external enum values (crossReference with valueType="enum").
+    /// Similar to regular enum template but for values loaded from external files.
+    /// </summary>
+    private static IDataTemplate CreateExternalEnumCellTemplate(string attributeName, FieldDefinition fieldDef, FileTabViewModel vm)
+    {
+        // Build lookup for value -> displayName
+        var displayNameLookup = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var enumValue in fieldDef.EnumValues ?? [])
+        {
+            displayNameLookup[enumValue.Value] = enumValue.DisplayName ?? enumValue.Value;
+        }
+
+        // Helper to get display name for a value
+        string GetDisplayName(string? value)
+        {
+            if (string.IsNullOrEmpty(value)) return "-";
+            return displayNameLookup.TryGetValue(value, out var displayName) ? displayName : value;
+        }
+
+        return new FuncDataTemplate<EntryRowViewModel>((rowVm, _) =>
+        {
+            var border = new Border();
+            border.Classes.Add("dataCell");
+
+            var text = new TextBlock();
+            text.Classes.Add("cellText");
+
+            if (rowVm != null)
+            {
+                text.Text = GetDisplayName(rowVm[attributeName]);
+
+                // Subscribe to refresh event for updates
+                vm.CellRefreshRequested += (s, args) =>
+                {
+                    text.Text = GetDisplayName(rowVm[attributeName]);
+                };
+            }
+
+            border.Child = text;
+            return border;
+        });
+    }
+
+    /// <summary>
+    /// Creates a display template for external simple values (crossReference with valueType="int" or "string").
+    /// </summary>
+    private static IDataTemplate CreateExternalValueCellTemplate(string attributeName, FieldDefinition fieldDef, FileTabViewModel vm)
+    {
+        return new FuncDataTemplate<EntryRowViewModel>((rowVm, _) =>
+        {
+            var border = new Border();
+            border.Classes.Add("dataCell");
+
+            var text = new TextBlock();
+            text.Classes.Add("cellText");
+
+            if (rowVm != null)
+            {
+                var value = rowVm[attributeName];
+                text.Text = string.IsNullOrEmpty(value) ? "-" : value;
+
+                // Subscribe to refresh event for updates
+                vm.CellRefreshRequested += (s, args) =>
+                {
+                    var newValue = rowVm[attributeName];
+                    text.Text = string.IsNullOrEmpty(newValue) ? "-" : newValue;
+                };
+            }
+
+            border.Child = text;
+            return border;
+        });
+    }
+
+    /// <summary>
     /// Creates a text cell template that handles validation and dynamic styling.
     /// Uses AXAML styles via pseudo-classes (defined in CellStyles.axaml).
     /// </summary>
@@ -1593,8 +1842,23 @@ public partial class FileTabView : UserControl
 
             var grid = new Grid
             {
-                ColumnDefinitions = new ColumnDefinitions("*,Auto")
+                ColumnDefinitions = new ColumnDefinitions("Auto,*")
             };
+
+            // Edit button on the left
+            var editButton = new Button
+            {
+                Content = "...",
+                Padding = new Thickness(6, 2),
+                MinWidth = 28,
+                FontSize = 11,
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Background = new SolidColorBrush(Color.FromRgb(70, 70, 70)),
+                Foreground = Brushes.White
+            };
+            Grid.SetColumn(editButton, 0);
+            grid.Children.Add(editButton);
 
             var text = new TextBlock
             {
@@ -1603,22 +1867,8 @@ public partial class FileTabView : UserControl
                 FontSize = 12,
                 TextTrimming = TextTrimming.CharacterEllipsis
             };
-            Grid.SetColumn(text, 0);
+            Grid.SetColumn(text, 1);
             grid.Children.Add(text);
-
-            // Edit button
-            var editButton = new Button
-            {
-                Content = "...",
-                Padding = new Thickness(4, 0),
-                MinWidth = 24,
-                FontSize = 10,
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Right
-            };
-            editButton.Classes.Add("compact");
-            Grid.SetColumn(editButton, 1);
-            grid.Children.Add(editButton);
 
             if (rowVm != null)
             {
@@ -1759,14 +2009,13 @@ public partial class FileTabView : UserControl
             var editButton = new Button
             {
                 Content = "...",
-                FontSize = 10,
-                Padding = new Thickness(4, 2),
-                MinWidth = 20,
+                FontSize = 11,
+                Padding = new Thickness(6, 2),
+                MinWidth = 28,
                 MinHeight = 0,
-                Background = new SolidColorBrush(Color.FromRgb(240, 240, 240)),
-                Foreground = new SolidColorBrush(Color.FromRgb(80, 80, 80)),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(200, 200, 200)),
-                BorderThickness = new Thickness(1),
+                Background = new SolidColorBrush(Color.FromRgb(70, 70, 70)),
+                Foreground = Brushes.White,
+                BorderThickness = new Thickness(0),
                 CornerRadius = new CornerRadius(2),
                 Cursor = new Cursor(StandardCursorType.Hand),
                 IsVisible = !rowVm.IsRemoved,
@@ -1946,12 +2195,12 @@ public partial class FileTabView : UserControl
             var editButton = new Button
             {
                 Content = "...",
-                FontSize = 10,
-                Padding = new Thickness(4, 2),
-                MinWidth = 20,
+                FontSize = 11,
+                Padding = new Thickness(6, 2),
+                MinWidth = 28,
                 MinHeight = 0,
-                Background = new SolidColorBrush(Color.FromArgb(180, 40, 40, 40)),
-                Foreground = new SolidColorBrush(Color.FromRgb(220, 220, 220)),
+                Background = new SolidColorBrush(Color.FromRgb(70, 70, 70)),
+                Foreground = Brushes.White,
                 BorderThickness = new Thickness(0),
                 CornerRadius = new CornerRadius(2),
                 Cursor = new Cursor(StandardCursorType.Hand),

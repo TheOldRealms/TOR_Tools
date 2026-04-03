@@ -344,6 +344,17 @@ public class CrossReferenceConfig
     public string LocalKeyField { get; set; } = "";
 
     /// <summary>
+    /// Controls how the value is rendered/edited:
+    /// - "crossRef" (default): Clickable links with navigation to target entries
+    /// - "enum": Dropdown using field's enumValues
+    /// - "int": Integer input field
+    /// - "string": Simple text input
+    /// When not "crossRef", the value is just read/written to the source file without navigation features.
+    /// </summary>
+    [JsonPropertyName("valueType")]
+    public string ValueType { get; set; } = "crossRef";
+
+    /// <summary>
     /// Prefix to strip from values before looking up (e.g., "SkillSet." for skill_template).
     /// Also used for display - values are shown without this prefix.
     /// </summary>
