@@ -193,11 +193,18 @@
         { "value": "false", "displayName": "No" }
       ]
     },
+    "race": {
+      "displayName": "Race",
+      "description": "Character race type.",
+      "type": "string",
+      "order": 31,
+      "width": 100
+    },
     "voice": {
       "displayName": "Voice",
       "description": "Voice type for dialogue.",
       "type": "enum",
-      "order": 31,
+      "order": 35,
       "width": 100,
       "enumValues": [
         { "value": "curt", "displayName": "Curt" },
@@ -237,10 +244,10 @@
     },
     "ext_Attributes": {
       "displayName": "Attributes",
-      "description": "Unit attributes (colon-separated). Click to edit or navigate to attribute definition.",
+      "description": "Unit attributes. Click to edit or navigate to attribute definition.",
       "type": "crossReference",
       "order": 50,
-      "width": 320,
+      "width": 280,
       "crossReference": {
         "sourceFile": "tor_extendedunitproperties.xml",
         "sourceKeyField": "id",
@@ -249,6 +256,132 @@
         "targetKeyField": "id",
         "localKeyField": "id"
       }
+    },
+    "ext_Abilities": {
+      "displayName": "Abilities",
+      "description": "Unit abilities. Click to navigate to ability definition.",
+      "type": "crossReference",
+      "order": 51,
+      "width": 280,
+      "crossReference": {
+        "sourceFile": "tor_extendedunitproperties.xml",
+        "sourceKeyField": "id",
+        "sourceValuePath": "Abilities/string",
+        "targetFile": "tor_abilitytemplates.xml",
+        "targetKeyField": "id",
+        "localKeyField": "id"
+      }
+    },
+    "ext_DamageProportions": {
+      "displayName": "Damage",
+      "description": "Damage type proportions dealt by this unit.",
+      "type": "tupleList",
+      "order": 52,
+      "width": 180,
+      "tupleList": {
+        "sourceFile": "tor_extendedunitproperties.xml",
+        "sourceKeyField": "id",
+        "containerPath": "DamageProportions",
+        "elementName": "DamageProportionTuple",
+        "localKeyField": "id",
+        "columns": [
+          { "attribute": "DamageType", "displayName": "Type", "type": "enum", "width": 80, "enumValues": ["Physical", "Fire", "Frost", "Lightning", "Holy", "Magical", "All"] },
+          { "attribute": "Percent", "displayName": "%", "type": "number", "width": 50 }
+        ]
+      }
+    },
+    "ext_Resistances": {
+      "displayName": "Resistances",
+      "description": "Damage type resistances.",
+      "type": "tupleList",
+      "order": 53,
+      "width": 180,
+      "tupleList": {
+        "sourceFile": "tor_extendedunitproperties.xml",
+        "sourceKeyField": "id",
+        "containerPath": "Resistances",
+        "elementName": "ResistanceTuple",
+        "localKeyField": "id",
+        "columns": [
+          { "attribute": "ResistedDamageType", "displayName": "Type", "type": "enum", "width": 80, "enumValues": ["Physical", "Fire", "Frost", "Lightning", "Holy", "Magical", "All"] },
+          { "attribute": "ReductionPercent", "displayName": "%", "type": "number", "width": 50 }
+        ]
+      }
+    },
+    "ext_Amplifiers": {
+      "displayName": "Amplifiers",
+      "description": "Damage amplification bonuses.",
+      "type": "tupleList",
+      "order": 54,
+      "width": 180,
+      "tupleList": {
+        "sourceFile": "tor_extendedunitproperties.xml",
+        "sourceKeyField": "id",
+        "containerPath": "DamageAmplifiers",
+        "elementName": "AmplifierTuple",
+        "localKeyField": "id",
+        "columns": [
+          { "attribute": "AmplifiedDamageType", "displayName": "Type", "type": "enum", "width": 80, "enumValues": ["Physical", "Fire", "Frost", "Lightning", "Holy", "Magical", "All"] },
+          { "attribute": "DamageAmplifier", "displayName": "%", "type": "number", "width": 50 }
+        ]
+      }
+    },
+    "ext_ResourceType": {
+      "displayName": "Resource",
+      "description": "Special resource type (Prestige, OathGold, etc.).",
+      "type": "crossReference",
+      "order": 58,
+      "width": 100,
+      "crossReference": {
+        "sourceFile": "tor_extendedunitproperties.xml",
+        "sourceKeyField": "id",
+        "sourceValuePath": "ResourceCost/@ResourceType",
+        "localKeyField": "id"
+      }
+    },
+    "ext_UpgradeCost": {
+      "displayName": "Upgrade",
+      "description": "Resource cost to upgrade.",
+      "type": "crossReference",
+      "order": 59,
+      "width": 70,
+      "crossReference": {
+        "sourceFile": "tor_extendedunitproperties.xml",
+        "sourceKeyField": "id",
+        "sourceValuePath": "ResourceCost/@UpgradeCost",
+        "localKeyField": "id"
+      }
+    },
+    "ext_UpkeepCost": {
+      "displayName": "Upkeep",
+      "description": "Daily resource upkeep cost.",
+      "type": "crossReference",
+      "order": 60,
+      "width": 70,
+      "crossReference": {
+        "sourceFile": "tor_extendedunitproperties.xml",
+        "sourceKeyField": "id",
+        "sourceValuePath": "ResourceCost/@UpkeepCost",
+        "localKeyField": "id"
+      }
+    },
+    "beard_tags": {
+      "displayName": "Beard",
+      "description": "Beard style tags.",
+      "type": "string",
+      "order": 70,
+      "width": 120,
+      "nested": true,
+      "nestedPath": "face/beard_tags/beard_tag/@name"
+    },
+    "hair_tags": {
+      "displayName": "Hair",
+      "description": "Hair style tags.",
+      "type": "string",
+      "order": 71,
+      "width": 120,
+      "nested": true,
+      "nestedPath": "face/hair_tags/hair_tag/@name"
     }
   }
 }

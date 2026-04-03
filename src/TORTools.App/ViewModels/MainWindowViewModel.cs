@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using TORTools.App.Services;
 using TORTools.Core.Models;
 using TORTools.Core.Services;
 using TORTools.Core.Workspace;
@@ -12,6 +13,8 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly IWorkspaceService _workspaceService;
     private readonly IIconService? _iconService;
     private readonly ItemCatalogService _itemCatalogService;
+    private readonly FactionCatalogService _factionCatalogService;
+    private readonly BannerImageService? _bannerImageService;
     private WorkspaceConfig _config;
 
     [ObservableProperty]
@@ -41,6 +44,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _workspaceService = workspaceService;
         _config = _workspaceService.LoadConfig();
         _itemCatalogService = new ItemCatalogService();
+        _factionCatalogService = new FactionCatalogService();
 
         // Initialize icon service if TOR_Armory path is available
         if (!string.IsNullOrEmpty(_config.TorArmoryPath))
@@ -56,6 +60,26 @@ public partial class MainWindowViewModel : ViewModelBase
             if (Directory.Exists(moduleDataPath))
             {
                 _itemCatalogService.LoadItems(moduleDataPath);
+            }
+
+            // Initialize banner image service for faction banner display
+            var assetSourcesPath = Path.Combine(_config.TorArmoryPath, "AssetSources");
+            if (Directory.Exists(assetSourcesPath))
+            {
+                _bannerImageService = new BannerImageService(assetSourcesPath);
+            }
+        }
+
+        // Initialize faction catalog if TOR_Core path is available
+        if (!string.IsNullOrEmpty(_config.TorCorePath))
+        {
+            var coreModuleDataPath = Path.Combine(_config.TorCorePath, "ModuleData");
+            var armoryAssetSourcesPath = !string.IsNullOrEmpty(_config.TorArmoryPath)
+                ? Path.Combine(_config.TorArmoryPath, "AssetSources")
+                : null;
+            if (Directory.Exists(coreModuleDataPath))
+            {
+                _factionCatalogService.LoadFactions(coreModuleDataPath, armoryAssetSourcesPath);
             }
         }
 
@@ -120,6 +144,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
         // Assign item catalog service for equipment set validation
         newTab.ItemCatalogService = _itemCatalogService;
+
+        // Assign banner image service for faction banner display
+        newTab.BannerImageService = _bannerImageService;
 
         // Subscribe to cross-reference navigation events
         newTab.NavigateToCrossReference += OnNavigateToCrossReference;

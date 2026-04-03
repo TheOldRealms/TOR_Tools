@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Xml.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using TORTools.App.Services;
 using TORTools.Core.Commands;
 using TORTools.Core.Models;
 using TORTools.Core.Schema;
@@ -17,6 +18,7 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     private readonly ISchemaService _schemaService;
     private readonly IValidationService _validationService;
     private readonly CrossReferenceService _crossRefService;
+    private readonly TupleListService _tupleListService;
     private XmlDocumentWrapper? _document;
     private FileSystemWatcher? _fileWatcher;
     private bool _isReloading;
@@ -45,6 +47,18 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     /// Key is the field name, value is a dictionary mapping ID to description.
     /// </summary>
     private readonly Dictionary<string, Dictionary<string, string>> _crossRefDescriptions = new();
+
+    /// <summary>
+    /// Tuple list data loaded from external XML files.
+    /// Key is the field name, value is a dictionary mapping local keys to lists of tuple dictionaries.
+    /// </summary>
+    private readonly Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>> _tupleListData = new();
+
+    /// <summary>
+    /// Source file paths for tuple list fields.
+    /// Key is the field name, value is the resolved path to the source file.
+    /// </summary>
+    private readonly Dictionary<string, string> _tupleListSourcePaths = new();
 
     /// <summary>
     /// Git committed values for comparison.
@@ -166,6 +180,11 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     public ItemCatalogService? ItemCatalogService { get; set; }
 
     /// <summary>
+    /// Banner image service for faction banner display. Set after construction by MainWindowViewModel.
+    /// </summary>
+    public BannerImageService? BannerImageService { get; set; }
+
+    /// <summary>
     /// The schema definition for this file type, if available.
     /// </summary>
     public SchemaDefinition? Schema { get; private set; }
@@ -229,17 +248,18 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         }
     }
 
-    public FileTabViewModel(string filePath) : this(filePath, new XmlDocumentService(), new UndoRedoService(), new SchemaService(), new ValidationService(), new CrossReferenceService())
+    public FileTabViewModel(string filePath) : this(filePath, new XmlDocumentService(), new UndoRedoService(), new SchemaService(), new ValidationService(), new CrossReferenceService(), new TupleListService())
     {
     }
 
-    public FileTabViewModel(string filePath, IXmlDocumentService xmlService, IUndoRedoService undoRedoService, ISchemaService schemaService, IValidationService validationService, CrossReferenceService crossRefService)
+    public FileTabViewModel(string filePath, IXmlDocumentService xmlService, IUndoRedoService undoRedoService, ISchemaService schemaService, IValidationService validationService, CrossReferenceService crossRefService, TupleListService tupleListService)
     {
         _xmlService = xmlService;
         _undoRedoService = undoRedoService;
         _schemaService = schemaService;
         _validationService = validationService;
         _crossRefService = crossRefService;
+        _tupleListService = tupleListService;
         FilePath = filePath;
         Title = Path.GetFileName(filePath);
 
@@ -248,6 +268,9 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
 
         // Load cross-reference data if schema defines any
         LoadCrossReferences();
+
+        // Load tuple list data if schema defines any
+        LoadTupleListData();
 
         // Subscribe to validation manager changes
         ValidationManager.IssuesChanged += OnValidationIssuesChanged;
@@ -341,6 +364,113 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Loads tuple list data based on schema definitions.
+    /// </summary>
+    private void LoadTupleListData()
+    {
+        if (Schema == null) return;
+
+        var baseDir = Path.GetDirectoryName(FilePath);
+        if (string.IsNullOrEmpty(baseDir)) return;
+
+        // Find all fields with tupleList configuration
+        foreach (var kvp in Schema.Fields)
+        {
+            var fieldName = kvp.Key;
+            var fieldDef = kvp.Value;
+
+            if (fieldDef.TupleList != null)
+            {
+                var config = fieldDef.TupleList;
+
+                // Find the source file
+                var sourceFilePath = FindSourceFile(baseDir, config.SourceFile);
+                if (sourceFilePath != null)
+                {
+                    var tupleData = _tupleListService.LoadTupleData(sourceFilePath, config);
+                    _tupleListData[fieldName] = tupleData;
+                    _tupleListSourcePaths[fieldName] = sourceFilePath;
+                    Console.WriteLine($"[TupleList] Loaded {tupleData.Count} entries for {fieldName} from {config.SourceFile}");
+                }
+                else
+                {
+                    Console.WriteLine($"[TupleList] Source file not found: {config.SourceFile}");
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets the tuple list data for a specific field.
+    /// </summary>
+    public Dictionary<string, List<Dictionary<string, string>>>? GetTupleListData(string fieldName)
+    {
+        return _tupleListData.TryGetValue(fieldName, out var data) ? data : null;
+    }
+
+    /// <summary>
+    /// Gets formatted tuple display text for a cell.
+    /// </summary>
+    public string GetTupleDisplayText(string fieldName, string localKey)
+    {
+        var fieldDef = Schema?.GetField(fieldName);
+        if (fieldDef?.TupleList == null) return "-";
+
+        if (!_tupleListData.TryGetValue(fieldName, out var data)) return "-";
+
+        var tuples = _tupleListService.GetTuples(data, localKey);
+        return _tupleListService.FormatTuplesForDisplay(tuples, fieldDef.TupleList);
+    }
+
+    /// <summary>
+    /// Gets the tuples for a specific entry and field.
+    /// </summary>
+    public List<Dictionary<string, string>> GetTuples(string fieldName, string localKey)
+    {
+        if (!_tupleListData.TryGetValue(fieldName, out var data))
+            return new List<Dictionary<string, string>>();
+
+        return _tupleListService.GetTuples(data, localKey);
+    }
+
+    /// <summary>
+    /// Saves tuple data to the source XML file.
+    /// </summary>
+    /// <param name="fieldName">The tuple list field name (e.g., "ext_DamageProportions")</param>
+    /// <param name="localKey">The local key value (e.g., troop ID)</param>
+    /// <param name="tuples">The tuple data to save</param>
+    /// <returns>True if save was successful</returns>
+    public bool SaveTupleData(string fieldName, string localKey, List<Dictionary<string, string>> tuples)
+    {
+        var fieldDef = Schema?.GetField(fieldName);
+        if (fieldDef?.TupleList == null)
+        {
+            Console.WriteLine($"[TupleList] No tuple list config for field: {fieldName}");
+            return false;
+        }
+
+        if (!_tupleListSourcePaths.TryGetValue(fieldName, out var sourceFilePath))
+        {
+            Console.WriteLine($"[TupleList] No source file path cached for field: {fieldName}");
+            return false;
+        }
+
+        // Save to XML
+        var success = _tupleListService.SaveTupleData(sourceFilePath, fieldDef.TupleList, localKey, tuples);
+
+        if (success)
+        {
+            // Update the in-memory cache
+            if (_tupleListData.TryGetValue(fieldName, out var data))
+            {
+                data[localKey] = tuples;
+            }
+        }
+
+        return success;
     }
 
     /// <summary>
@@ -491,7 +621,7 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
 
     /// <summary>
     /// Loads descriptions from a target XML file.
-    /// Looks for a "description" attribute on each element.
+    /// Looks for "display_description" first (player-friendly), then falls back to "description".
     /// </summary>
     private Dictionary<string, string> LoadTargetDescriptions(string filePath, string keyField)
     {
@@ -503,7 +633,9 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
             foreach (var element in doc.Root?.Elements() ?? Enumerable.Empty<XElement>())
             {
                 var key = element.Attribute(keyField)?.Value;
-                var description = element.Attribute("description")?.Value;
+                // Prefer display_description (player-friendly), fallback to description
+                var description = element.Attribute("display_description")?.Value
+                               ?? element.Attribute("description")?.Value;
 
                 if (!string.IsNullOrEmpty(key) && !string.IsNullOrEmpty(description))
                 {
@@ -1362,12 +1494,16 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         // Add remaining columns in alphabetical order
         ColumnNames.AddRange(columnSet.OrderBy(c => c));
 
-        // Add cross-reference and nested columns from schema (these may not be direct attributes)
+        // Add cross-reference, nested, and tupleList columns from schema (these may not be direct attributes)
         if (Schema != null)
         {
             foreach (var kvp in Schema.Fields)
             {
                 if (kvp.Value.CrossReference != null && !ColumnNames.Contains(kvp.Key))
+                {
+                    ColumnNames.Add(kvp.Key);
+                }
+                else if (kvp.Value.TupleList != null && !ColumnNames.Contains(kvp.Key))
                 {
                     ColumnNames.Add(kvp.Key);
                 }

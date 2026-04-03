@@ -42,11 +42,30 @@ public class CrossReferenceService
             if (root == null)
                 return result;
 
-            // Check if this is an attribute path (starts with "@")
-            var isAttributePath = config.SourceValuePath.StartsWith("@");
-            var pathParts = isAttributePath
-                ? new[] { config.SourceValuePath.Substring(1) }
-                : config.SourceValuePath.Split('/');
+            // Parse the path - check for attribute extraction (/@AttrName at end or @AttrName at start)
+            var sourcePath = config.SourceValuePath;
+            string? attributeToExtract = null;
+            string[] elementParts;
+
+            if (sourcePath.StartsWith("@"))
+            {
+                // Direct attribute from entry element: @AttrName
+                attributeToExtract = sourcePath.Substring(1);
+                elementParts = Array.Empty<string>();
+            }
+            else if (sourcePath.Contains("/@"))
+            {
+                // Nested path with attribute: Container/Element/@AttrName
+                var attrIndex = sourcePath.LastIndexOf("/@");
+                attributeToExtract = sourcePath.Substring(attrIndex + 2);
+                var elementPath = sourcePath.Substring(0, attrIndex);
+                elementParts = elementPath.Split('/');
+            }
+            else
+            {
+                // Pure element path: Container/Element (extract text content)
+                elementParts = sourcePath.Split('/');
+            }
 
             foreach (var entry in root.Elements())
             {
@@ -58,26 +77,37 @@ public class CrossReferenceService
                 var key = keyAttr.Value;
                 var values = new List<string>();
 
-                if (isAttributePath)
+                if (attributeToExtract != null && elementParts.Length == 0)
                 {
                     // Read attribute value directly from the entry element
-                    var attrValue = entry.Attribute(pathParts[0])?.Value?.Trim();
+                    var attrValue = entry.Attribute(attributeToExtract)?.Value?.Trim();
                     if (!string.IsNullOrEmpty(attrValue))
                         values.Add(attrValue);
                 }
                 else
                 {
-                    // Navigate the path to get values (nested elements)
+                    // Navigate the element path
                     IEnumerable<XElement> currentElements = new[] { entry };
-                    foreach (var part in pathParts)
+                    foreach (var part in elementParts)
                     {
                         currentElements = currentElements.SelectMany(e => e.Elements(part));
                     }
 
-                    // Collect the values (text content of final elements)
+                    // Collect values - either attribute or text content
                     foreach (var valueElement in currentElements)
                     {
-                        var value = valueElement.Value?.Trim();
+                        string? value;
+                        if (attributeToExtract != null)
+                        {
+                            // Extract attribute from nested elements
+                            value = valueElement.Attribute(attributeToExtract)?.Value?.Trim();
+                        }
+                        else
+                        {
+                            // Extract text content
+                            value = valueElement.Value?.Trim();
+                        }
+
                         if (!string.IsNullOrEmpty(value))
                             values.Add(value);
                     }

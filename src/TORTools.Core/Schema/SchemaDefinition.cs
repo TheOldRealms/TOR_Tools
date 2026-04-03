@@ -216,6 +216,12 @@ public class FieldDefinition
     public CrossReferenceConfig? CrossReference { get; set; }
 
     /// <summary>
+    /// Tuple list configuration for fields that edit multiple attribute tuples (e.g., DamageProportions).
+    /// </summary>
+    [JsonPropertyName("tupleList")]
+    public TupleListConfig? TupleList { get; set; }
+
+    /// <summary>
     /// Regex pattern for validation. Non-matching values generate warnings.
     /// </summary>
     [JsonPropertyName("pattern")]
@@ -470,4 +476,83 @@ public class LinkedFileConfig
     /// </summary>
     [JsonPropertyName("linkField")]
     public string LinkField { get; set; } = "id";
+}
+
+/// <summary>
+/// Configuration for tuple list fields that display/edit multiple attribute tuples.
+/// Used for fields like DamageProportions, Resistances, DamageAmplifiers.
+/// </summary>
+public class TupleListConfig
+{
+    /// <summary>
+    /// The source XML file containing the tuple data (e.g., "tor_extendedunitproperties.xml").
+    /// </summary>
+    [JsonPropertyName("sourceFile")]
+    public string SourceFile { get; set; } = "";
+
+    /// <summary>
+    /// The key field in the source file that matches our local key (e.g., "id").
+    /// </summary>
+    [JsonPropertyName("sourceKeyField")]
+    public string SourceKeyField { get; set; } = "id";
+
+    /// <summary>
+    /// Path to the container element (e.g., "DamageProportions").
+    /// </summary>
+    [JsonPropertyName("containerPath")]
+    public string ContainerPath { get; set; } = "";
+
+    /// <summary>
+    /// Name of each tuple element (e.g., "DamageProportionTuple").
+    /// </summary>
+    [JsonPropertyName("elementName")]
+    public string ElementName { get; set; } = "";
+
+    /// <summary>
+    /// The local field to use as the lookup key (e.g., "id").
+    /// </summary>
+    [JsonPropertyName("localKeyField")]
+    public string LocalKeyField { get; set; } = "id";
+
+    /// <summary>
+    /// Column definitions for the tuple editor.
+    /// </summary>
+    [JsonPropertyName("columns")]
+    public List<TupleColumnConfig> Columns { get; set; } = new();
+}
+
+/// <summary>
+/// Configuration for a single column in a tuple editor.
+/// </summary>
+public class TupleColumnConfig
+{
+    /// <summary>
+    /// The XML attribute name (e.g., "DamageType", "Percent").
+    /// </summary>
+    [JsonPropertyName("attribute")]
+    public string Attribute { get; set; } = "";
+
+    /// <summary>
+    /// Display name for the column header.
+    /// </summary>
+    [JsonPropertyName("displayName")]
+    public string DisplayName { get; set; } = "";
+
+    /// <summary>
+    /// Column type: "enum", "number", "string".
+    /// </summary>
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = "string";
+
+    /// <summary>
+    /// For enum columns, the allowed values.
+    /// </summary>
+    [JsonPropertyName("enumValues")]
+    public List<string>? EnumValues { get; set; }
+
+    /// <summary>
+    /// Column width in pixels.
+    /// </summary>
+    [JsonPropertyName("width")]
+    public int Width { get; set; } = 100;
 }

@@ -15,7 +15,8 @@
       "Bash(powershell -Command \"Get-Process -Name TORTools.App -ErrorAction SilentlyContinue | Stop-Process -Force\")",
       "Bash(powershell:*)",
       "Bash(grep:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(tail:*)"
     ]
   }
 }

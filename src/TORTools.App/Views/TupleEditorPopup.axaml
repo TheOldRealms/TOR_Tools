@@ -1,0 +1,42 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="TORTools.App.Views.TupleEditorPopup"
+        Title="Edit Tuples"
+        Width="400"
+        Height="350"
+        WindowStartupLocation="CenterOwner"
+        CanResize="True"
+        MinWidth="300"
+        MinHeight="250">
+
+    <Grid RowDefinitions="Auto,*,Auto" Margin="12">
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+            <TextBlock x:Name="HeaderText" FontSize="14" FontWeight="SemiBold" />
+            <TextBlock x:Name="SubHeaderText" FontSize="12" Foreground="#666666" Margin="0,4,0,0" />
+        </StackPanel>
+
+        <!-- DataGrid for editing tuples -->
+        <DataGrid x:Name="TupleGrid"
+                  Grid.Row="1"
+                  AutoGenerateColumns="False"
+                  CanUserReorderColumns="False"
+                  CanUserResizeColumns="True"
+                  CanUserSortColumns="False"
+                  GridLinesVisibility="All"
+                  BorderThickness="1"
+                  BorderBrush="#CCCCCC"
+                  HorizontalAlignment="Stretch"
+                  Margin="0,0,0,12">
+            <!-- Columns are generated dynamically in code-behind -->
+        </DataGrid>
+
+        <!-- Button row -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+            <Button x:Name="AddButton" Content="Add Row" Click="OnAddRow" />
+            <Button x:Name="RemoveButton" Content="Remove" Click="OnRemoveRow" />
+            <Button Content="Cancel" Click="OnCancel" Width="80" />
+            <Button x:Name="SaveButton" Content="Save" Click="OnSave" Width="80" Classes="accent" />
+        </StackPanel>
+    </Grid>
+</Window>
