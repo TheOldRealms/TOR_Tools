@@ -34,7 +34,7 @@ public class WorkspaceService : IWorkspaceService
         ["tor_troopdefinitions.xml"] = ("Unit Catalog", "Troop Definitions"),
         ["tor_charactertemplates.xml"] = ("Unit Catalog", "Character Templates"),
         ["tor_dummyNPCs.xml"] = ("Unit Catalog", "Dummy NPCs"),
-        ["tor_extendedunitproperties.xml"] = ("Unit Catalog", "Extended Unit Properties"),
+        // tor_extendedunitproperties.xml - data accessed via cross-references in Troops table (Attributes, Abilities, etc.)
         ["tor_bodyproperties.xml"] = ("Unit Catalog", "Body Properties"),
 
         // Equipment Sets (part of Unit Catalog)
@@ -117,6 +117,11 @@ public class WorkspaceService : IWorkspaceService
         ["tor_bodyproperties.xml"] = 20,
         ["tor_extendedunitproperties.xml"] = 21,
         ["tor_dummyNPCs.xml"] = 30,
+
+        // Factions Catalog - kingdoms, clans, cultures
+        ["tor_kingdoms.xml"] = 1,
+        ["tor_clans.xml"] = 2,
+        ["tor_cultures.xml"] = 3,
     };
 
     public string ConfigFilePath => Path.Combine(
@@ -234,21 +239,30 @@ public class WorkspaceService : IWorkspaceService
     {
         var files = new List<XmlFileInfo>();
 
-        if (!string.IsNullOrEmpty(config.TorCorePath))
-            files.AddRange(ScanRepository(config.TorCorePath, "TOR_Core"));
-
-        if (!string.IsNullOrEmpty(config.TorArmoryPath))
-            files.AddRange(ScanRepository(config.TorArmoryPath, "TOR_Armory"));
-
-        if (!string.IsNullOrEmpty(config.TorEnvironmentPath))
-            files.AddRange(ScanRepository(config.TorEnvironmentPath, "TOR_Environment"));
-
-        // Scan TORTools/data for tool-specific data files
+        // First scan TORTools/data for tool-specific data files (these take priority)
+        var toolDataFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (!string.IsNullOrEmpty(config.BannerlordPath))
         {
             var torToolsDataPath = Path.Combine(config.BannerlordPath, "Modules", "TORTools", "data");
-            files.AddRange(ScanToolDataFolder(torToolsDataPath));
+            foreach (var file in ScanToolDataFolder(torToolsDataPath))
+            {
+                files.Add(file);
+                toolDataFiles.Add(file.FileName);
+            }
         }
+
+        // Then scan other repositories, skipping files that exist in TORTools/data
+        if (!string.IsNullOrEmpty(config.TorCorePath))
+            files.AddRange(ScanRepository(config.TorCorePath, "TOR_Core")
+                .Where(f => !toolDataFiles.Contains(f.FileName)));
+
+        if (!string.IsNullOrEmpty(config.TorArmoryPath))
+            files.AddRange(ScanRepository(config.TorArmoryPath, "TOR_Armory")
+                .Where(f => !toolDataFiles.Contains(f.FileName)));
+
+        if (!string.IsNullOrEmpty(config.TorEnvironmentPath))
+            files.AddRange(ScanRepository(config.TorEnvironmentPath, "TOR_Environment")
+                .Where(f => !toolDataFiles.Contains(f.FileName)));
 
         return files;
     }

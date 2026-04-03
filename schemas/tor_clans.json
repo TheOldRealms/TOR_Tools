@@ -82,71 +82,71 @@
       "displayName": "Banner",
       "description": "Banner definition with optional :kingdom_* suffix for custom texture.",
       "type": "banner",
-      "order": 7,
-      "width": 80
-    },
-    "is_noble": {
-      "displayName": "Noble",
-      "description": "Whether this is a noble faction (belongs to a kingdom).",
-      "type": "boolean",
-      "order": 8,
-      "width": 60
-    },
-    "is_minor_faction": {
-      "displayName": "Minor",
-      "description": "Whether this is a minor faction.",
-      "type": "boolean",
-      "order": 9,
-      "width": 60
-    },
-    "is_bandit": {
-      "displayName": "Bandit",
-      "description": "Whether this is a bandit faction.",
-      "type": "boolean",
-      "order": 10,
-      "width": 60
-    },
-    "is_outlaw": {
-      "displayName": "Outlaw",
-      "description": "Whether this is an outlaw faction.",
-      "type": "boolean",
-      "order": 11,
-      "width": 60
+      "order": 3,
+      "width": 120
     },
     "color": {
       "displayName": "Color",
       "description": "Primary faction color (hex format: FFRRGGBB).",
       "type": "color",
-      "order": 12,
+      "order": 4,
       "width": 80
     },
     "color2": {
       "displayName": "Color 2",
       "description": "Secondary faction color (hex format: FFRRGGBB).",
       "type": "color",
-      "order": 13,
+      "order": 5,
       "width": 80
     },
     "alternative_color": {
       "displayName": "Alt Color",
       "description": "Alternative primary color (hex format: FFRRGGBB).",
       "type": "color",
-      "order": 14,
+      "order": 6,
       "width": 80
     },
     "alternative_color2": {
       "displayName": "Alt Color 2",
       "description": "Alternative secondary color (hex format: FFRRGGBB).",
       "type": "color",
-      "order": 15,
+      "order": 7,
       "width": 80
     },
     "label_color": {
       "displayName": "Label Color",
       "description": "Color used for faction labels (hex format: FFRRGGBB).",
       "type": "color",
-      "order": 16,
+      "order": 8,
       "width": 80
+    },
+    "is_noble": {
+      "displayName": "Noble",
+      "description": "Whether this is a noble faction (belongs to a kingdom).",
+      "type": "boolean",
+      "order": 10,
+      "width": 60
+    },
+    "is_minor_faction": {
+      "displayName": "Minor",
+      "description": "Whether this is a minor faction.",
+      "type": "boolean",
+      "order": 11,
+      "width": 60
+    },
+    "is_bandit": {
+      "displayName": "Bandit",
+      "description": "Whether this is a bandit faction.",
+      "type": "boolean",
+      "order": 12,
+      "width": 60
+    },
+    "is_outlaw": {
+      "displayName": "Outlaw",
+      "description": "Whether this is an outlaw faction.",
+      "type": "boolean",
+      "order": 13,
+      "width": 60
     },
     "default_party_template": {
       "displayName": "Party Template",

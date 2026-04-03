@@ -11,6 +11,7 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.VisualTree;
 using TORTools.App.Helpers;
+using TORTools.App.Services;
 using TORTools.App.ViewModels;
 using TORTools.Core.Schema;
 using TORTools.Core.Services;
@@ -330,14 +331,39 @@ public partial class FileTabView : UserControl
             var isEnumField = (fieldDef?.Type == "enum" && fieldDef.EnumValues?.Count > 0) || isCrossRefWithEnum;
             var isCrossRefField = (fieldDef?.Type == "crossReference" || fieldDef?.Type == "reverseCrossReference") && fieldDef?.CrossReference != null && !isCrossRefWithEnum;
             var isIconField = fieldDef?.Type == "icon";
+            var isBannerField = fieldDef?.Type == "banner";
+            var isColorField = fieldDef?.Type == "color";
+            var isTupleListField = fieldDef?.Type == "tupleList" && fieldDef?.TupleList != null;
 
-            Console.WriteLine($"[FileTabView] Adding column: {displayInfo.DisplayName} ({displayInfo.AttributeName}) - Enum: {isEnumField}, CrossRef: {isCrossRefField}, Icon: {isIconField}");
+            Console.WriteLine($"[FileTabView] Adding column: {displayInfo.DisplayName} ({displayInfo.AttributeName}) - Enum: {isEnumField}, CrossRef: {isCrossRefField}, Icon: {isIconField}, Banner: {isBannerField}, Color: {isColorField}, TupleList: {isTupleListField}");
 
             // Check if this is the ID column - if so, add lock toggle to header
             var isIdColumn = displayInfo.AttributeName.Equals("id", StringComparison.OrdinalIgnoreCase);
 
             DataGridColumn column;
-            if (isIconField)
+            if (isColorField)
+            {
+                // Color swatch field
+                column = new DataGridTemplateColumn
+                {
+                    Header = CreateColumnHeader(displayInfo, fieldDef),
+                    Width = new DataGridLength(displayInfo.Width),
+                    IsReadOnly = false,
+                    CellTemplate = CreateColorCellTemplate(displayInfo.AttributeName, fieldDef!, vm)
+                };
+            }
+            else if (isBannerField)
+            {
+                // Banner image field
+                column = new DataGridTemplateColumn
+                {
+                    Header = CreateColumnHeader(displayInfo, fieldDef),
+                    Width = new DataGridLength(displayInfo.Width),
+                    IsReadOnly = false,
+                    CellTemplate = CreateBannerCellTemplate(displayInfo.AttributeName, fieldDef!, vm)
+                };
+            }
+            else if (isIconField)
             {
                 // Icon picker field
                 column = new DataGridTemplateColumn
@@ -374,6 +400,17 @@ public partial class FileTabView : UserControl
                         CellTemplate = CreateEditableCrossRefTemplate(displayInfo.AttributeName, fieldDef, vm)
                     };
                 }
+            }
+            else if (isTupleListField)
+            {
+                // Tuple list field (e.g., DamageProportions, Resistances, Amplifiers)
+                column = new DataGridTemplateColumn
+                {
+                    Header = CreateColumnHeader(displayInfo, fieldDef),
+                    Width = new DataGridLength(displayInfo.Width),
+                    IsReadOnly = true, // Editing happens via popup
+                    CellTemplate = CreateTupleListCellTemplate(displayInfo.AttributeName, fieldDef!, vm)
+                };
             }
             else if (isEnumField)
             {
@@ -1544,6 +1581,98 @@ public partial class FileTabView : UserControl
     }
 
     /// <summary>
+    /// Creates a cell template for tuple list fields (e.g., DamageProportions, Resistances, Amplifiers).
+    /// Displays a summary like "Physical: 100%, Fire: 50%" with an edit button to open popup.
+    /// </summary>
+    private static IDataTemplate CreateTupleListCellTemplate(string attributeName, FieldDefinition fieldDef, FileTabViewModel vm)
+    {
+        return new FuncDataTemplate<EntryRowViewModel>((rowVm, _) =>
+        {
+            var border = new Border();
+            border.Classes.Add("dataCell");
+
+            var grid = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitions("*,Auto")
+            };
+
+            var text = new TextBlock
+            {
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(4, 0),
+                FontSize = 12,
+                TextTrimming = TextTrimming.CharacterEllipsis
+            };
+            Grid.SetColumn(text, 0);
+            grid.Children.Add(text);
+
+            // Edit button
+            var editButton = new Button
+            {
+                Content = "...",
+                Padding = new Thickness(4, 0),
+                MinWidth = 24,
+                FontSize = 10,
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Right
+            };
+            editButton.Classes.Add("compact");
+            Grid.SetColumn(editButton, 1);
+            grid.Children.Add(editButton);
+
+            if (rowVm != null)
+            {
+                // Get the local key (usually "id") for looking up tuple data
+                var localKeyField = fieldDef.TupleList!.LocalKeyField;
+                var localKey = rowVm[localKeyField] ?? "";
+
+                // Get formatted display text
+                var displayText = vm.GetTupleDisplayText(attributeName, localKey);
+                text.Text = displayText;
+
+                // Set tooltip with full text if truncated
+                if (!string.IsNullOrEmpty(displayText) && displayText != "-")
+                {
+                    ToolTip.SetTip(text, displayText);
+                }
+
+                // Edit button click handler - opens popup editor
+                editButton.Click += async (s, e) =>
+                {
+                    var tuples = vm.GetTuples(attributeName, localKey);
+                    var config = fieldDef.TupleList!;
+
+                    // Create and show the tuple editor popup
+                    var popup = new TupleEditorPopup(localKey, attributeName, tuples, config, vm);
+                    var topLevel = TopLevel.GetTopLevel(editButton);
+                    if (topLevel is Window window)
+                    {
+                        var result = await popup.ShowDialog<bool>(window);
+                        if (result)
+                        {
+                            // Refresh the display text after edit
+                            var newDisplayText = vm.GetTupleDisplayText(attributeName, localKey);
+                            text.Text = newDisplayText;
+                            if (!string.IsNullOrEmpty(newDisplayText) && newDisplayText != "-")
+                            {
+                                ToolTip.SetTip(text, newDisplayText);
+                            }
+                        }
+                    }
+                };
+            }
+            else
+            {
+                text.Text = "-";
+                editButton.IsEnabled = false;
+            }
+
+            border.Child = grid;
+            return border;
+        });
+    }
+
+    /// <summary>
     /// Creates a cell template for icon fields with thumbnail preview and picker button.
     /// </summary>
     private static IDataTemplate CreateIconCellTemplate(string attributeName, FieldDefinition fieldDef, FileTabViewModel vm)
@@ -1663,6 +1792,711 @@ public partial class FileTabView : UserControl
             };
 
             panel.Children.Add(editButton);
+            border.Child = panel;
+
+            return border;
+        });
+    }
+
+    /// <summary>
+    /// Creates a cell template for banner fields with thumbnail preview.
+    /// Displays the banner image from the TOR_Armory asset sources based on the banner_key suffix.
+    /// Shows image on top row (with primary color background), full banner_key on bottom row.
+    /// </summary>
+    private static IDataTemplate CreateBannerCellTemplate(string attributeName, FieldDefinition fieldDef, FileTabViewModel vm)
+    {
+        return new FuncDataTemplate<EntryRowViewModel>((rowVm, _) =>
+        {
+            var border = new Border();
+            border.Classes.Add("dataCell");
+
+            // Vertical layout: image on top, text below
+            var panel = new StackPanel
+            {
+                Orientation = Orientation.Vertical,
+                Spacing = 2
+            };
+
+            if (rowVm == null)
+            {
+                border.Child = panel;
+                return border;
+            }
+
+            // Image container with colored background
+            var imageContainer = new Border
+            {
+                Width = 48,
+                Height = 48,
+                CornerRadius = new CornerRadius(4),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(2),
+                ClipToBounds = true
+            };
+
+            // Banner thumbnail (centered inside container)
+            var bannerImage = new Image
+            {
+                Width = 44,
+                Height = 44,
+                Stretch = Stretch.Uniform,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            imageContainer.Child = bannerImage;
+
+            // Full banner_key text below the image
+            var bannerText = new TextBlock
+            {
+                HorizontalAlignment = HorizontalAlignment.Center,
+                TextAlignment = TextAlignment.Center,
+                Margin = new Thickness(2, 0),
+                FontSize = 9,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                TextWrapping = TextWrapping.NoWrap,
+                Foreground = new SolidColorBrush(Color.FromRgb(180, 180, 180))
+            };
+
+            // Helper to parse color from hex string (supports "FFRRGGBB" and "0xFFRRGGBB" formats)
+            Color? ParseColorValue(string? colorValue)
+            {
+                if (string.IsNullOrEmpty(colorValue))
+                    return null;
+
+                // Remove "0x" prefix if present
+                var hex = colorValue.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
+                    ? colorValue.Substring(2)
+                    : colorValue;
+
+                // Try to parse as ARGB hex (AARRGGBB)
+                if (hex.Length == 8 && uint.TryParse(hex, System.Globalization.NumberStyles.HexNumber, null, out var argb))
+                {
+                    return Color.FromUInt32(argb);
+                }
+
+                // Try to parse as RGB hex (RRGGBB)
+                if (hex.Length == 6 && uint.TryParse(hex, System.Globalization.NumberStyles.HexNumber, null, out var rgb))
+                {
+                    return Color.FromUInt32(0xFF000000 | rgb);
+                }
+
+                return null;
+            }
+
+            // Helper to update the banner display
+            void UpdateBannerDisplay()
+            {
+                var bannerKey = rowVm[attributeName];
+
+                // Show the full banner_key as the text
+                bannerText.Text = bannerKey ?? "";
+
+                // Set tooltip with full banner key for easy copying
+                if (!string.IsNullOrEmpty(bannerKey))
+                {
+                    ToolTip.SetTip(panel, bannerKey);
+                }
+
+                // Try to get primary color for background
+                // Check various color field names used across different schemas
+                var primaryColorValue = rowVm["color"] ?? rowVm["primary_banner_color"];
+                var bgColor = ParseColorValue(primaryColorValue);
+                if (bgColor.HasValue)
+                {
+                    imageContainer.Background = new SolidColorBrush(bgColor.Value);
+                }
+                else
+                {
+                    imageContainer.Background = new SolidColorBrush(Color.FromRgb(40, 40, 40));
+                }
+
+                // Extract suffix to load the image
+                var suffix = FactionCatalogService.ExtractBannerImageName(bannerKey);
+
+                // Try to load banner image
+                if (!string.IsNullOrEmpty(suffix) && vm.BannerImageService != null)
+                {
+                    var bitmap = vm.BannerImageService.GetImageByName(suffix);
+                    if (bitmap != null)
+                    {
+                        bannerImage.Source = bitmap;
+                        bannerImage.IsVisible = true;
+                    }
+                    else
+                    {
+                        bannerImage.IsVisible = false;
+                    }
+                }
+                else
+                {
+                    bannerImage.IsVisible = false;
+                }
+
+                CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
+            }
+
+            // Initial display
+            UpdateBannerDisplay();
+
+            // Subscribe to refresh events
+            vm.CellRefreshRequested += (s, args) => UpdateBannerDisplay();
+
+            // Edit button overlay on the image container
+            var editButton = new Button
+            {
+                Content = "...",
+                FontSize = 10,
+                Padding = new Thickness(4, 2),
+                MinWidth = 20,
+                MinHeight = 0,
+                Background = new SolidColorBrush(Color.FromArgb(180, 40, 40, 40)),
+                Foreground = new SolidColorBrush(Color.FromRgb(220, 220, 220)),
+                BorderThickness = new Thickness(0),
+                CornerRadius = new CornerRadius(2),
+                Cursor = new Cursor(StandardCursorType.Hand),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 2, 0, 0),
+                IsVisible = !rowVm.IsRemoved
+            };
+            ToolTip.SetTip(editButton, "Edit banner key");
+
+            editButton.Click += (s, e) =>
+            {
+                ShowBannerEditorPopup(editButton, rowVm, attributeName, vm.BannerImageService, () =>
+                {
+                    Console.WriteLine($"[BannerEditor] Banner editor closed");
+                    UpdateBannerDisplay();
+                    vm.RequestCellRefresh();
+                });
+            };
+
+            panel.Children.Add(imageContainer);
+            panel.Children.Add(editButton);
+            panel.Children.Add(bannerText);
+
+            border.Child = panel;
+
+            return border;
+        });
+    }
+
+    /// <summary>
+    /// Shows a dialog for editing a banner key and colors with visual preview.
+    /// </summary>
+    private static void ShowBannerEditorPopup(Control anchor, EntryRowViewModel rowVm, string bannerAttributeName, BannerImageService? bannerImageService, Action onComplete)
+    {
+        Console.WriteLine("[BannerEditor] Creating dialog...");
+
+        var topLevel = TopLevel.GetTopLevel(anchor);
+        if (topLevel == null)
+        {
+            Console.WriteLine("[BannerEditor] ERROR: Could not find TopLevel");
+            onComplete();
+            return;
+        }
+
+        // Helper to parse color
+        Color ParseColorOrDefault(string? colorValue, Color defaultColor)
+        {
+            if (string.IsNullOrEmpty(colorValue))
+                return defaultColor;
+
+            var hex = colorValue.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
+                ? colorValue.Substring(2)
+                : colorValue;
+
+            if (hex.Length == 8 && uint.TryParse(hex, System.Globalization.NumberStyles.HexNumber, null, out var argb))
+                return Color.FromUInt32(argb);
+
+            if (hex.Length == 6 && uint.TryParse(hex, System.Globalization.NumberStyles.HexNumber, null, out var rgb))
+                return Color.FromUInt32(0xFF000000 | rgb);
+
+            return defaultColor;
+        }
+
+        // Get current values
+        var currentBannerKey = rowVm[bannerAttributeName] ?? "";
+        var currentColor = rowVm["color"];
+        var currentColor2 = rowVm["color2"];
+        var currentAltColor = rowVm["alternative_color"];
+        var currentAltColor2 = rowVm["alternative_color2"];
+
+        // Also check for kingdom-style color fields
+        var currentPrimaryBannerColor = rowVm["primary_banner_color"];
+        var currentSecondaryBannerColor = rowVm["secondary_banner_color"];
+
+        var defaultGray = Color.FromRgb(60, 60, 60);
+        var bgColor = ParseColorOrDefault(currentColor ?? currentPrimaryBannerColor, defaultGray);
+
+        // Create dialog
+        var dialog = new Window
+        {
+            Title = "Edit Banner & Colors",
+            Width = 450,
+            Height = 580,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = true,
+            ShowInTaskbar = false,
+            MinWidth = 350,
+            MinHeight = 500
+        };
+
+        var mainBorder = new Border
+        {
+            Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)),
+            Padding = new Thickness(16)
+        };
+
+        var scrollViewer = new ScrollViewer
+        {
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+        };
+
+        var mainStack = new StackPanel { Spacing = 12 };
+
+        // Banner preview section
+        var previewLabel = new TextBlock
+        {
+            Text = "Banner Preview:",
+            FontWeight = FontWeight.SemiBold,
+            Margin = new Thickness(0, 0, 0, 4)
+        };
+        mainStack.Children.Add(previewLabel);
+
+        // Large banner preview with colored background
+        var previewContainer = new Border
+        {
+            Width = 100,
+            Height = 100,
+            CornerRadius = new CornerRadius(8),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Background = new SolidColorBrush(bgColor),
+            ClipToBounds = true
+        };
+
+        var previewImage = new Image
+        {
+            Width = 92,
+            Height = 92,
+            Stretch = Stretch.Uniform,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        // Load initial image
+        var initialSuffix = FactionCatalogService.ExtractBannerImageName(currentBannerKey);
+        if (!string.IsNullOrEmpty(initialSuffix) && bannerImageService != null)
+        {
+            var bitmap = bannerImageService.GetImageByName(initialSuffix);
+            if (bitmap != null)
+            {
+                previewImage.Source = bitmap;
+            }
+        }
+
+        previewContainer.Child = previewImage;
+        mainStack.Children.Add(previewContainer);
+
+        // Banner key text field
+        var keyLabel = new TextBlock
+        {
+            Text = "Banner Key:",
+            FontWeight = FontWeight.SemiBold,
+            Margin = new Thickness(0, 8, 0, 4)
+        };
+        mainStack.Children.Add(keyLabel);
+
+        var keyTextBox = new TextBox
+        {
+            Text = currentBannerKey,
+            TextWrapping = TextWrapping.Wrap,
+            AcceptsReturn = false,
+            Height = 50,
+            FontSize = 11
+        };
+        mainStack.Children.Add(keyTextBox);
+
+        // Update preview when text changes
+        keyTextBox.TextChanged += (s, e) =>
+        {
+            var newSuffix = FactionCatalogService.ExtractBannerImageName(keyTextBox.Text);
+            if (!string.IsNullOrEmpty(newSuffix) && bannerImageService != null)
+            {
+                var bitmap = bannerImageService.GetImageByName(newSuffix);
+                previewImage.Source = bitmap;
+            }
+            else
+            {
+                previewImage.Source = null;
+            }
+        };
+
+        // Helper to create a color editor row
+        Panel CreateColorRow(string label, string? currentValue, string fieldName, Action<Color> onColorChanged)
+        {
+            var row = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"),
+                Margin = new Thickness(0, 4, 0, 4)
+            };
+
+            var labelBlock = new TextBlock
+            {
+                Text = label,
+                VerticalAlignment = VerticalAlignment.Center,
+                Width = 100
+            };
+            Grid.SetColumn(labelBlock, 0);
+            row.Children.Add(labelBlock);
+
+            var colorSwatch = new Border
+            {
+                Width = 28,
+                Height = 28,
+                CornerRadius = new CornerRadius(4),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(80, 80, 80)),
+                BorderThickness = new Thickness(1),
+                Background = new SolidColorBrush(ParseColorOrDefault(currentValue, defaultGray)),
+                Margin = new Thickness(8, 0),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            Grid.SetColumn(colorSwatch, 2);
+            row.Children.Add(colorSwatch);
+
+            var textBox = new TextBox
+            {
+                Text = currentValue ?? "",
+                FontSize = 11,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            Grid.SetColumn(textBox, 1);
+            row.Children.Add(textBox);
+
+            // Update swatch when text changes
+            textBox.TextChanged += (s, e) =>
+            {
+                var newColor = ParseColorOrDefault(textBox.Text, defaultGray);
+                colorSwatch.Background = new SolidColorBrush(newColor);
+                onColorChanged(newColor);
+            };
+
+            // Store textbox in Tag for later retrieval
+            row.Tag = (fieldName, textBox);
+
+            return row;
+        }
+
+        // Colors section
+        var colorsLabel = new TextBlock
+        {
+            Text = "Colors:",
+            FontWeight = FontWeight.SemiBold,
+            Margin = new Thickness(0, 12, 0, 4)
+        };
+        mainStack.Children.Add(colorsLabel);
+
+        var colorRows = new List<(string fieldName, TextBox textBox)>();
+
+        // Determine which color fields exist for this entry
+        bool hasStandardColors = currentColor != null || currentColor2 != null;
+        bool hasBannerColors = currentPrimaryBannerColor != null || currentSecondaryBannerColor != null;
+
+        if (hasBannerColors)
+        {
+            // Kingdom-style colors
+            var primaryRow = CreateColorRow("Primary:", currentPrimaryBannerColor, "primary_banner_color", (c) =>
+            {
+                previewContainer.Background = new SolidColorBrush(c);
+            });
+            mainStack.Children.Add(primaryRow);
+            if (primaryRow.Tag is ValueTuple<string, TextBox> pt) colorRows.Add(pt);
+
+            var secondaryRow = CreateColorRow("Secondary:", currentSecondaryBannerColor, "secondary_banner_color", (_) => { });
+            mainStack.Children.Add(secondaryRow);
+            if (secondaryRow.Tag is ValueTuple<string, TextBox> st) colorRows.Add(st);
+        }
+
+        // Standard colors (always show if they exist or if no banner colors)
+        if (hasStandardColors || !hasBannerColors)
+        {
+            var colorRow = CreateColorRow("Color:", currentColor, "color", (c) =>
+            {
+                if (!hasBannerColors)
+                    previewContainer.Background = new SolidColorBrush(c);
+            });
+            mainStack.Children.Add(colorRow);
+            if (colorRow.Tag is ValueTuple<string, TextBox> ct) colorRows.Add(ct);
+
+            var color2Row = CreateColorRow("Color 2:", currentColor2, "color2", (_) => { });
+            mainStack.Children.Add(color2Row);
+            if (color2Row.Tag is ValueTuple<string, TextBox> c2t) colorRows.Add(c2t);
+        }
+
+        // Alternative colors
+        if (currentAltColor != null || currentAltColor2 != null || hasStandardColors)
+        {
+            var altColorRow = CreateColorRow("Alt Color:", currentAltColor, "alternative_color", (_) => { });
+            mainStack.Children.Add(altColorRow);
+            if (altColorRow.Tag is ValueTuple<string, TextBox> act) colorRows.Add(act);
+
+            var altColor2Row = CreateColorRow("Alt Color 2:", currentAltColor2, "alternative_color2", (_) => { });
+            mainStack.Children.Add(altColor2Row);
+            if (altColor2Row.Tag is ValueTuple<string, TextBox> ac2t) colorRows.Add(ac2t);
+        }
+
+        // Buttons
+        var buttonPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(0, 16, 0, 0)
+        };
+
+        bool completed = false;
+        bool saved = false;
+
+        var okButton = new Button
+        {
+            Content = "OK",
+            Padding = new Thickness(24, 6),
+            Background = new SolidColorBrush(Color.FromRgb(0, 120, 215)),
+            Foreground = Brushes.White
+        };
+        okButton.Click += (s, e) =>
+        {
+            if (!completed)
+            {
+                completed = true;
+                saved = true;
+
+                // Save banner key
+                var newBannerKey = keyTextBox.Text?.Trim() ?? "";
+                if (newBannerKey != currentBannerKey)
+                {
+                    rowVm[bannerAttributeName] = newBannerKey;
+                    Console.WriteLine($"[BannerEditor] Updated banner_key to: {newBannerKey}");
+                }
+
+                // Save color values
+                foreach (var (fieldName, textBox) in colorRows)
+                {
+                    var newValue = textBox.Text?.Trim();
+                    var oldValue = rowVm[fieldName];
+                    if (newValue != oldValue && !string.IsNullOrEmpty(newValue))
+                    {
+                        rowVm[fieldName] = newValue;
+                        Console.WriteLine($"[BannerEditor] Updated {fieldName} to: {newValue}");
+                    }
+                }
+
+                dialog.Close();
+            }
+        };
+
+        var cancelButton = new Button
+        {
+            Content = "Cancel",
+            Padding = new Thickness(24, 6),
+            Background = new SolidColorBrush(Color.FromRgb(60, 60, 60)),
+            Foreground = Brushes.White
+        };
+        cancelButton.Click += (s, e) =>
+        {
+            if (!completed)
+            {
+                completed = true;
+                dialog.Close();
+            }
+        };
+
+        buttonPanel.Children.Add(cancelButton);
+        buttonPanel.Children.Add(okButton);
+        mainStack.Children.Add(buttonPanel);
+
+        scrollViewer.Content = mainStack;
+        mainBorder.Child = scrollViewer;
+        dialog.Content = mainBorder;
+
+        // Handle Escape key
+        dialog.KeyDown += (s, e) =>
+        {
+            if (e.Key == Key.Escape && !completed)
+            {
+                completed = true;
+                dialog.Close();
+                e.Handled = true;
+            }
+        };
+
+        // Handle dialog closed
+        dialog.Closed += (s, e) =>
+        {
+            Console.WriteLine($"[BannerEditor] Dialog closed, saved: {saved}");
+            onComplete();
+        };
+
+        // Show dialog
+        if (topLevel is Window parentWindow)
+        {
+            dialog.ShowDialog(parentWindow);
+        }
+        else
+        {
+            dialog.Show();
+        }
+
+        keyTextBox.Focus();
+        keyTextBox.SelectAll();
+    }
+
+    /// <summary>
+    /// Creates a cell template for color fields with a color swatch and editable hex value.
+    /// Supports both "FFRRGGBB" and "0xFFRRGGBB" formats.
+    /// </summary>
+    private static IDataTemplate CreateColorCellTemplate(string attributeName, FieldDefinition fieldDef, FileTabViewModel vm)
+    {
+        return new FuncDataTemplate<EntryRowViewModel>((rowVm, _) =>
+        {
+            var border = new Border();
+            border.Classes.Add("dataCell");
+
+            var panel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 4,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            if (rowVm == null)
+            {
+                border.Child = panel;
+                return border;
+            }
+
+            // Color swatch (small rectangle showing the color)
+            var colorSwatch = new Border
+            {
+                Width = 20,
+                Height = 20,
+                CornerRadius = new CornerRadius(2),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(80, 80, 80)),
+                BorderThickness = new Thickness(1),
+                Margin = new Thickness(2, 0)
+            };
+
+            // Hex value text (editable via TextBox)
+            var hexText = new TextBox
+            {
+                FontSize = 11,
+                Padding = new Thickness(2),
+                MinWidth = 70,
+                MaxWidth = 90,
+                VerticalAlignment = VerticalAlignment.Center,
+                Background = Brushes.Transparent,
+                BorderThickness = new Thickness(0),
+                Foreground = new SolidColorBrush(Color.FromRgb(200, 200, 200))
+            };
+
+            // Helper to parse color from hex string
+            Color? ParseHexColor(string? hexValue)
+            {
+                if (string.IsNullOrEmpty(hexValue))
+                    return null;
+
+                // Remove "0x" prefix if present
+                var hex = hexValue.TrimStart();
+                if (hex.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+                    hex = hex.Substring(2);
+
+                // Remove # prefix if present
+                if (hex.StartsWith("#"))
+                    hex = hex.Substring(1);
+
+                // Try to parse as ARGB (AARRGGBB) or RGB (RRGGBB)
+                try
+                {
+                    if (hex.Length == 8)
+                    {
+                        // AARRGGBB format
+                        var a = Convert.ToByte(hex.Substring(0, 2), 16);
+                        var r = Convert.ToByte(hex.Substring(2, 2), 16);
+                        var g = Convert.ToByte(hex.Substring(4, 2), 16);
+                        var b = Convert.ToByte(hex.Substring(6, 2), 16);
+                        return Color.FromArgb(a, r, g, b);
+                    }
+                    else if (hex.Length == 6)
+                    {
+                        // RRGGBB format (assume full alpha)
+                        var r = Convert.ToByte(hex.Substring(0, 2), 16);
+                        var g = Convert.ToByte(hex.Substring(2, 2), 16);
+                        var b = Convert.ToByte(hex.Substring(4, 2), 16);
+                        return Color.FromArgb(255, r, g, b);
+                    }
+                }
+                catch
+                {
+                    // Invalid format
+                }
+
+                return null;
+            }
+
+            // Helper to update the color display
+            void UpdateColorDisplay()
+            {
+                var colorValue = rowVm[attributeName];
+                hexText.Text = colorValue ?? "";
+
+                var color = ParseHexColor(colorValue);
+                if (color.HasValue)
+                {
+                    colorSwatch.Background = new SolidColorBrush(color.Value);
+                    ToolTip.SetTip(colorSwatch, $"Color: {colorValue}");
+                }
+                else
+                {
+                    // Invalid or empty - show checkerboard pattern or gray
+                    colorSwatch.Background = new SolidColorBrush(Color.FromRgb(60, 60, 60));
+                    ToolTip.SetTip(colorSwatch, "No color / Invalid format");
+                }
+
+                CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
+            }
+
+            // Initial display
+            UpdateColorDisplay();
+
+            // Update row value when text changes and loses focus
+            hexText.LostFocus += (s, e) =>
+            {
+                var newValue = hexText.Text?.Trim() ?? "";
+                if (newValue != (rowVm[attributeName] ?? ""))
+                {
+                    rowVm[attributeName] = newValue;
+                    UpdateColorDisplay();
+                }
+            };
+
+            // Also update on Enter key
+            hexText.KeyDown += (s, e) =>
+            {
+                if (e.Key == Key.Enter)
+                {
+                    var newValue = hexText.Text?.Trim() ?? "";
+                    rowVm[attributeName] = newValue;
+                    UpdateColorDisplay();
+                    e.Handled = true;
+                }
+            };
+
+            // Subscribe to refresh events
+            vm.CellRefreshRequested += (s, args) => UpdateColorDisplay();
+
+            panel.Children.Add(colorSwatch);
+            panel.Children.Add(hexText);
+
             border.Child = panel;
 
             return border;

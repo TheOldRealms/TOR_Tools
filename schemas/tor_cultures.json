@@ -1,0 +1,636 @@
+{
+  "file": "tor_cultures.xml",
+  "displayName": "Cultures",
+  "description": "Culture definitions with troop references, NPCs, equipment rosters, and naming conventions.",
+  "rootElement": "SPCultures",
+  "entryElement": "Culture",
+  "fields": {
+    "id": {
+      "displayName": "ID",
+      "description": "Unique identifier for this culture.",
+      "type": "string",
+      "required": true,
+      "order": 1,
+      "width": 140
+    },
+    "name": {
+      "displayName": "Name",
+      "description": "Display name with localization key.",
+      "type": "string",
+      "required": true,
+      "order": 2,
+      "width": 180
+    },
+    "is_main_culture": {
+      "displayName": "Main Culture",
+      "description": "Whether this is a main playable culture.",
+      "type": "boolean",
+      "order": 3,
+      "width": 80
+    },
+    "can_have_settlement": {
+      "displayName": "Has Settlements",
+      "description": "Whether this culture can own settlements.",
+      "type": "boolean",
+      "order": 4,
+      "width": 80
+    },
+    "color": {
+      "displayName": "Color",
+      "description": "Primary culture color (hex format: 0xFFRRGGBB).",
+      "type": "color",
+      "order": 5,
+      "width": 90
+    },
+    "color2": {
+      "displayName": "Color 2",
+      "description": "Secondary culture color (hex format: 0xFFRRGGBB).",
+      "type": "color",
+      "order": 6,
+      "width": 90
+    },
+    "faction_banner_key": {
+      "displayName": "Banner Key",
+      "description": "Default faction banner definition.",
+      "type": "banner",
+      "order": 3,
+      "width": 120
+    },
+    "basic_troop": {
+      "displayName": "Basic Troop",
+      "description": "Basic recruit troop (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 10,
+      "width": 200
+    },
+    "elite_basic_troop": {
+      "displayName": "Elite Basic Troop",
+      "description": "Elite/noble recruit troop (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 11,
+      "width": 200
+    },
+    "melee_militia_troop": {
+      "displayName": "Melee Militia",
+      "description": "Melee militia troop (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 12,
+      "width": 200
+    },
+    "ranged_militia_troop": {
+      "displayName": "Ranged Militia",
+      "description": "Ranged militia troop (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 13,
+      "width": 200
+    },
+    "melee_elite_militia_troop": {
+      "displayName": "Elite Melee Militia",
+      "description": "Elite melee militia troop (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 14,
+      "width": 200
+    },
+    "ranged_elite_militia_troop": {
+      "displayName": "Elite Ranged Militia",
+      "description": "Elite ranged militia troop (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 15,
+      "width": 200
+    },
+    "default_party_template": {
+      "displayName": "Lord Party Template",
+      "description": "Default lord party template (PartyTemplate.* reference).",
+      "type": "string",
+      "order": 20,
+      "width": 200
+    },
+    "villager_party_template": {
+      "displayName": "Villager Template",
+      "description": "Villager party template (PartyTemplate.* reference).",
+      "type": "string",
+      "order": 21,
+      "width": 200
+    },
+    "militia_party_template": {
+      "displayName": "Militia Template",
+      "description": "Militia party template (PartyTemplate.* reference).",
+      "type": "string",
+      "order": 22,
+      "width": 200
+    },
+    "rebels_party_template": {
+      "displayName": "Rebels Template",
+      "description": "Rebels party template (PartyTemplate.* reference).",
+      "type": "string",
+      "order": 23,
+      "width": 200
+    },
+    "vassal_reward_party_template": {
+      "displayName": "Vassal Reward Template",
+      "description": "Vassal reward party template (PartyTemplate.* reference).",
+      "type": "string",
+      "order": 24,
+      "width": 200
+    },
+    "settlement_patrol_template_level_1": {
+      "displayName": "Patrol L1",
+      "description": "Settlement patrol level 1 template (PartyTemplate.* reference).",
+      "type": "string",
+      "order": 25,
+      "width": 200
+    },
+    "settlement_patrol_template_level_2": {
+      "displayName": "Patrol L2",
+      "description": "Settlement patrol level 2 template (PartyTemplate.* reference).",
+      "type": "string",
+      "order": 26,
+      "width": 200
+    },
+    "settlement_patrol_template_level_3": {
+      "displayName": "Patrol L3",
+      "description": "Settlement patrol level 3 template (PartyTemplate.* reference).",
+      "type": "string",
+      "order": 27,
+      "width": 200
+    },
+    "villager": {
+      "displayName": "Villager",
+      "description": "Villager NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 30,
+      "width": 200
+    },
+    "caravan_master": {
+      "displayName": "Caravan Master",
+      "description": "Caravan master NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 31,
+      "width": 200
+    },
+    "caravan_guard": {
+      "displayName": "Caravan Guard",
+      "description": "Caravan guard NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 32,
+      "width": 200
+    },
+    "veteran_caravan_guard": {
+      "displayName": "Veteran Caravan Guard",
+      "description": "Veteran caravan guard NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 33,
+      "width": 200
+    },
+    "guard": {
+      "displayName": "Guard",
+      "description": "Settlement guard NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 34,
+      "width": 200
+    },
+    "prison_guard": {
+      "displayName": "Prison Guard",
+      "description": "Prison guard NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 35,
+      "width": 200
+    },
+    "merchant": {
+      "displayName": "Merchant",
+      "description": "Merchant NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 36,
+      "width": 200
+    },
+    "blacksmith": {
+      "displayName": "Blacksmith",
+      "description": "Blacksmith NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 37,
+      "width": 200
+    },
+    "weaponsmith": {
+      "displayName": "Weaponsmith",
+      "description": "Weaponsmith NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 38,
+      "width": 200
+    },
+    "armorer": {
+      "displayName": "Armorer",
+      "description": "Armorer NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 39,
+      "width": 200
+    },
+    "horseMerchant": {
+      "displayName": "Horse Merchant",
+      "description": "Horse merchant NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 40,
+      "width": 200
+    },
+    "tavernkeeper": {
+      "displayName": "Tavernkeeper",
+      "description": "Tavernkeeper NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 41,
+      "width": 200
+    },
+    "taverngamehost": {
+      "displayName": "Tavern Game Host",
+      "description": "Tavern game host NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 42,
+      "width": 200
+    },
+    "tavern_wench": {
+      "displayName": "Tavern Wench",
+      "description": "Tavern wench NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 43,
+      "width": 200
+    },
+    "musician": {
+      "displayName": "Musician",
+      "description": "Musician NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 44,
+      "width": 200
+    },
+    "barber": {
+      "displayName": "Barber",
+      "description": "Barber NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 45,
+      "width": 200
+    },
+    "ransom_broker": {
+      "displayName": "Ransom Broker",
+      "description": "Ransom broker NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 46,
+      "width": 200
+    },
+    "gangleader_bodyguard": {
+      "displayName": "Gang Bodyguard",
+      "description": "Gang leader bodyguard NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 47,
+      "width": 200
+    },
+    "shop_worker": {
+      "displayName": "Shop Worker",
+      "description": "Shop worker NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 48,
+      "width": 200
+    },
+    "tournament_master": {
+      "displayName": "Tournament Master",
+      "description": "Tournament master NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 49,
+      "width": 200
+    },
+    "merchant_notary": {
+      "displayName": "Merchant Notary",
+      "description": "Merchant notary NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 50,
+      "width": 200
+    },
+    "artisan_notary": {
+      "displayName": "Artisan Notary",
+      "description": "Artisan notary NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 51,
+      "width": 200
+    },
+    "preacher_notary": {
+      "displayName": "Preacher Notary",
+      "description": "Preacher notary NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 52,
+      "width": 200
+    },
+    "rural_notable_notary": {
+      "displayName": "Rural Notary",
+      "description": "Rural notable notary NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 53,
+      "width": 200
+    },
+    "townsman": {
+      "displayName": "Townsman",
+      "description": "Townsman NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 60,
+      "width": 200
+    },
+    "townsman_infant": {
+      "displayName": "Townsman Infant",
+      "description": "Townsman infant NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 61,
+      "width": 200
+    },
+    "townsman_child": {
+      "displayName": "Townsman Child",
+      "description": "Townsman child NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 62,
+      "width": 200
+    },
+    "townsman_teenager": {
+      "displayName": "Townsman Teen",
+      "description": "Townsman teenager NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 63,
+      "width": 200
+    },
+    "townswoman": {
+      "displayName": "Townswoman",
+      "description": "Townswoman NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 64,
+      "width": 200
+    },
+    "townswoman_infant": {
+      "displayName": "Townswoman Infant",
+      "description": "Townswoman infant NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 65,
+      "width": 200
+    },
+    "townswoman_child": {
+      "displayName": "Townswoman Child",
+      "description": "Townswoman child NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 66,
+      "width": 200
+    },
+    "townswoman_teenager": {
+      "displayName": "Townswoman Teen",
+      "description": "Townswoman teenager NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 67,
+      "width": 200
+    },
+    "village_woman": {
+      "displayName": "Village Woman",
+      "description": "Village woman NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 68,
+      "width": 200
+    },
+    "villager_male_child": {
+      "displayName": "Village Boy",
+      "description": "Village male child NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 69,
+      "width": 200
+    },
+    "villager_male_teenager": {
+      "displayName": "Village Teen Boy",
+      "description": "Village male teenager NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 70,
+      "width": 200
+    },
+    "villager_female_child": {
+      "displayName": "Village Girl",
+      "description": "Village female child NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 71,
+      "width": 200
+    },
+    "villager_female_teenager": {
+      "displayName": "Village Teen Girl",
+      "description": "Village female teenager NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 72,
+      "width": 200
+    },
+    "beggar": {
+      "displayName": "Beggar",
+      "description": "Male beggar NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 73,
+      "width": 200
+    },
+    "female_beggar": {
+      "displayName": "Female Beggar",
+      "description": "Female beggar NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 74,
+      "width": 200
+    },
+    "female_dancer": {
+      "displayName": "Female Dancer",
+      "description": "Female dancer NPC (NPCCharacter.* reference).",
+      "type": "string",
+      "order": 75,
+      "width": 200
+    },
+    "default_battle_equipment_roster": {
+      "displayName": "Battle Equipment",
+      "description": "Default battle equipment roster (EquipmentRoster.* reference).",
+      "type": "string",
+      "order": 80,
+      "width": 200
+    },
+    "default_civilian_equipment_roster": {
+      "displayName": "Civilian Equipment",
+      "description": "Default civilian equipment roster (EquipmentRoster.* reference).",
+      "type": "string",
+      "order": 81,
+      "width": 200
+    },
+    "default_stealth_equipment_roster": {
+      "displayName": "Stealth Equipment",
+      "description": "Default stealth equipment roster (EquipmentRoster.* reference).",
+      "type": "string",
+      "order": 82,
+      "width": 200
+    },
+    "duel_preset_equipment_roster": {
+      "displayName": "Duel Equipment",
+      "description": "Duel preset equipment roster (EquipmentRoster.* reference).",
+      "type": "string",
+      "order": 83,
+      "width": 200
+    },
+    "marriage_bride_equipment_roster": {
+      "displayName": "Marriage Equipment",
+      "description": "Marriage bride equipment roster (EquipmentRoster.* reference).",
+      "type": "string",
+      "order": 84,
+      "width": 200
+    },
+    "board_game_type": {
+      "displayName": "Board Game",
+      "description": "Type of board game played in taverns.",
+      "type": "enum",
+      "order": 90,
+      "width": 100,
+      "enumValues": [
+        { "value": "Tablut", "displayName": "Tablut" },
+        { "value": "Seega", "displayName": "Seega" },
+        { "value": "Puluc", "displayName": "Puluc" },
+        { "value": "MuTorere", "displayName": "Mu Torere" },
+        { "value": "Konane", "displayName": "Konane" },
+        { "value": "BaghChal", "displayName": "Bagh Chal" }
+      ]
+    },
+    "prosperity_bonus": {
+      "displayName": "Prosperity Bonus",
+      "description": "Culture prosperity bonus value.",
+      "type": "string",
+      "order": 91,
+      "width": 80
+    },
+    "encounter_background_mesh": {
+      "displayName": "Encounter Mesh",
+      "description": "Encounter background mesh name.",
+      "type": "string",
+      "order": 92,
+      "width": 150
+    },
+    "default_character_creation_body_property": {
+      "displayName": "Body Property",
+      "description": "Default body property for character creation (BodyProperty.* reference).",
+      "type": "string",
+      "order": 93,
+      "width": 200
+    },
+    "start_point_position_x": {
+      "displayName": "Start X",
+      "description": "Starting position X coordinate on the map.",
+      "type": "string",
+      "order": 94,
+      "width": 80
+    },
+    "start_point_position_y": {
+      "displayName": "Start Y",
+      "description": "Starting position Y coordinate on the map.",
+      "type": "string",
+      "order": 95,
+      "width": 80
+    },
+    "text": {
+      "displayName": "Description",
+      "description": "Culture description text with localization key.",
+      "type": "string",
+      "order": 99,
+      "width": 300
+    }
+  },
+  "nestedElements": {
+    "caravan_party_templates": {
+      "displayName": "Caravan Templates",
+      "description": "Caravan party templates for this culture.",
+      "childElement": "caravan_party_template",
+      "fields": {
+        "id": {
+          "displayName": "Template ID",
+          "description": "Party template reference (PartyTemplate.* reference).",
+          "type": "string",
+          "required": true
+        }
+      }
+    },
+    "elite_caravan_party_templates": {
+      "displayName": "Elite Caravan Templates",
+      "description": "Elite caravan party templates for this culture.",
+      "childElement": "caravan_party_template",
+      "fields": {
+        "id": {
+          "displayName": "Template ID",
+          "description": "Party template reference (PartyTemplate.* reference).",
+          "type": "string",
+          "required": true
+        }
+      }
+    },
+    "vassal_reward_items": {
+      "displayName": "Vassal Reward Items",
+      "description": "Items given as vassal rewards.",
+      "childElement": "item",
+      "fields": {
+        "id": {
+          "displayName": "Item ID",
+          "description": "Item reference (Item.* reference).",
+          "type": "string",
+          "required": true
+        }
+      }
+    },
+    "banner_bearer_replacement_weapons": {
+      "displayName": "Banner Bearer Weapons",
+      "description": "Replacement weapons for banner bearers.",
+      "childElement": "item",
+      "fields": {
+        "id": {
+          "displayName": "Item ID",
+          "description": "Weapon item reference (Item.* reference).",
+          "type": "string",
+          "required": true
+        }
+      }
+    },
+    "default_policies": {
+      "displayName": "Default Policies",
+      "description": "Default kingdom policies for this culture.",
+      "childElement": "policy",
+      "fields": {
+        "id": {
+          "displayName": "Policy ID",
+          "description": "Policy identifier.",
+          "type": "string",
+          "required": true
+        }
+      }
+    },
+    "male_names": {
+      "displayName": "Male Names",
+      "description": "List of male names for this culture.",
+      "childElement": "name",
+      "fields": {
+        "name": {
+          "displayName": "Name",
+          "description": "Name with localization key.",
+          "type": "string",
+          "required": true
+        }
+      }
+    },
+    "female_names": {
+      "displayName": "Female Names",
+      "description": "List of female names for this culture.",
+      "childElement": "name",
+      "fields": {
+        "name": {
+          "displayName": "Name",
+          "description": "Name with localization key.",
+          "type": "string",
+          "required": true
+        }
+      }
+    },
+    "clan_names": {
+      "displayName": "Clan Names",
+      "description": "List of clan names for this culture.",
+      "childElement": "name",
+      "fields": {
+        "name": {
+          "displayName": "Name",
+          "description": "Name with localization key.",
+          "type": "string",
+          "required": true
+        }
+      }
+    }
+  }
+}
