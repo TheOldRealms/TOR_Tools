@@ -925,9 +925,47 @@ public partial class FileTabView : UserControl
                                 ? Color.FromRgb(255, 165, 0)   // Orange for saved
                                 : Color.FromRgb(0, 120, 215);  // Blue for normal
 
+                            // Check if this is an ability field and try to show icon
+                            var isAbilityField = fieldDef.CrossReference?.TargetFile == "tor_abilitytemplates.xml";
+                            string? iconPath = null;
+                            if (isAbilityField && vm.AbilityCatalogService != null && vm.IconService != null)
+                            {
+                                var spriteName = vm.AbilityCatalogService.GetAbilitySprite(displayId);
+                                if (!string.IsNullOrEmpty(spriteName))
+                                {
+                                    iconPath = vm.IconService.GetIconPath(spriteName);
+                                }
+                            }
+
+                            // Create a container for icon + text
+                            var linkContent = new StackPanel
+                            {
+                                Orientation = Avalonia.Layout.Orientation.Horizontal,
+                                Spacing = 3
+                            };
+
+                            // Add ability icon if available
+                            if (!string.IsNullOrEmpty(iconPath) && File.Exists(iconPath))
+                            {
+                                var iconImage = new Image
+                                {
+                                    Width = 16,
+                                    Height = 16,
+                                    Source = new Avalonia.Media.Imaging.Bitmap(iconPath),
+                                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+                                };
+                                linkContent.Children.Add(iconImage);
+                            }
+
+                            linkContent.Children.Add(new TextBlock
+                            {
+                                Text = displayId,
+                                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+                            });
+
                             var linkButton = new Button
                             {
-                                Content = displayId, // Show without prefix
+                                Content = linkContent,
                                 Padding = new Thickness(4, 2),
                                 Margin = new Thickness(0, 0, 4, 0),
                                 Background = Brushes.Transparent,

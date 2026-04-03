@@ -185,6 +185,11 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     public BannerImageService? BannerImageService { get; set; }
 
     /// <summary>
+    /// Ability catalog service for ability icons and info. Set after construction by MainWindowViewModel.
+    /// </summary>
+    public AbilityCatalogService? AbilityCatalogService { get; set; }
+
+    /// <summary>
     /// The schema definition for this file type, if available.
     /// </summary>
     public SchemaDefinition? Schema { get; private set; }

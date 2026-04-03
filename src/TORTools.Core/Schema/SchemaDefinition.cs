@@ -94,6 +94,27 @@ public class SchemaDefinition
     public LinkedFileConfig? LinkedFile { get; set; }
 
     /// <summary>
+    /// Additional source files to merge with the main file.
+    /// Entries from all files are combined into a single view.
+    /// </summary>
+    [JsonPropertyName("additionalSourceFiles")]
+    public List<AdditionalSourceFile>? AdditionalSourceFiles { get; set; }
+
+    /// <summary>
+    /// Virtual field name that stores which source file each entry came from.
+    /// Used to split entries back to correct files on save.
+    /// </summary>
+    [JsonPropertyName("sourceFileField")]
+    public string? SourceFileField { get; set; }
+
+    /// <summary>
+    /// Configuration for merging data from a secondary file (e.g., tor_heroes.xml for faction/text).
+    /// Unlike linkedFile which adds columns, this merges attributes from entries with matching IDs.
+    /// </summary>
+    [JsonPropertyName("mergedDataFile")]
+    public MergedDataFileConfig? MergedDataFile { get; set; }
+
+    /// <summary>
     /// Gets a field definition by name (case-insensitive).
     /// </summary>
     public FieldDefinition? GetField(string attributeName)
@@ -566,4 +587,73 @@ public class TupleColumnConfig
     /// </summary>
     [JsonPropertyName("width")]
     public int Width { get; set; } = 100;
+}
+
+/// <summary>
+/// Configuration for an additional source file to merge with the main file.
+/// </summary>
+public class AdditionalSourceFile
+{
+    /// <summary>
+    /// The file name (e.g., "tor_lords.xml").
+    /// </summary>
+    [JsonPropertyName("file")]
+    public string FileName { get; set; } = "";
+
+    /// <summary>
+    /// Relative path from ModuleData (e.g., "tor_npccharacters").
+    /// </summary>
+    [JsonPropertyName("path")]
+    public string? Path { get; set; }
+
+    /// <summary>
+    /// Value to set in the sourceFileField for entries from this file.
+    /// Used to identify which file an entry belongs to.
+    /// </summary>
+    [JsonPropertyName("sourceValue")]
+    public string SourceValue { get; set; } = "";
+}
+
+/// <summary>
+/// Configuration for a merged data file that provides additional attributes for entries.
+/// Data from this file is matched by ID and merged into the main entries.
+/// </summary>
+public class MergedDataFileConfig
+{
+    /// <summary>
+    /// The file name (e.g., "tor_heroes.xml").
+    /// </summary>
+    [JsonPropertyName("file")]
+    public string FileName { get; set; } = "";
+
+    /// <summary>
+    /// Relative path from ModuleData.
+    /// </summary>
+    [JsonPropertyName("path")]
+    public string? Path { get; set; }
+
+    /// <summary>
+    /// The root element name in the merged XML.
+    /// </summary>
+    [JsonPropertyName("rootElement")]
+    public string RootElement { get; set; } = "";
+
+    /// <summary>
+    /// The entry element name in the merged XML.
+    /// </summary>
+    [JsonPropertyName("entryElement")]
+    public string EntryElement { get; set; } = "";
+
+    /// <summary>
+    /// The field used to match entries between files (usually "id").
+    /// </summary>
+    [JsonPropertyName("matchField")]
+    public string MatchField { get; set; } = "id";
+
+    /// <summary>
+    /// Mapping of attributes to extract from the merged file.
+    /// Key = field name in schema, Value = attribute/path in merged file.
+    /// </summary>
+    [JsonPropertyName("fieldMappings")]
+    public Dictionary<string, string> FieldMappings { get; set; } = new();
 }

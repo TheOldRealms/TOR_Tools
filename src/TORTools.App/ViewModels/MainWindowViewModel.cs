@@ -14,6 +14,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly IIconService? _iconService;
     private readonly ItemCatalogService _itemCatalogService;
     private readonly FactionCatalogService _factionCatalogService;
+    private readonly AbilityCatalogService _abilityCatalogService;
     private readonly BannerImageService? _bannerImageService;
     private WorkspaceConfig _config;
 
@@ -45,6 +46,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _config = _workspaceService.LoadConfig();
         _itemCatalogService = new ItemCatalogService();
         _factionCatalogService = new FactionCatalogService();
+        _abilityCatalogService = new AbilityCatalogService("");
 
         // Initialize icon service if TOR_Armory path is available
         if (!string.IsNullOrEmpty(_config.TorArmoryPath))
@@ -70,7 +72,7 @@ public partial class MainWindowViewModel : ViewModelBase
             }
         }
 
-        // Initialize faction catalog if TOR_Core path is available
+        // Initialize faction catalog and ability catalog if TOR_Core path is available
         if (!string.IsNullOrEmpty(_config.TorCorePath))
         {
             var coreModuleDataPath = Path.Combine(_config.TorCorePath, "ModuleData");
@@ -80,6 +82,7 @@ public partial class MainWindowViewModel : ViewModelBase
             if (Directory.Exists(coreModuleDataPath))
             {
                 _factionCatalogService.LoadFactions(coreModuleDataPath, armoryAssetSourcesPath);
+                _abilityCatalogService = new AbilityCatalogService(coreModuleDataPath);
             }
         }
 
@@ -147,6 +150,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
         // Assign banner image service for faction banner display
         newTab.BannerImageService = _bannerImageService;
+
+        // Assign ability catalog service for ability icons
+        newTab.AbilityCatalogService = _abilityCatalogService;
 
         // Subscribe to cross-reference navigation events
         newTab.NavigateToCrossReference += OnNavigateToCrossReference;
