@@ -1024,8 +1024,8 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
                 var rawValue = values.GetValueOrDefault(fieldName, "");
                 if (string.IsNullOrEmpty(rawValue)) continue;
 
-                // Handle multi-value fields (colon-separated)
-                var ids = rawValue.Split(':');
+                // Handle multi-value fields (colon-separated or comma-separated)
+                var ids = rawValue.Split(new[] { ':', ',' }, StringSplitOptions.RemoveEmptyEntries);
 
                 foreach (var id in ids)
                 {
@@ -1141,38 +1141,203 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     {
         try
         {
-            _document = _xmlService.Load(FilePath);
-            var entries = _xmlService.GetEntries(_document);
-
-            XmlEntries.Clear();
-            XmlEntries.AddRange(entries);
-
-            // Load git committed values for comparison
-            LoadGitCommittedValues();
-
-            // Check if this is an equipment set file with nested variations
-            if (Schema?.HasNestedVariations == true && !string.IsNullOrEmpty(Schema.VariationElement))
+            // Check if this schema defines multiple source files to merge
+            if (Schema?.AdditionalSourceFiles != null && Schema.AdditionalSourceFiles.Count > 0)
             {
-                // Flatten equipment sets - each variation becomes a row
-                LoadEquipmentSetVariations(entries);
+                LoadMergedFiles();
             }
             else
             {
-                // Normal loading
-                DiscoverColumns(entries);
-                CreateRows(entries);
+                // Standard single-file loading
+                _document = _xmlService.Load(FilePath);
+                var entries = _xmlService.GetEntries(_document);
+
+                XmlEntries.Clear();
+                XmlEntries.AddRange(entries);
+
+                // Load git committed values for comparison
+                LoadGitCommittedValues();
+
+                // Check if this is an equipment set file with nested variations
+                if (Schema?.HasNestedVariations == true && !string.IsNullOrEmpty(Schema.VariationElement))
+                {
+                    // Flatten equipment sets - each variation becomes a row
+                    LoadEquipmentSetVariations(entries);
+                }
+                else
+                {
+                    // Normal loading
+                    DiscoverColumns(entries);
+                    CreateRows(entries);
+                }
+
+                HasError = false;
+                ErrorMessage = "";
+
+                // Run validation on file load
+                RunValidation();
             }
-
-            HasError = false;
-            ErrorMessage = "";
-
-            // Run validation on file load
-            RunValidation();
         }
         catch (Exception ex)
         {
             HasError = true;
             ErrorMessage = $"Error loading file: {ex.Message}";
+        }
+    }
+
+    /// <summary>
+    /// Loads entries from multiple source files and merges them into a single view.
+    /// </summary>
+    private void LoadMergedFiles()
+    {
+        if (Schema == null) return;
+
+        var allEntries = new List<XmlEntry>();
+        var baseDir = Path.GetDirectoryName(FilePath);
+        if (string.IsNullOrEmpty(baseDir)) return;
+
+        // Load main file
+        Console.WriteLine($"[LoadMergedFiles] Loading main file: {FilePath}");
+        _document = _xmlService.Load(FilePath);
+        var mainEntries = _xmlService.GetEntries(_document);
+        Console.WriteLine($"[LoadMergedFiles] Loaded {mainEntries.Count} entries from main file");
+
+        // Set source file field on main entries (if specified)
+        if (!string.IsNullOrEmpty(Schema.SourceFileField))
+        {
+            foreach (var entry in mainEntries)
+            {
+                // Main file entries get the "default" value (usually "false" for is_custom_battle_lord)
+                entry.SetAttributeValue(Schema.SourceFileField, "false");
+            }
+        }
+
+        allEntries.AddRange(mainEntries);
+
+        // Load additional source files
+        foreach (var additionalFile in Schema.AdditionalSourceFiles)
+        {
+            var additionalFilePath = FindSourceFile(baseDir, additionalFile.FileName);
+            if (additionalFilePath == null)
+            {
+                Console.WriteLine($"[LoadMergedFiles] Additional file not found: {additionalFile.FileName}");
+                continue;
+            }
+
+            Console.WriteLine($"[LoadMergedFiles] Loading additional file: {additionalFilePath}");
+            var additionalDoc = _xmlService.Load(additionalFilePath);
+            var additionalEntries = _xmlService.GetEntries(additionalDoc);
+            Console.WriteLine($"[LoadMergedFiles] Loaded {additionalEntries.Count} entries from {additionalFile.FileName}");
+
+            // Set source file field on additional entries
+            if (!string.IsNullOrEmpty(Schema.SourceFileField) && !string.IsNullOrEmpty(additionalFile.SourceValue))
+            {
+                foreach (var entry in additionalEntries)
+                {
+                    entry.SetAttributeValue(Schema.SourceFileField, additionalFile.SourceValue);
+                }
+            }
+
+            allEntries.AddRange(additionalEntries);
+        }
+
+        Console.WriteLine($"[LoadMergedFiles] Total merged entries: {allEntries.Count}");
+
+        // Merge data from merged data file (e.g., tor_heroes.xml)
+        if (Schema.MergedDataFile != null)
+        {
+            MergeDataFromFile(allEntries, baseDir);
+        }
+
+        XmlEntries.Clear();
+        XmlEntries.AddRange(allEntries);
+
+        // Load git committed values for comparison
+        LoadGitCommittedValues();
+
+        // Normal loading
+        DiscoverColumns(allEntries);
+        CreateRows(allEntries);
+
+        HasError = false;
+        ErrorMessage = "";
+
+        // Run validation on file load
+        RunValidation();
+    }
+
+    /// <summary>
+    /// Merges data from a separate data file into the loaded entries.
+    /// Used for merging hero data (faction, text) from tor_heroes.xml into lords.
+    /// </summary>
+    private void MergeDataFromFile(List<XmlEntry> entries, string baseDir)
+    {
+        if (Schema?.MergedDataFile == null) return;
+
+        var mergedConfig = Schema.MergedDataFile;
+        var mergedFilePath = FindSourceFile(baseDir, mergedConfig.FileName);
+        if (mergedFilePath == null)
+        {
+            Console.WriteLine($"[MergeData] Merged data file not found: {mergedConfig.FileName}");
+            return;
+        }
+
+        Console.WriteLine($"[MergeData] Loading merged data from: {mergedFilePath}");
+
+        try
+        {
+            var mergedDoc = XDocument.Load(mergedFilePath);
+            var mergedRoot = mergedDoc.Root;
+            if (mergedRoot == null) return;
+
+            // Find the entry element name
+            var entryElementName = mergedConfig.EntryElement ?? "Hero";
+            var matchField = mergedConfig.MatchField ?? "id";
+
+            // Build a dictionary of merged data keyed by match field
+            var mergedData = new Dictionary<string, XElement>(StringComparer.OrdinalIgnoreCase);
+            foreach (var element in mergedRoot.Elements(entryElementName))
+            {
+                var key = element.Attribute(matchField)?.Value;
+                if (!string.IsNullOrEmpty(key))
+                {
+                    mergedData[key] = element;
+                }
+            }
+
+            Console.WriteLine($"[MergeData] Loaded {mergedData.Count} entries from {mergedConfig.FileName}");
+
+            // Merge data into entries
+            foreach (var entry in entries)
+            {
+                var entryId = entry.GetAttributeValue(matchField);
+                if (string.IsNullOrEmpty(entryId)) continue;
+
+                if (mergedData.TryGetValue(entryId, out var mergedElement))
+                {
+                    // Apply field mappings
+                    if (mergedConfig.FieldMappings != null)
+                    {
+                        foreach (var mapping in mergedConfig.FieldMappings)
+                        {
+                            var sourceField = mapping.Value; // "faction" or "text"
+                            var targetField = mapping.Key;   // "clan" or "encyclopedia_text"
+
+                            var sourceValue = mergedElement.Attribute(sourceField)?.Value;
+                            if (!string.IsNullOrEmpty(sourceValue))
+                            {
+                                entry.SetAttributeValue(targetField, sourceValue);
+                            }
+                        }
+                    }
+                }
+            }
+
+            Console.WriteLine($"[MergeData] Merged data complete");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[MergeData] Error loading {mergedFilePath}: {ex.Message}");
         }
     }
 
@@ -1845,9 +2010,18 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
                 GenerateCivilianClones();
             }
 
-            // Use compact format by default, unless schema explicitly disables it
-            var compactFormat = Schema?.CompactFormat ?? true;
-            _xmlService.Save(_document, null, compactFormat);
+            // Check if this is a multi-file schema that needs split saving
+            if (Schema?.AdditionalSourceFiles != null && Schema.AdditionalSourceFiles.Count > 0)
+            {
+                SaveMergedFiles();
+            }
+            else
+            {
+                // Standard single-file save
+                var compactFormat = Schema?.CompactFormat ?? true;
+                _xmlService.Save(_document, null, compactFormat);
+            }
+
             HasUnsavedChanges = false;
             HasError = false;
             ErrorMessage = "";
@@ -1875,6 +2049,181 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         {
             // Delay resetting flag to avoid catching our own save event
             Task.Delay(500).ContinueWith(_ => _isSaving = false);
+        }
+    }
+
+    /// <summary>
+    /// Saves multi-file schemas by splitting entries back to their source files.
+    /// Also saves merged data (e.g., hero data) back to separate files.
+    /// </summary>
+    private void SaveMergedFiles()
+    {
+        if (Schema == null) return;
+
+        var baseDir = Path.GetDirectoryName(FilePath);
+        if (string.IsNullOrEmpty(baseDir)) return;
+
+        var compactFormat = Schema.CompactFormat;
+
+        // Group entries by source file field (e.g., is_custom_battle_lord)
+        var mainEntries = new List<XmlEntry>();
+        var additionalFileEntries = new Dictionary<string, List<XmlEntry>>();
+
+        foreach (var entry in XmlEntries)
+        {
+            if (!string.IsNullOrEmpty(Schema.SourceFileField))
+            {
+                var sourceValue = entry.GetAttributeValue(Schema.SourceFileField);
+
+                // Check if this entry belongs to an additional file
+                var additionalFile = Schema.AdditionalSourceFiles.FirstOrDefault(f => f.SourceValue == sourceValue);
+                if (additionalFile != null)
+                {
+                    if (!additionalFileEntries.ContainsKey(additionalFile.FileName))
+                    {
+                        additionalFileEntries[additionalFile.FileName] = new List<XmlEntry>();
+                    }
+                    additionalFileEntries[additionalFile.FileName].Add(entry);
+                }
+                else
+                {
+                    mainEntries.Add(entry);
+                }
+            }
+            else
+            {
+                mainEntries.Add(entry);
+            }
+        }
+
+        // Save main file
+        Console.WriteLine($"[SaveMergedFiles] Saving {mainEntries.Count} entries to main file: {FilePath}");
+        var mainXDoc = CreateDocumentFromEntries(mainEntries, Schema.RootElement ?? "NPCCharacters");
+        var mainDoc = new XmlDocumentWrapper(mainXDoc, FilePath, _document!.HasBom, _document.Encoding, _document.IndentString);
+        _xmlService.Save(mainDoc, FilePath, compactFormat);
+
+        // Save additional files
+        foreach (var kvp in additionalFileEntries)
+        {
+            var fileName = kvp.Key;
+            var entries = kvp.Value;
+            var filePath = FindSourceFile(baseDir, fileName);
+
+            if (filePath != null)
+            {
+                Console.WriteLine($"[SaveMergedFiles] Saving {entries.Count} entries to: {filePath}");
+                var xdoc = CreateDocumentFromEntries(entries, Schema.RootElement ?? "NPCCharacters");
+                var doc = new XmlDocumentWrapper(xdoc, filePath, _document!.HasBom, _document.Encoding, _document.IndentString);
+                _xmlService.Save(doc, filePath, compactFormat);
+            }
+        }
+
+        // Save merged data file if configured (e.g., tor_heroes.xml)
+        if (Schema.MergedDataFile != null)
+        {
+            SaveMergedDataFile(baseDir);
+        }
+    }
+
+    /// <summary>
+    /// Creates an XDocument from a list of XmlEntry objects.
+    /// </summary>
+    private XDocument CreateDocumentFromEntries(List<XmlEntry> entries, string rootElementName)
+    {
+        var root = new XElement(rootElementName);
+        foreach (var entry in entries)
+        {
+            // Remove the source file field attribute before saving (it's only for internal tracking)
+            if (!string.IsNullOrEmpty(Schema?.SourceFileField))
+            {
+                entry.OriginalElement.Attribute(Schema.SourceFileField)?.Remove();
+            }
+            root.Add(entry.OriginalElement);
+        }
+        return new XDocument(root);
+    }
+
+    /// <summary>
+    /// Saves merged data fields back to the merged data file (e.g., tor_heroes.xml).
+    /// Extracts clan → faction and encyclopedia_text → text mappings.
+    /// </summary>
+    private void SaveMergedDataFile(string baseDir)
+    {
+        if (Schema?.MergedDataFile == null) return;
+
+        var mergedConfig = Schema.MergedDataFile;
+        var mergedFilePath = FindSourceFile(baseDir, mergedConfig.FileName);
+        if (mergedFilePath == null)
+        {
+            Console.WriteLine($"[SaveMergedData] Merged data file not found: {mergedConfig.FileName}");
+            return;
+        }
+
+        Console.WriteLine($"[SaveMergedData] Updating merged data file: {mergedFilePath}");
+
+        try
+        {
+            // Load existing merged data file
+            var mergedDoc = XDocument.Load(mergedFilePath);
+            var mergedRoot = mergedDoc.Root;
+            if (mergedRoot == null) return;
+
+            var entryElementName = mergedConfig.EntryElement ?? "Hero";
+            var matchField = mergedConfig.MatchField ?? "id";
+
+            // Build a dictionary of existing entries
+            var existingEntries = new Dictionary<string, XElement>(StringComparer.OrdinalIgnoreCase);
+            foreach (var element in mergedRoot.Elements(entryElementName))
+            {
+                var key = element.Attribute(matchField)?.Value;
+                if (!string.IsNullOrEmpty(key))
+                {
+                    existingEntries[key] = element;
+                }
+            }
+
+            // Update entries with data from our rows
+            int updatedCount = 0;
+            foreach (var entry in XmlEntries)
+            {
+                var entryId = entry.GetAttributeValue(matchField);
+                if (string.IsNullOrEmpty(entryId)) continue;
+
+                if (existingEntries.TryGetValue(entryId, out var heroElement))
+                {
+                    // Apply reverse field mappings (targetField → sourceField)
+                    if (mergedConfig.FieldMappings != null)
+                    {
+                        foreach (var mapping in mergedConfig.FieldMappings)
+                        {
+                            var targetField = mapping.Key;   // "clan" or "encyclopedia_text"
+                            var sourceField = mapping.Value; // "faction" or "text"
+
+                            var value = entry.GetAttributeValue(targetField);
+                            if (!string.IsNullOrEmpty(value))
+                            {
+                                var oldValue = heroElement.Attribute(sourceField)?.Value;
+                                if (oldValue != value)
+                                {
+                                    heroElement.SetAttributeValue(sourceField, value);
+                                    updatedCount++;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Console.WriteLine($"[SaveMergedData] Updated {updatedCount} fields in {mergedFilePath}");
+
+            // Save the merged data file with compact format
+            var compactFormat = Schema.CompactFormat;
+            var mergedDocWrapper = new XmlDocumentWrapper(mergedDoc, mergedFilePath, _document!.HasBom, _document.Encoding, _document.IndentString);
+            _xmlService.Save(mergedDocWrapper, mergedFilePath, compactFormat);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[SaveMergedData] Error saving {mergedFilePath}: {ex.Message}");
         }
     }
 

@@ -29,7 +29,7 @@ public class WorkspaceService : IWorkspaceService
         // tor_extendeditemproperties.xml is accessed via cross-references, not directly edited
 
         // Unit Catalog - TOR_Core
-        ["tor_heroes.xml"] = ("Unit Catalog", "Heroes"),
+        // tor_heroes.xml is merged into Campaign Lords, not edited directly
         ["tor_campaign_lords.xml"] = ("Unit Catalog", "Campaign Lords"),
         ["tor_troopdefinitions.xml"] = ("Unit Catalog", "Troop Definitions"),
         ["tor_charactertemplates.xml"] = ("Unit Catalog", "Character Templates"),
@@ -111,8 +111,8 @@ public class WorkspaceService : IWorkspaceService
         ["tor_troopdefinitions.xml"] = 1,
         ["tor_equipment_sets.xml"] = 2,
         ["tor_skillsets.xml"] = 3,
-        ["tor_heroes.xml"] = 10,
-        ["tor_campaign_lords.xml"] = 11,
+        // tor_heroes.xml removed - merged into Campaign Lords
+        ["tor_campaign_lords.xml"] = 10,
         ["tor_charactertemplates.xml"] = 12,
         ["tor_bodyproperties.xml"] = 20,
         ["tor_extendedunitproperties.xml"] = 21,

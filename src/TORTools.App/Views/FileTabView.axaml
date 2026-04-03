@@ -106,21 +106,21 @@
         </Border>
 
         <!-- DataGrid when loaded successfully -->
-        <DataGrid x:Name="EntryGrid"
-                  Grid.Row="1"
-                  ItemsSource="{Binding Rows}"
-                  SelectedIndex="{Binding SelectedIndex}"
-                  IsVisible="{Binding !HasError}"
-                  AutoGenerateColumns="False"
-                  CanUserReorderColumns="True"
-                  CanUserResizeColumns="True"
-                  CanUserSortColumns="True"
-                  GridLinesVisibility="All"
-                  IsReadOnly="False"
-                  SelectionMode="Extended"
-                  HeadersVisibility="Column"
-                  FrozenColumnCount="2"
-                  LoadingRow="OnDataGridLoadingRow">
+        <Border Grid.Row="1" Padding="0,0,8,0">
+            <DataGrid x:Name="EntryGrid"
+                      ItemsSource="{Binding Rows}"
+                      SelectedIndex="{Binding SelectedIndex}"
+                      IsVisible="{Binding !HasError}"
+                      AutoGenerateColumns="False"
+                      CanUserReorderColumns="True"
+                      CanUserResizeColumns="True"
+                      CanUserSortColumns="True"
+                      GridLinesVisibility="All"
+                      IsReadOnly="False"
+                      SelectionMode="Extended"
+                      HeadersVisibility="Column"
+                      FrozenColumnCount="2"
+                      LoadingRow="OnDataGridLoadingRow">
             <DataGrid.ContextMenu>
                 <ContextMenu>
                     <MenuItem Header="Insert Row Above" Command="{Binding InsertRowAboveCommand}">
@@ -159,6 +159,7 @@
                 </ContextMenu>
             </DataGrid.ContextMenu>
         </DataGrid>
+        </Border>
 
         <!-- Validation Panel -->
         <Border Grid.Row="2"

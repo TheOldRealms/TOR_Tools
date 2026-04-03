@@ -13,6 +13,7 @@ using Avalonia.VisualTree;
 using TORTools.App.Helpers;
 using TORTools.App.Services;
 using TORTools.App.ViewModels;
+using TORTools.App.Views.Dialogs;
 using TORTools.Core.Schema;
 using TORTools.Core.Services;
 using TORTools.Core.Validation;
@@ -447,6 +448,18 @@ public partial class FileTabView : UserControl
                     IsReadOnly = displayInfo.IsReadOnly,
                     CellTemplate = CreateEnumCellTemplate(displayInfo.AttributeName, fieldDef!, vm),
                     CellEditingTemplate = CreateEnumEditingTemplate(displayInfo.AttributeName, fieldDef!)
+                };
+            }
+            else if (fieldDef?.Multiline == true)
+            {
+                // Multiline text field with edit button (but also allows inline editing)
+                column = new DataGridTemplateColumn
+                {
+                    Header = CreateColumnHeader(displayInfo, fieldDef),
+                    Width = new DataGridLength(displayInfo.Width),
+                    IsReadOnly = false,
+                    CellTemplate = CreateMultilineTextCellTemplate(displayInfo.AttributeName, fieldDef, vm),
+                    CellEditingTemplate = CreateTextEditingTemplate(displayInfo.AttributeName, fieldDef)
                 };
             }
             else
@@ -1065,8 +1078,11 @@ public partial class FileTabView : UserControl
                 var localKeyField = fieldDef.CrossReference?.LocalKeyField ?? "id";
                 var localKey = rowVm[localKeyField] ?? "";
 
-                // Custom title for skill template
-                var dialogTitle = isSkillTemplate ? "Edit Skill Set" : "Edit Traits";
+                // Custom title based on field type
+                var isAbilityField = fieldDef.CrossReference?.TargetFile == "tor_abilitytemplates.xml";
+                var dialogTitle = isSkillTemplate ? "Edit Skill Set"
+                    : isAbilityField ? "Edit Abilities"
+                    : "Edit Traits";
 
                 // Get level for skill template default calculation
                 int? troopLevel = null;
@@ -1077,26 +1093,49 @@ public partial class FileTabView : UserControl
                         troopLevel = level;
                 }
 
-                ShowTraitEditorPopup(editButton, currentValue, availableIds, dialogTitle, prefixToStrip, troopLevel, (result) =>
+                // Use specialized dialog for abilities, generic for others
+                if (isAbilityField)
                 {
-                    if (result != null && result != currentValue)
+                    var parentWindow = TopLevel.GetTopLevel(editButton) as Window;
+                    if (parentWindow != null)
                     {
-                        // Update the cross-reference in the source file
-                        var success = vm.UpdateCrossReferenceValue(attributeName, localKey, result);
-                        if (success)
+                        var abilityDialog = new AbilityEditorDialog(currentValue, availableIds, vm);
+                        var dialogResult = abilityDialog.ShowDialog(parentWindow);
+                        if (dialogResult != null && dialogResult != currentValue)
                         {
-                            rowVm[attributeName] = result;
-                            Console.WriteLine($"[CrossRef] Updated traits to: {result}");
-
-                            // Rebuild the links to show the new values
-                            RebuildLinks();
-                        }
-                        else
-                        {
-                            Console.WriteLine($"[CrossRef] Failed to update cross-reference");
+                            var success = vm.UpdateCrossReferenceValue(attributeName, localKey, dialogResult);
+                            if (success)
+                            {
+                                rowVm[attributeName] = dialogResult;
+                                Console.WriteLine($"[CrossRef] Updated abilities to: {dialogResult}");
+                                RebuildLinks();
+                            }
                         }
                     }
-                });
+                }
+                else
+                {
+                    ShowTraitEditorPopup(editButton, currentValue, availableIds, dialogTitle, prefixToStrip, troopLevel, null, (result) =>
+                    {
+                        if (result != null && result != currentValue)
+                        {
+                            // Update the cross-reference in the source file
+                            var success = vm.UpdateCrossReferenceValue(attributeName, localKey, result);
+                            if (success)
+                            {
+                                rowVm[attributeName] = result;
+                                Console.WriteLine($"[CrossRef] Updated traits to: {result}");
+
+                                // Rebuild the links to show the new values
+                                RebuildLinks();
+                            }
+                            else
+                            {
+                                Console.WriteLine($"[CrossRef] Failed to update cross-reference");
+                            }
+                        }
+                    });
+                }
             };
 
             // Add edit button first, then links panel (button appears before attributes)
@@ -1111,7 +1150,7 @@ public partial class FileTabView : UserControl
     /// <summary>
     /// Shows a dialog window for editing traits/skills with autocomplete support.
     /// </summary>
-    private static void ShowTraitEditorPopup(Control anchor, string currentValue, List<string> availableIds, string title, string? prefixToStrip, int? troopLevel, Action<string?> onComplete)
+    private static void ShowTraitEditorPopup(Control anchor, string currentValue, List<string> availableIds, string title, string? prefixToStrip, int? troopLevel, FileTabViewModel? vmForIcons, Action<string?> onComplete)
     {
         Console.WriteLine("[TraitEditor] Creating dialog...");
 
@@ -1791,6 +1830,82 @@ public partial class FileTabView : UserControl
                     }
                     // Update styling
                     CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
+                };
+            }
+
+            border.Child = grid;
+            return border;
+        });
+    }
+
+    /// <summary>
+    /// Creates a multiline text cell template with an edit button.
+    /// </summary>
+    private static IDataTemplate CreateMultilineTextCellTemplate(string attributeName, FieldDefinition? fieldDef, FileTabViewModel vm)
+    {
+        return new FuncDataTemplate<EntryRowViewModel>((rowVm, _) =>
+        {
+            var border = new Border();
+            border.Classes.Add("dataCell");
+
+            var grid = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitions("*,Auto")
+            };
+
+            // Text display (truncated)
+            var text = new TextBlock
+            {
+                Text = rowVm?[attributeName] ?? "",
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                MaxLines = 1,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Avalonia.Thickness(4, 0, 4, 0)
+            };
+            Grid.SetColumn(text, 0);
+            grid.Children.Add(text);
+
+            // Edit button
+            var editButton = new Button
+            {
+                Content = "...",
+                Width = 24,
+                Height = 24,
+                Padding = new Avalonia.Thickness(2),
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Margin = new Avalonia.Thickness(2)
+            };
+            ToolTip.SetTip(editButton, "Edit text");
+            Grid.SetColumn(editButton, 1);
+            grid.Children.Add(editButton);
+
+            // Handle click
+            editButton.Click += async (sender, e) =>
+            {
+                if (rowVm == null) return;
+
+                var currentValue = rowVm[attributeName] ?? "";
+                var dialog = new TextEditorDialog(fieldDef?.DisplayName ?? attributeName, currentValue);
+                var parentWindow = TopLevel.GetTopLevel(editButton) as Window;
+                if (parentWindow == null) return;
+
+                var result = await dialog.ShowDialog<string?>(parentWindow);
+
+                if (result != null && result != currentValue)
+                {
+                    rowVm[attributeName] = result;
+                    text.Text = result;
+                    vm.HasUnsavedChanges = true;
+                }
+            };
+
+            // Subscribe to refresh events
+            if (rowVm != null)
+            {
+                vm.CellRefreshRequested += (s, args) =>
+                {
+                    text.Text = rowVm[attributeName] ?? "";
                 };
             }
 

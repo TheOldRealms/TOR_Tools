@@ -224,6 +224,12 @@ public class FieldDefinition
     public bool Hidden { get; set; }
 
     /// <summary>
+    /// Whether this field is multiline text that should use a popup editor.
+    /// </summary>
+    [JsonPropertyName("multiline")]
+    public bool Multiline { get; set; }
+
+    /// <summary>
     /// If set, this field is auto-filled based on another field's value.
     /// The value is the source field name.
     /// </summary>
