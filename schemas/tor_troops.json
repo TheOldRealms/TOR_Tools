@@ -234,6 +234,21 @@
         { "value": "true", "displayName": "Yes" },
         { "value": "false", "displayName": "No" }
       ]
+    },
+    "ext_Attributes": {
+      "displayName": "Attributes",
+      "description": "Unit attributes (colon-separated). Click to edit or navigate to attribute definition.",
+      "type": "crossReference",
+      "order": 50,
+      "width": 320,
+      "crossReference": {
+        "sourceFile": "tor_extendedunitproperties.xml",
+        "sourceKeyField": "id",
+        "sourceValuePath": "Attributes/string",
+        "targetFile": "tor_attributes.xml",
+        "targetKeyField": "id",
+        "localKeyField": "id"
+      }
     }
   }
 }

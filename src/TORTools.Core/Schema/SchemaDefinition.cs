@@ -51,6 +51,49 @@ public class SchemaDefinition
     public bool CompactFormat { get; set; } = true;
 
     /// <summary>
+    /// Whether this file type has nested variation elements (e.g., equipment sets).
+    /// </summary>
+    [JsonPropertyName("hasNestedVariations")]
+    public bool HasNestedVariations { get; set; }
+
+    /// <summary>
+    /// The element name for variations (e.g., "EquipmentSet").
+    /// </summary>
+    [JsonPropertyName("variationElement")]
+    public string? VariationElement { get; set; }
+
+    /// <summary>
+    /// The element name for equipment items within variations (e.g., "Equipment").
+    /// </summary>
+    [JsonPropertyName("equipmentItemElement")]
+    public string? EquipmentItemElement { get; set; }
+
+    /// <summary>
+    /// Whether items should be validated against the item catalog.
+    /// </summary>
+    [JsonPropertyName("itemCatalogCrossRef")]
+    public bool ItemCatalogCrossRef { get; set; }
+
+    /// <summary>
+    /// Equipment slot definitions for equipment set files.
+    /// </summary>
+    [JsonPropertyName("equipmentSlots")]
+    public List<EquipmentSlotDefinition>? EquipmentSlots { get; set; }
+
+    /// <summary>
+    /// Attributes that can appear on variation elements.
+    /// </summary>
+    [JsonPropertyName("variationAttributes")]
+    public List<VariationAttributeDefinition>? VariationAttributes { get; set; }
+
+    /// <summary>
+    /// Configuration for a linked file that provides additional data for entries.
+    /// The linked file's entries are matched by ID and merged into the main file's rows.
+    /// </summary>
+    [JsonPropertyName("linkedFile")]
+    public LinkedFileConfig? LinkedFile { get; set; }
+
+    /// <summary>
     /// Gets a field definition by name (case-insensitive).
     /// </summary>
     public FieldDefinition? GetField(string attributeName)
@@ -209,6 +252,24 @@ public class FieldDefinition
     /// </summary>
     [JsonPropertyName("prefixToAdd")]
     public string? PrefixToAdd { get; set; }
+
+    /// <summary>
+    /// If true, this field's value comes from a linked file rather than the main file.
+    /// </summary>
+    [JsonPropertyName("linkedField")]
+    public bool LinkedField { get; set; }
+
+    /// <summary>
+    /// Path to the value in the linked file's entry (e.g., "Attributes", "ResourceCost/@UpkeepCost").
+    /// </summary>
+    [JsonPropertyName("linkedSource")]
+    public string? LinkedSource { get; set; }
+
+    /// <summary>
+    /// Delimiter for joining/splitting list values (e.g., ":" for colon-separated attributes).
+    /// </summary>
+    [JsonPropertyName("delimiter")]
+    public string? Delimiter { get; set; }
 }
 
 /// <summary>
@@ -313,4 +374,100 @@ public class EnumValue
     /// </summary>
     [JsonPropertyName("description")]
     public string? Description { get; set; }
+}
+
+/// <summary>
+/// Definition of an equipment slot for equipment set files.
+/// </summary>
+public class EquipmentSlotDefinition
+{
+    /// <summary>
+    /// The slot attribute value (e.g., "Item0", "Head", "Body").
+    /// </summary>
+    [JsonPropertyName("slot")]
+    public string Slot { get; set; } = "";
+
+    /// <summary>
+    /// Display name for the slot.
+    /// </summary>
+    [JsonPropertyName("displayName")]
+    public string DisplayName { get; set; } = "";
+
+    /// <summary>
+    /// Display order.
+    /// </summary>
+    [JsonPropertyName("order")]
+    public int Order { get; set; }
+
+    /// <summary>
+    /// Column width in pixels.
+    /// </summary>
+    [JsonPropertyName("width")]
+    public int Width { get; set; } = 200;
+}
+
+/// <summary>
+/// Definition of an attribute on variation elements.
+/// </summary>
+public class VariationAttributeDefinition
+{
+    /// <summary>
+    /// The attribute name (e.g., "civilian").
+    /// </summary>
+    [JsonPropertyName("attribute")]
+    public string Attribute { get; set; } = "";
+
+    /// <summary>
+    /// Display name for the attribute.
+    /// </summary>
+    [JsonPropertyName("displayName")]
+    public string DisplayName { get; set; } = "";
+
+    /// <summary>
+    /// Data type (string, bool, int, etc.).
+    /// </summary>
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = "string";
+
+    /// <summary>
+    /// Description of this attribute.
+    /// </summary>
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
+}
+
+/// <summary>
+/// Configuration for a linked file that provides additional data merged into main file entries.
+/// </summary>
+public class LinkedFileConfig
+{
+    /// <summary>
+    /// The linked file name (e.g., "tor_extendedunitproperties.xml").
+    /// </summary>
+    [JsonPropertyName("file")]
+    public string FileName { get; set; } = "";
+
+    /// <summary>
+    /// Relative path to the linked file from the module's ModuleData folder.
+    /// </summary>
+    [JsonPropertyName("path")]
+    public string? Path { get; set; }
+
+    /// <summary>
+    /// The root element name in the linked XML.
+    /// </summary>
+    [JsonPropertyName("rootElement")]
+    public string RootElement { get; set; } = "";
+
+    /// <summary>
+    /// The entry element name in the linked XML.
+    /// </summary>
+    [JsonPropertyName("entryElement")]
+    public string EntryElement { get; set; } = "";
+
+    /// <summary>
+    /// The field used to link entries between files (usually "id").
+    /// </summary>
+    [JsonPropertyName("linkField")]
+    public string LinkField { get; set; } = "id";
 }

@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Xml.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using TORTools.Core.Commands;
@@ -38,6 +39,12 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     /// Key is the field name, value is the resolved path to the source file.
     /// </summary>
     private readonly Dictionary<string, string> _crossRefSourcePaths = new();
+
+    /// <summary>
+    /// Descriptions for cross-reference target items (e.g., attribute descriptions).
+    /// Key is the field name, value is a dictionary mapping ID to description.
+    /// </summary>
+    private readonly Dictionary<string, Dictionary<string, string>> _crossRefDescriptions = new();
 
     /// <summary>
     /// Git committed values for comparison.
@@ -152,6 +159,11 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     /// Icon service for icon picker functionality. Set after construction by MainWindowViewModel.
     /// </summary>
     public IIconService? IconService { get; set; }
+
+    /// <summary>
+    /// Item catalog service for equipment set validation. Set after construction by MainWindowViewModel.
+    /// </summary>
+    public ItemCatalogService? ItemCatalogService { get; set; }
 
     /// <summary>
     /// The schema definition for this file type, if available.
@@ -308,6 +320,14 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
                                 var availableIds = _crossRefService.LoadTargetKeys(targetFilePath, config.TargetKeyField);
                                 _availableIds[fieldName] = availableIds;
                                 Console.WriteLine($"[CrossRef] Loaded {availableIds.Count} available IDs for {fieldName} autocomplete");
+
+                                // Also load descriptions from the target file if available
+                                var descriptions = LoadTargetDescriptions(targetFilePath, config.TargetKeyField);
+                                if (descriptions.Count > 0)
+                                {
+                                    _crossRefDescriptions[fieldName] = descriptions;
+                                    Console.WriteLine($"[CrossRef] Loaded {descriptions.Count} descriptions for {fieldName}");
+                                }
                             }
                         }
 
@@ -380,6 +400,15 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     {
         Console.WriteLine($"[FindSourceFile] Looking for {fileName} from base {baseDir}");
 
+        // FIRST: Check TORTools/data for tool-specific data files (highest priority)
+        // This allows tool-specific files like tor_attributes.xml to live in TORTools
+        var torToolsDataPath = FindTorToolsDataPath(baseDir, fileName);
+        if (torToolsDataPath != null)
+        {
+            Console.WriteLine($"[FindSourceFile] Found in TORTools/data: {torToolsDataPath}");
+            return torToolsDataPath;
+        }
+
         // Check same directory
         var path = Path.Combine(baseDir, fileName);
         if (File.Exists(path))
@@ -408,7 +437,7 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
             var parentName = Path.GetFileName(parent);
             if (parentName?.Equals("Modules", StringComparison.OrdinalIgnoreCase) == true)
             {
-                // Found the Modules directory - check TOR_Core
+                // Check TOR_Core/ModuleData/tor_custom_xmls
                 var torCorePath = Path.Combine(parent, "TOR_Core", "ModuleData", "tor_custom_xmls", fileName);
                 Console.WriteLine($"[FindSourceFile] Checking TOR_Core path: {torCorePath}");
                 if (File.Exists(torCorePath))
@@ -430,6 +459,78 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         }
 
         Console.WriteLine($"[FindSourceFile] Not found: {fileName}");
+        return null;
+    }
+
+    /// <summary>
+    /// Helper to find TORTools/data path for tool-specific data files.
+    /// </summary>
+    private string? FindTorToolsDataPath(string baseDir, string fileName)
+    {
+        var current = baseDir;
+        for (int i = 0; i < 5; i++) // Safety limit
+        {
+            var parent = Path.GetDirectoryName(current);
+            if (string.IsNullOrEmpty(parent)) break;
+
+            var parentName = Path.GetFileName(parent);
+            if (parentName?.Equals("Modules", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                // Found Modules directory - check TORTools/data
+                var torToolsPath = Path.Combine(parent, "TORTools", "data", fileName);
+                if (File.Exists(torToolsPath))
+                {
+                    return torToolsPath;
+                }
+                break;
+            }
+            current = parent;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Loads descriptions from a target XML file.
+    /// Looks for a "description" attribute on each element.
+    /// </summary>
+    private Dictionary<string, string> LoadTargetDescriptions(string filePath, string keyField)
+    {
+        var descriptions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        try
+        {
+            var doc = XDocument.Load(filePath);
+            foreach (var element in doc.Root?.Elements() ?? Enumerable.Empty<XElement>())
+            {
+                var key = element.Attribute(keyField)?.Value;
+                var description = element.Attribute("description")?.Value;
+
+                if (!string.IsNullOrEmpty(key) && !string.IsNullOrEmpty(description))
+                {
+                    descriptions[key] = description;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[LoadTargetDescriptions] Error loading {filePath}: {ex.Message}");
+        }
+
+        return descriptions;
+    }
+
+    /// <summary>
+    /// Gets the description for a cross-reference target item.
+    /// </summary>
+    public string? GetCrossRefDescription(string fieldName, string itemId)
+    {
+        if (_crossRefDescriptions.TryGetValue(fieldName, out var descriptions))
+        {
+            if (descriptions.TryGetValue(itemId, out var description))
+            {
+                return description;
+            }
+        }
         return null;
     }
 
@@ -544,8 +645,10 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         });
 
         // Run basic validation
+        // Skip duplicate ID check for equipment sets (variations share same roster ID)
+        var skipDuplicateIdCheck = Schema?.HasNestedVariations == true;
         var entries = rowData.Select(r => (IDictionary<string, string>)r.values).ToList();
-        var result = _validationService.ValidateAll(entries, Schema);
+        var result = _validationService.ValidateAll(entries, Schema, skipDuplicateIdCheck);
 
         // Register basic validation issues
         foreach (var issue in result.Issues)
@@ -910,11 +1013,18 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
             // Load git committed values for comparison
             LoadGitCommittedValues();
 
-            // Discover all unique column names from all entries
-            DiscoverColumns(entries);
-
-            // Create row view models for DataGrid binding
-            CreateRows(entries);
+            // Check if this is an equipment set file with nested variations
+            if (Schema?.HasNestedVariations == true && !string.IsNullOrEmpty(Schema.VariationElement))
+            {
+                // Flatten equipment sets - each variation becomes a row
+                LoadEquipmentSetVariations(entries);
+            }
+            else
+            {
+                // Normal loading
+                DiscoverColumns(entries);
+                CreateRows(entries);
+            }
 
             HasError = false;
             ErrorMessage = "";
@@ -927,6 +1037,140 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
             HasError = true;
             ErrorMessage = $"Error loading file: {ex.Message}";
         }
+    }
+
+    /// <summary>
+    /// Loads equipment sets by flattening variations into rows.
+    /// Each EquipmentSet variation becomes its own row with equipment slots as columns.
+    /// </summary>
+    /// <remarks>
+    /// NOTE: Vanilla Bannerlord supports a Flags element on EquipmentRoster with attributes like
+    /// IsCivilianTemplate, IsCombatantTemplate, IsWandererEquipment. TOR doesn't use this element
+    /// (XmlGenerator doesn't support it). Only the 'civilian' attribute on EquipmentSet is used.
+    /// If TOR adopts the vanilla Flags element in future, we'll need to add support here.
+    /// </remarks>
+    private void LoadEquipmentSetVariations(IReadOnlyList<XmlEntry> rosterEntries)
+    {
+        // Build column list: roster fields + variation attributes + equipment slots
+        ColumnNames.Clear();
+        ColumnNames.Add("id");           // Roster ID
+        ColumnNames.Add("culture");      // Roster culture
+        ColumnNames.Add("_variation");   // Variation index (internal tracking)
+        ColumnNames.Add("civilian");     // Variation attribute
+
+        // Add equipment slots from schema
+        if (Schema?.EquipmentSlots != null)
+        {
+            foreach (var slot in Schema.EquipmentSlots.OrderBy(s => s.Order))
+            {
+                ColumnNames.Add(slot.Slot);
+            }
+        }
+
+        // Unsubscribe from old rows
+        foreach (var row in Rows)
+        {
+            row.CellValueChanged -= OnCellValueChanged;
+        }
+        Rows.Clear();
+
+        int rowNum = 1;
+        var variationElementName = Schema!.VariationElement!;
+        var equipmentElementName = Schema.EquipmentItemElement ?? "Equipment";
+
+        foreach (var roster in rosterEntries)
+        {
+            var rosterId = roster.GetAttributeValue("id") ?? "";
+            var rosterCulture = roster.GetAttributeValue("culture") ?? "";
+
+            // Get all EquipmentSet variations
+            var variations = roster.Children.Where(c => c.ElementName == variationElementName).ToList();
+
+            if (variations.Count == 0)
+            {
+                // No variations - create a single row for the roster
+                var emptyRow = CreateEquipmentRow(roster, null, rosterId, rosterCulture, 0, false, new Dictionary<string, string>(), rowNum++);
+                Rows.Add(emptyRow);
+            }
+            else
+            {
+                int variationIndex = 0;
+                foreach (var variation in variations)
+                {
+                    var isCivilian = variation.GetAttributeValue("civilian")?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
+
+                    // Extract equipment from this variation
+                    var equipment = new Dictionary<string, string>();
+                    foreach (var equipItem in variation.Children.Where(c => c.ElementName == equipmentElementName))
+                    {
+                        var slot = equipItem.GetAttributeValue("slot");
+                        var itemId = equipItem.GetAttributeValue("id");
+                        if (!string.IsNullOrEmpty(slot) && !string.IsNullOrEmpty(itemId))
+                        {
+                            equipment[slot] = itemId;
+                        }
+                    }
+
+                    var row = CreateEquipmentRow(roster, variation, rosterId, rosterCulture, variationIndex, isCivilian, equipment, rowNum++);
+                    Rows.Add(row);
+                    variationIndex++;
+                }
+            }
+        }
+
+        Console.WriteLine($"[EquipmentSets] Loaded {Rows.Count} variations from {rosterEntries.Count} rosters");
+    }
+
+    /// <summary>
+    /// Creates a row for an equipment set variation.
+    /// </summary>
+    private EntryRowViewModel CreateEquipmentRow(
+        XmlEntry roster,
+        XmlEntry? variation,
+        string rosterId,
+        string rosterCulture,
+        int variationIndex,
+        bool isCivilian,
+        Dictionary<string, string> equipment,
+        int rowNum)
+    {
+        // Get git committed values for this entry
+        var gitKey = $"{rosterId}_{variationIndex}";
+        var gitValues = GetGitCommittedValues(gitKey);
+
+        var row = new EntryRowViewModel(roster, ColumnNames, gitValues);
+        row.RowNumber = rowNum;
+        row.VariationEntry = variation;
+        row.VariationIndex = variationIndex;
+        row.RosterId = rosterId;
+
+        // NOTE: Do NOT subscribe to CellValueChanged yet - we're just populating initial values
+        // Set roster-level values (these are display-only, not persisted to roster attributes)
+        row.SetValueWithoutNotify("id", rosterId);
+        row.SetValueWithoutNotify("culture", rosterCulture);
+        row.SetValueWithoutNotify("_variation", variationIndex.ToString());
+        row.SetValueWithoutNotify("civilian", isCivilian ? "true" : "false");
+
+        // Set equipment slot values
+        if (Schema?.EquipmentSlots != null)
+        {
+            foreach (var slot in Schema.EquipmentSlots)
+            {
+                if (equipment.TryGetValue(slot.Slot, out var itemId))
+                {
+                    row.SetValueWithoutNotify(slot.Slot, itemId);
+                }
+                else
+                {
+                    row.SetValueWithoutNotify(slot.Slot, "");
+                }
+            }
+        }
+
+        // NOW subscribe to changes - after initial values are set
+        row.CellValueChanged += OnCellValueChanged;
+
+        return row;
     }
 
     /// <summary>
@@ -1228,6 +1472,14 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         if (sender is not EntryRowViewModel rowVm) return;
         if (_document == null) return;
 
+        // Handle equipment set variations specially
+        if (rowVm.IsEquipmentSetVariation)
+        {
+            HandleEquipmentSetCellChange(rowVm, e);
+            MarkAsModified();
+            return;
+        }
+
         // Check if this is a nested field
         var fieldDef = GetFieldDefinition(e.ColumnName);
         var nestedPath = (fieldDef?.Nested == true) ? fieldDef.NestedPath : null;
@@ -1243,6 +1495,90 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         ApplyAutoFill(rowVm, e.ColumnName, e.NewValue);
 
         MarkAsModified();
+    }
+
+    /// <summary>
+    /// Handles cell changes for equipment set variations.
+    /// Updates the nested XML structure accordingly.
+    /// </summary>
+    private void HandleEquipmentSetCellChange(EntryRowViewModel rowVm, CellValueChangedEventArgs e)
+    {
+        var variation = rowVm.VariationEntry;
+        var roster = rowVm.XmlEntry;
+        var columnName = e.ColumnName;
+        var newValue = e.NewValue;
+
+        // Equipment slot columns
+        var equipmentSlots = Schema?.EquipmentSlots?.Select(s => s.Slot).ToHashSet() ?? new HashSet<string>();
+
+        if (columnName == "culture")
+        {
+            // Update roster-level culture attribute
+            roster.SetAttributeValue("culture", newValue);
+            Console.WriteLine($"[EquipmentSet] Updated roster culture to: {newValue}");
+        }
+        else if (columnName == "civilian" && variation != null)
+        {
+            // Update variation's civilian attribute
+            if (newValue == "true")
+            {
+                variation.OriginalElement.SetAttributeValue("civilian", "true");
+            }
+            else
+            {
+                // Remove the attribute if false (default)
+                variation.OriginalElement.SetAttributeValue("civilian", null);
+            }
+            Console.WriteLine($"[EquipmentSet] Updated civilian to: {newValue}");
+        }
+        else if (equipmentSlots.Contains(columnName) && variation != null)
+        {
+            // Update equipment slot
+            UpdateEquipmentSlot(variation, columnName, newValue);
+        }
+    }
+
+    /// <summary>
+    /// Updates an equipment slot in a variation element.
+    /// </summary>
+    private void UpdateEquipmentSlot(XmlEntry variation, string slotName, string? itemId)
+    {
+        var equipmentElementName = Schema?.EquipmentItemElement ?? "Equipment";
+
+        // Find existing equipment element for this slot
+        var existingEquip = variation.Children
+            .FirstOrDefault(c => c.ElementName == equipmentElementName &&
+                                 c.GetAttributeValue("slot") == slotName);
+
+        if (string.IsNullOrWhiteSpace(itemId))
+        {
+            // Remove the equipment element if value is cleared
+            if (existingEquip != null)
+            {
+                existingEquip.OriginalElement.Remove();
+                variation.Children.Remove(existingEquip);
+                Console.WriteLine($"[EquipmentSet] Removed {slotName}");
+            }
+        }
+        else
+        {
+            if (existingEquip != null)
+            {
+                // Update existing equipment element
+                existingEquip.SetAttributeValue("id", itemId);
+                Console.WriteLine($"[EquipmentSet] Updated {slotName} = {itemId}");
+            }
+            else
+            {
+                // Create new equipment element
+                var newElement = new System.Xml.Linq.XElement(equipmentElementName,
+                    new System.Xml.Linq.XAttribute("slot", slotName),
+                    new System.Xml.Linq.XAttribute("id", itemId));
+                variation.OriginalElement.Add(newElement);
+                variation.Children.Add(new XmlEntry(newElement));
+                Console.WriteLine($"[EquipmentSet] Added {slotName} = {itemId}");
+            }
+        }
     }
 
     /// <summary>
@@ -1394,6 +1730,11 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     {
         foreach (var rowVm in Rows)
         {
+            // Skip equipment set variation rows - their changes are applied directly
+            // via HandleEquipmentSetCellChange() during editing
+            if (rowVm.IsEquipmentSetVariation)
+                continue;
+
             var xmlEntry = rowVm.XmlEntry;
 
             foreach (var columnName in ColumnNames)

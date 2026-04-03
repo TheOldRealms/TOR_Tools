@@ -42,6 +42,32 @@ public class EntryRowViewModel : INotifyPropertyChanged
     public XmlEntry XmlEntry { get; }
 
     /// <summary>
+    /// For equipment set variations: the EquipmentSet child element.
+    /// </summary>
+    public XmlEntry? VariationEntry { get; set; }
+
+    /// <summary>
+    /// For equipment set variations: the index of this variation within the roster.
+    /// </summary>
+    public int VariationIndex { get; set; } = -1;
+
+    /// <summary>
+    /// Whether this row represents an equipment set variation (has nested structure).
+    /// </summary>
+    public bool IsEquipmentSetVariation => VariationEntry != null;
+
+    /// <summary>
+    /// Whether this is the first variation of a roster (variation index 0).
+    /// Used for visual grouping - only first variation shows the roster ID.
+    /// </summary>
+    public bool IsFirstVariation => VariationIndex == 0;
+
+    /// <summary>
+    /// The roster ID this variation belongs to. Used for grouping.
+    /// </summary>
+    public string? RosterId { get; set; }
+
+    /// <summary>
     /// Set of field names that have been modified from their original values.
     /// </summary>
     public IReadOnlySet<string> ModifiedFields => _modifiedFields;
@@ -276,6 +302,16 @@ public class EntryRowViewModel : INotifyPropertyChanged
                 CellValueChanged?.Invoke(this, new CellValueChangedEventArgs(columnName, oldValue, value));
             }
         }
+    }
+
+    /// <summary>
+    /// Sets a value without triggering change notifications or events.
+    /// Used during initial population of equipment set rows.
+    /// </summary>
+    public void SetValueWithoutNotify(string columnName, string value)
+    {
+        _values[columnName] = value;
+        _originalValues[columnName] = value; // Also set as original so it's not marked modified
     }
 
     /// <summary>

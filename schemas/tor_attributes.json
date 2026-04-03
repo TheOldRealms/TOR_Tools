@@ -1,0 +1,39 @@
+{
+  "file": "tor_attributes.xml",
+  "displayName": "Unit Attributes",
+  "description": "Combat attributes that can be assigned to units (Expendable, Piercing, Knightly, etc.).",
+  "rootElement": "UnitAttributes",
+  "entryElement": "UnitAttribute",
+  "fields": {
+    "id": {
+      "displayName": "Attribute",
+      "description": "Unique attribute identifier.",
+      "type": "string",
+      "required": true,
+      "order": 1,
+      "width": 180
+    },
+    "description": {
+      "displayName": "Description",
+      "description": "What this attribute does.",
+      "type": "string",
+      "order": 2,
+      "width": 400
+    },
+    "LinkedUnits": {
+      "displayName": "Used By",
+      "description": "Units that have this attribute. Click to navigate to unit.",
+      "type": "reverseCrossReference",
+      "order": 3,
+      "width": 300,
+      "crossReference": {
+        "sourceFile": "tor_extendedunitproperties.xml",
+        "sourceKeyField": "id",
+        "sourceValuePath": "Attributes/string",
+        "targetFile": "tor_troopdefinitions.xml",
+        "targetKeyField": "id",
+        "localKeyField": "id"
+      }
+    }
+  }
+}

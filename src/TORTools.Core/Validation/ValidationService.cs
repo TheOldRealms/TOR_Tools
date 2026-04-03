@@ -9,21 +9,24 @@ namespace TORTools.Core.Validation;
 public class ValidationService : IValidationService
 {
     /// <inheritdoc />
-    public ValidationResult ValidateAll(IReadOnlyList<IDictionary<string, string>> entries, SchemaDefinition? schema)
+    public ValidationResult ValidateAll(IReadOnlyList<IDictionary<string, string>> entries, SchemaDefinition? schema, bool skipDuplicateIdCheck = false)
     {
         var result = new ValidationResult();
 
-        // Collect all IDs for uniqueness validation
+        // Collect all IDs for uniqueness validation (skip if equipment set variations)
         var allIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var duplicateIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var entry in entries)
+        if (!skipDuplicateIdCheck)
         {
-            if (entry.TryGetValue("id", out var id) && !string.IsNullOrEmpty(id))
+            foreach (var entry in entries)
             {
-                if (!allIds.Add(id))
+                if (entry.TryGetValue("id", out var id) && !string.IsNullOrEmpty(id))
                 {
-                    duplicateIds.Add(id);
+                    if (!allIds.Add(id))
+                    {
+                        duplicateIds.Add(id);
+                    }
                 }
             }
         }
@@ -35,8 +38,8 @@ public class ValidationService : IValidationService
             var entryResult = ValidateEntry(entry, i, schema, allIds);
             result.Issues.AddRange(entryResult.Issues);
 
-            // Check for duplicate IDs
-            if (entry.TryGetValue("id", out var id) && duplicateIds.Contains(id))
+            // Check for duplicate IDs (skip if equipment set variations)
+            if (!skipDuplicateIdCheck && entry.TryGetValue("id", out var id) && duplicateIds.Contains(id))
             {
                 result.AddError(i, "id", $"Duplicate ID '{id}' - IDs must be unique", id, id);
             }

@@ -29,6 +29,14 @@
             <Setter Property="Foreground" Value="#3ba55d"/>
         </Style>
 
+        <!-- Style for equipment set roster group alternating rows -->
+        <Style Selector="DataGridRow.rosterGroupAlt">
+            <Setter Property="Background" Value="#2a2d32"/>
+        </Style>
+        <Style Selector="DataGridRow.rosterGroupAlt:selected">
+            <Setter Property="Background" Value="#3a3d42"/>
+        </Style>
+
         <!-- Style for rows selected for copy (Discord blurple accent) -->
         <Style Selector="DataGridRow.selectedForCopy">
             <Setter Property="Background" Value="#3c4270"/>

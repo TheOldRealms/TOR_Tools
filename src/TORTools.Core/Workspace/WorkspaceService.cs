@@ -37,13 +37,14 @@ public class WorkspaceService : IWorkspaceService
         ["tor_extendedunitproperties.xml"] = ("Unit Catalog", "Extended Unit Properties"),
         ["tor_bodyproperties.xml"] = ("Unit Catalog", "Body Properties"),
 
-        // Equipment Catalog
-        ["tor_equipment_sets.xml"] = ("Equipment", "Equipment Sets"),
+        // Equipment Sets (part of Unit Catalog)
+        ["tor_equipment_sets.xml"] = ("Unit Catalog", "Equipment Sets"),
 
         // Abilities & Effects Catalog
         ["tor_abilitytemplates.xml"] = ("Abilities & Effects", "Ability Templates"),
         ["tor_statuseffects.xml"] = ("Abilities & Effects", "Status Effects"),
         ["tor_triggeredeffects.xml"] = ("Abilities & Effects", "Triggered Effects"),
+        ["tor_attributes.xml"] = ("Abilities & Effects", "Unit Attributes"),
 
         // Factions Catalog
         ["tor_clans.xml"] = ("Factions", "Clans"),
@@ -79,7 +80,6 @@ public class WorkspaceService : IWorkspaceService
     [
         "Item Catalog",
         "Unit Catalog",
-        "Equipment",
         "Abilities & Effects",
         "Factions",
         "Crafting",
@@ -106,6 +106,17 @@ public class WorkspaceService : IWorkspaceService
         ["tor_horseandharness.xml"] = 12,
         ["tor_itemtraits.xml"] = 20,
         ["tor_weapon_descriptions.xml"] = 21,
+
+        // Unit Catalog - troops and their equipment
+        ["tor_troopdefinitions.xml"] = 1,
+        ["tor_equipment_sets.xml"] = 2,
+        ["tor_skillsets.xml"] = 3,
+        ["tor_heroes.xml"] = 10,
+        ["tor_campaign_lords.xml"] = 11,
+        ["tor_charactertemplates.xml"] = 12,
+        ["tor_bodyproperties.xml"] = 20,
+        ["tor_extendedunitproperties.xml"] = 21,
+        ["tor_dummyNPCs.xml"] = 30,
     };
 
     public string ConfigFilePath => Path.Combine(
@@ -232,7 +243,40 @@ public class WorkspaceService : IWorkspaceService
         if (!string.IsNullOrEmpty(config.TorEnvironmentPath))
             files.AddRange(ScanRepository(config.TorEnvironmentPath, "TOR_Environment"));
 
+        // Scan TORTools/data for tool-specific data files
+        if (!string.IsNullOrEmpty(config.BannerlordPath))
+        {
+            var torToolsDataPath = Path.Combine(config.BannerlordPath, "Modules", "TORTools", "data");
+            files.AddRange(ScanToolDataFolder(torToolsDataPath));
+        }
+
         return files;
+    }
+
+    private IEnumerable<XmlFileInfo> ScanToolDataFolder(string dataPath)
+    {
+        if (!Directory.Exists(dataPath))
+            yield break;
+
+        foreach (var file in Directory.EnumerateFiles(dataPath, "*.xml"))
+        {
+            var fileName = Path.GetFileName(file);
+            // Only include files that have a catalog mapping
+            if (FileCatalogMap.TryGetValue(fileName, out var catalogInfo))
+            {
+                var fileInfo = new FileInfo(file);
+                yield return new XmlFileInfo
+                {
+                    FilePath = file,
+                    DisplayName = catalogInfo.DisplayName,
+                    Category = catalogInfo.Catalog,
+                    Repository = "TORTools",
+                    RelativePath = Path.Combine("data", fileName),
+                    FileSize = fileInfo.Length,
+                    LastModified = fileInfo.LastWriteTime
+                };
+            }
+        }
     }
 
     /// <summary>

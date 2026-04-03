@@ -12,8 +12,9 @@ public interface IValidationService
     /// </summary>
     /// <param name="entries">The entries to validate (list of attribute dictionaries).</param>
     /// <param name="schema">The schema definition to validate against.</param>
+    /// <param name="skipDuplicateIdCheck">If true, skip duplicate ID validation (e.g., for equipment set variations).</param>
     /// <returns>Validation result with all issues found.</returns>
-    ValidationResult ValidateAll(IReadOnlyList<IDictionary<string, string>> entries, SchemaDefinition? schema);
+    ValidationResult ValidateAll(IReadOnlyList<IDictionary<string, string>> entries, SchemaDefinition? schema, bool skipDuplicateIdCheck = false);
 
     /// <summary>
     /// Validate a single entry against the schema.

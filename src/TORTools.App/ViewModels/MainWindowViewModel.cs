@@ -11,6 +11,7 @@ public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly IWorkspaceService _workspaceService;
     private readonly IIconService? _iconService;
+    private readonly ItemCatalogService _itemCatalogService;
     private WorkspaceConfig _config;
 
     [ObservableProperty]
@@ -39,6 +40,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         _workspaceService = workspaceService;
         _config = _workspaceService.LoadConfig();
+        _itemCatalogService = new ItemCatalogService();
 
         // Initialize icon service if TOR_Armory path is available
         if (!string.IsNullOrEmpty(_config.TorArmoryPath))
@@ -47,6 +49,13 @@ public partial class MainWindowViewModel : ViewModelBase
             if (Directory.Exists(guiPath))
             {
                 _iconService = new IconService(guiPath);
+            }
+
+            // Initialize item catalog for equipment set validation
+            var moduleDataPath = Path.Combine(_config.TorArmoryPath, "ModuleData");
+            if (Directory.Exists(moduleDataPath))
+            {
+                _itemCatalogService.LoadItems(moduleDataPath);
             }
         }
 
@@ -108,6 +117,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
         // Assign icon service if available
         newTab.IconService = _iconService;
+
+        // Assign item catalog service for equipment set validation
+        newTab.ItemCatalogService = _itemCatalogService;
 
         // Subscribe to cross-reference navigation events
         newTab.NavigateToCrossReference += OnNavigateToCrossReference;

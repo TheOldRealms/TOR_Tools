@@ -140,13 +140,125 @@ public partial class FileTabView : UserControl
             vm.CopyRow();
             e.Handled = true;
         }
-        else if (e.Key == Key.V && vm.HasCopiedRow)
+        else if (e.Key == Key.V)
         {
-            // Ctrl+V: Paste row data
-            Console.WriteLine("[KeyDown] Pasting row...");
-            vm.PasteRow();
+            // Ctrl+V: Check for equipment clipboard data first, then fall back to row paste
+            _ = HandlePasteAsync(vm);
             e.Handled = true;
         }
+    }
+
+    /// <summary>
+    /// Handles paste operation, checking for equipment clipboard format first.
+    /// </summary>
+    private async Task HandlePasteAsync(FileTabViewModel vm)
+    {
+        // Check if this is an equipment set file
+        if (vm.Schema?.ItemCatalogCrossRef == true && vm.ItemCatalogService != null)
+        {
+            // Try to get clipboard text
+            var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+            if (clipboard != null)
+            {
+                var clipboardText = await clipboard.GetTextAsync();
+                if (!string.IsNullOrWhiteSpace(clipboardText))
+                {
+                    // Check if it looks like equipment clipboard format (comma-separated, has Item. or "none")
+                    if (IsEquipmentClipboardFormat(clipboardText))
+                    {
+                        Console.WriteLine($"[Paste] Detected equipment clipboard format: {clipboardText}");
+                        PasteEquipmentFromClipboard(vm, clipboardText);
+                        return;
+                    }
+                }
+            }
+        }
+
+        // Fall back to regular row paste
+        if (vm.HasCopiedRow)
+        {
+            Console.WriteLine("[KeyDown] Pasting row...");
+            vm.PasteRow();
+        }
+    }
+
+    /// <summary>
+    /// Checks if clipboard text matches the equipment clipboard format from CopyEquipmentToClipBoard.
+    /// Format: comma-separated values with "Item.{id}" or "none" for each slot.
+    /// </summary>
+    private static bool IsEquipmentClipboardFormat(string text)
+    {
+        // Equipment clipboard format has 11 comma-separated values
+        var parts = text.Split(',');
+        if (parts.Length < 10 || parts.Length > 12)
+            return false;
+
+        // Check if values look like equipment (Item.xxx or none)
+        int validCount = 0;
+        foreach (var part in parts)
+        {
+            var trimmed = part.Trim();
+            if (trimmed.StartsWith("Item.", StringComparison.OrdinalIgnoreCase) ||
+                trimmed.Equals("none", StringComparison.OrdinalIgnoreCase) ||
+                string.IsNullOrEmpty(trimmed))
+            {
+                validCount++;
+            }
+        }
+
+        // At least half should be valid equipment format
+        return validCount >= parts.Length / 2;
+    }
+
+    /// <summary>
+    /// Pastes equipment data from clipboard into the current row.
+    /// </summary>
+    private void PasteEquipmentFromClipboard(FileTabViewModel vm, string clipboardText)
+    {
+        if (vm.SelectedIndex < 0 || vm.SelectedIndex >= vm.Rows.Count)
+        {
+            Console.WriteLine("[Paste] No row selected for equipment paste");
+            return;
+        }
+
+        var selectedRow = vm.Rows[vm.SelectedIndex];
+        var equipmentData = vm.ItemCatalogService!.ParseClipboardEquipment(clipboardText);
+
+        Console.WriteLine($"[Paste] Parsed {equipmentData.Count} equipment slots");
+
+        // Get equipment slot definitions from schema
+        var slotDefs = vm.Schema?.EquipmentSlots;
+        if (slotDefs == null || slotDefs.Count == 0)
+        {
+            Console.WriteLine("[Paste] No equipment slot definitions in schema");
+            return;
+        }
+
+        // Apply equipment to the row
+        // Note: For now, we apply to direct attributes. For nested variations, we'd need different handling.
+        foreach (var (slot, itemId) in equipmentData)
+        {
+            // Try lowercase first, then original case
+            var slotFieldName = slot.ToLowerInvariant();
+            if (vm.Schema?.Fields.ContainsKey(slotFieldName) == true)
+            {
+                selectedRow[slotFieldName] = itemId;
+                Console.WriteLine($"[Paste] Set {slotFieldName} = {itemId}");
+            }
+            else if (vm.Schema?.Fields.ContainsKey(slot) == true)
+            {
+                selectedRow[slot] = itemId;
+                Console.WriteLine($"[Paste] Set {slot} = {itemId}");
+            }
+            else
+            {
+                // Field not in schema, but set it anyway for flexibility
+                selectedRow[slot] = itemId;
+                Console.WriteLine($"[Paste] Set {slot} = {itemId} (not in schema)");
+            }
+        }
+
+        vm.RequestCellRefresh();
     }
 
     protected override void OnDataContextChanged(EventArgs e)
@@ -320,6 +432,22 @@ public partial class FileTabView : UserControl
 
     private static void UpdateRowStyle(DataGridRow row, EntryRowViewModel rowVm)
     {
+        // Equipment set roster grouping - apply alternating row background
+        if (rowVm.IsEquipmentSetVariation && !string.IsNullOrEmpty(rowVm.RosterId))
+        {
+            // Use hash of roster ID to determine group color
+            var rosterHash = rowVm.RosterId.GetHashCode();
+            if ((rosterHash & 1) == 0)
+            {
+                // Even hash: slightly lighter background
+                row.Classes.Add("rosterGroupAlt");
+            }
+            else
+            {
+                row.Classes.Remove("rosterGroupAlt");
+            }
+        }
+
         // New entry styling
         if (rowVm.IsNew)
         {
@@ -405,6 +533,8 @@ public partial class FileTabView : UserControl
     /// </summary>
     private static IDataTemplate CreateReadOnlyCrossRefTemplate(string attributeName, FieldDefinition fieldDef, FileTabViewModel vm)
     {
+        const int MaxVisibleItems = 3;
+
         return new FuncDataTemplate<EntryRowViewModel>((rowVm, _) =>
         {
             var wrapPanel = new WrapPanel
@@ -419,8 +549,10 @@ public partial class FileTabView : UserControl
                 {
                     // Split by comma to get individual IDs
                     var ids = value.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    var totalCount = ids.Length;
+                    var visibleCount = Math.Min(totalCount, MaxVisibleItems);
 
-                    for (int i = 0; i < ids.Length; i++)
+                    for (int i = 0; i < visibleCount; i++)
                     {
                         var id = ids[i].Trim();
                         if (string.IsNullOrEmpty(id)) continue;
@@ -453,6 +585,29 @@ public partial class FileTabView : UserControl
                         };
 
                         wrapPanel.Children.Add(linkButton);
+                    }
+
+                    // Show "..." if there are more items
+                    if (totalCount > MaxVisibleItems)
+                    {
+                        var remainingCount = totalCount - MaxVisibleItems;
+                        var remainingIds = string.Join(", ", ids.Skip(MaxVisibleItems).Select(id => id.Trim()));
+
+                        var moreButton = new Button
+                        {
+                            Content = $"... +{remainingCount}",
+                            Padding = new Thickness(4, 2),
+                            Margin = new Thickness(0, 0, 4, 0),
+                            Background = new SolidColorBrush(Color.FromRgb(60, 60, 60)),
+                            BorderThickness = new Thickness(0),
+                            Foreground = new SolidColorBrush(Color.FromRgb(180, 180, 180)),
+                            FontSize = 11,
+                            MinHeight = 0,
+                            MinWidth = 0
+                        };
+
+                        ToolTip.SetTip(moreButton, $"More entries:\n{remainingIds}");
+                        wrapPanel.Children.Add(moreButton);
                     }
                 }
             }
@@ -572,7 +727,12 @@ public partial class FileTabView : UserControl
                                 MinHeight = 0,
                                 MinWidth = 0
                             };
-                            ToolTip.SetTip(linkButton, $"Click to navigate to: {capturedId}");
+                            // Use description as tooltip if available, otherwise show navigation hint
+                            var description = vm.GetCrossRefDescription(attributeName, displayId);
+                            var tooltipText = !string.IsNullOrEmpty(description)
+                                ? $"{displayId}: {description}"
+                                : $"Click to navigate to: {capturedId}";
+                            ToolTip.SetTip(linkButton, tooltipText);
                             linkButton.Click += (s, e) =>
                             {
                                 vm.NavigateToReferenceForField(attributeName, capturedId);
@@ -621,8 +781,6 @@ public partial class FileTabView : UserControl
             {
                 RebuildLinks();
             };
-
-            panel.Children.Add(linksPanel);
 
             // Check if this is a skill_template field for custom UI
             var isSkillTemplate = attributeName.Equals("skill_template", StringComparison.OrdinalIgnoreCase);
@@ -692,7 +850,9 @@ public partial class FileTabView : UserControl
                 });
             };
 
+            // Add edit button first, then links panel (button appears before attributes)
             panel.Children.Add(editButton);
+            panel.Children.Add(linksPanel);
             border.Child = panel;
 
             return border;
@@ -1087,8 +1247,21 @@ public partial class FileTabView : UserControl
 
             if (rowVm != null)
             {
-                // Show display name instead of raw value
-                text.Text = GetDisplayName(rowVm[attributeName]);
+                // Equipment set: hide roster-level fields (culture) for non-first variations
+                var isRosterLevelField = attributeName == "culture";
+                if (isRosterLevelField && rowVm.IsEquipmentSetVariation && !rowVm.IsFirstVariation)
+                {
+                    text.Text = "";
+                }
+                else
+                {
+                    // Show display name instead of raw value
+                    text.Text = GetDisplayName(rowVm[attributeName]);
+                    if (isRosterLevelField && rowVm.IsEquipmentSetVariation && rowVm.IsFirstVariation)
+                    {
+                        text.FontWeight = FontWeight.SemiBold;
+                    }
+                }
 
                 // Validate on render
                 var rowIndex = rowVm.RowNumber - 1;
@@ -1105,7 +1278,14 @@ public partial class FileTabView : UserControl
                 vm.CellRefreshRequested += (s, args) =>
                 {
                     // Re-read value from row and show display name
-                    text.Text = GetDisplayName(rowVm[attributeName]);
+                    if (isRosterLevelField && rowVm.IsEquipmentSetVariation && !rowVm.IsFirstVariation)
+                    {
+                        text.Text = "";
+                    }
+                    else
+                    {
+                        text.Text = GetDisplayName(rowVm[attributeName]);
+                    }
                     // Update styling
                     CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
                 };
@@ -1155,8 +1335,11 @@ public partial class FileTabView : UserControl
 
             if (rowVm != null)
             {
-                // Disable editing for removed rows
-                if (rowVm.IsRemoved)
+                // Disable editing for removed rows or roster-level fields on non-first variations
+                var isRosterLevelField = attributeName == "culture";
+                var isNonFirstVariation = isRosterLevelField && rowVm.IsEquipmentSetVariation && !rowVm.IsFirstVariation;
+
+                if (rowVm.IsRemoved || isNonFirstVariation)
                 {
                     comboBox.IsEnabled = false;
                 }
@@ -1225,8 +1408,35 @@ public partial class FileTabView : UserControl
 
             if (rowVm != null)
             {
-                // Set initial text (with prefix stripped for display)
-                text.Text = StripPrefix(rowVm[attributeName]);
+                // Equipment set visual grouping for roster-level fields (id, culture)
+                var isRosterLevelField = attributeName == "id" || attributeName == "culture";
+                if (isRosterLevelField && rowVm.IsEquipmentSetVariation)
+                {
+                    if (rowVm.IsFirstVariation)
+                    {
+                        // First variation: show full value with bold styling
+                        text.Text = StripPrefix(rowVm[attributeName]);
+                        text.FontWeight = FontWeight.SemiBold;
+                    }
+                    else
+                    {
+                        // Subsequent variations: show indent marker for ID, empty for culture
+                        if (attributeName == "id")
+                        {
+                            text.Text = "  └─";
+                            text.Foreground = new SolidColorBrush(Color.FromRgb(128, 128, 128));
+                        }
+                        else
+                        {
+                            text.Text = "";
+                        }
+                    }
+                }
+                else
+                {
+                    // Normal text display
+                    text.Text = StripPrefix(rowVm[attributeName]);
+                }
 
                 // Validate on render if we have field definition
                 if (fieldDef != null)
@@ -1246,7 +1456,15 @@ public partial class FileTabView : UserControl
                 vm.CellRefreshRequested += (s, args) =>
                 {
                     // Re-read value from row and update text (with prefix stripped)
-                    text.Text = StripPrefix(rowVm[attributeName]);
+                    if (isRosterLevelField && rowVm.IsEquipmentSetVariation && !rowVm.IsFirstVariation)
+                    {
+                        // Keep indent marker for ID, empty for culture on non-first variations
+                        text.Text = attributeName == "id" ? "  └─" : "";
+                    }
+                    else
+                    {
+                        text.Text = StripPrefix(rowVm[attributeName]);
+                    }
                     // Update styling
                     CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
                 };
