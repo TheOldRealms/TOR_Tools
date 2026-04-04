@@ -2,6 +2,9 @@ using System.Collections.ObjectModel;
 using System.Xml.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using TORTools.App.Commands;
+using TORTools.App.Helpers;
+using TORTools.App.Models;
 using TORTools.App.Services;
 using TORTools.Core.Commands;
 using TORTools.Core.Models;
@@ -13,70 +16,48 @@ namespace TORTools.App.ViewModels;
 
 public partial class FileTabViewModel : ViewModelBase, IDisposable
 {
-    private readonly IXmlDocumentService _xmlService;
+    private readonly FileEditManager _fileEditManager;
     private readonly IUndoRedoService _undoRedoService;
-    private readonly ISchemaService _schemaService;
-    private readonly IValidationService _validationService;
     private readonly CrossReferenceService _crossRefService;
     private readonly TupleListService _tupleListService;
-    private readonly IGitValueService _gitValueService;
-    private XmlDocumentWrapper? _document;
+    private readonly FilePathResolver _filePathResolver;
     private FileSystemWatcher? _fileWatcher;
     private bool _isReloading;
     private bool _isSaving;
 
     /// <summary>
-    /// Cross-reference data loaded from other XML files.
+    /// Convenience accessor for the file edit context.
+    /// </summary>
+    private FileEditContext Context => _fileEditManager.Context;
+
+    /// <summary>
+    /// Cross-reference data loaded from other XML files (local to ViewModel, not in Context).
     /// Key is the cross-reference field name, value is a dictionary mapping local keys to referenced values.
     /// </summary>
     private readonly Dictionary<string, Dictionary<string, List<string>>> _crossRefData = new();
 
     /// <summary>
-    /// Available IDs for autocomplete in editable cross-reference fields.
-    /// Key is the field name, value is the list of available IDs.
-    /// </summary>
-    private readonly Dictionary<string, List<string>> _availableIds = new();
-
-    /// <summary>
-    /// Source file paths for cross-reference fields.
+    /// Source file paths for cross-reference fields (local to ViewModel).
     /// Key is the field name, value is the resolved path to the source file.
     /// </summary>
     private readonly Dictionary<string, string> _crossRefSourcePaths = new();
 
     /// <summary>
-    /// Descriptions for cross-reference target items (e.g., attribute descriptions).
-    /// Key is the field name, value is a dictionary mapping ID to description.
-    /// </summary>
-    private readonly Dictionary<string, Dictionary<string, string>> _crossRefDescriptions = new();
-
-    /// <summary>
-    /// Tuple list data loaded from external XML files.
+    /// Tuple list data loaded from external XML files (local to ViewModel).
     /// Key is the field name, value is a dictionary mapping local keys to lists of tuple dictionaries.
     /// </summary>
     private readonly Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>> _tupleListData = new();
 
     /// <summary>
-    /// Source file paths for tuple list fields.
+    /// Source file paths for tuple list fields (local to ViewModel).
     /// Key is the field name, value is the resolved path to the source file.
     /// </summary>
     private readonly Dictionary<string, string> _tupleListSourcePaths = new();
 
     /// <summary>
-    /// Git committed values for comparison.
-    /// Key is entryId, value is dictionary of fieldName -> committedValue.
+    /// Central validation manager - now accessed through Context.
     /// </summary>
-    private Dictionary<string, Dictionary<string, string>> _gitCommittedValues = new();
-
-    /// <summary>
-    /// Entries that have been removed during this session.
-    /// These can be shown/hidden via the ShowRemovedEntries toggle.
-    /// </summary>
-    private readonly List<EntryRowViewModel> _removedEntries = new();
-
-    /// <summary>
-    /// Central validation manager - cells register their errors here.
-    /// </summary>
-    public ValidationManager ValidationManager { get; } = new();
+    public ValidationManager ValidationManager => Context.ValidationManager;
 
     /// <summary>
     /// Event raised when user wants to navigate to a cross-referenced entry.
@@ -114,19 +95,19 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     private bool _hasError;
 
     /// <summary>
-    /// Observable rows for DataGrid binding.
+    /// Observable rows for DataGrid binding - now accessed through Context.
     /// </summary>
-    public ObservableCollection<EntryRowViewModel> Rows { get; } = new();
+    public ObservableCollection<EntryRowViewModel> Rows => Context.Rows;
 
     /// <summary>
-    /// The raw XmlEntry objects (for internal use).
+    /// The raw XmlEntry objects - now accessed through Context.
     /// </summary>
-    public List<XmlEntry> XmlEntries { get; } = new();
+    public List<XmlEntry> XmlEntries => Context.XmlEntries;
 
     /// <summary>
-    /// Column names discovered from the XML.
+    /// Column names discovered from the XML - now accessed through Context.
     /// </summary>
-    public List<string> ColumnNames { get; } = new();
+    public List<string> ColumnNames => Context.ColumnNames;
 
     /// <summary>
     /// The currently selected entry index (for row operations).
@@ -191,9 +172,9 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     public AbilityCatalogService? AbilityCatalogService { get; set; }
 
     /// <summary>
-    /// The schema definition for this file type, if available.
+    /// The schema definition for this file type - now accessed through Context.
     /// </summary>
-    public SchemaDefinition? Schema { get; private set; }
+    public SchemaDefinition? Schema => Context.Schema;
 
     /// <summary>
     /// Gets the field definition for a column, if schema is available.
@@ -204,11 +185,11 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>
-    /// Gets available IDs for autocomplete in a cross-reference field.
+    /// Gets available IDs for autocomplete in a cross-reference field - now accessed through Context.
     /// </summary>
     public IEnumerable<string> GetAvailableIds(string fieldName)
     {
-        if (_availableIds.TryGetValue(fieldName, out var ids))
+        if (Context.AvailableIds.TryGetValue(fieldName, out var ids))
             return ids;
         return Enumerable.Empty<string>();
     }
@@ -254,24 +235,65 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         }
     }
 
-    public FileTabViewModel(string filePath) : this(filePath, new XmlDocumentService(), new UndoRedoService(), new SchemaService(), new ValidationService(), new CrossReferenceService(), new TupleListService(), new GitValueService())
+    public FileTabViewModel(string filePath) : this(
+        filePath,
+        CreateFileEditManager(filePath),
+        new UndoRedoService(),
+        new CrossReferenceService(),
+        new TupleListService(),
+        new FilePathResolver())
     {
     }
 
-    public FileTabViewModel(string filePath, IXmlDocumentService xmlService, IUndoRedoService undoRedoService, ISchemaService schemaService, IValidationService validationService, CrossReferenceService crossRefService, TupleListService tupleListService, IGitValueService gitValueService)
+    private static FileEditManager CreateFileEditManager(string filePath)
     {
-        _xmlService = xmlService;
+        var xmlService = new XmlDocumentService();
+        var schemaService = new SchemaService();
+        var validationService = new ValidationService();
+        var gitValueService = new GitValueService();
+        var crossRefService = new CrossReferenceService();
+        var tupleListService = new TupleListService();
+
+        var context = new FileEditContext { FilePath = filePath };
+        var fileLoaderService = new FileLoaderService(xmlService, gitValueService, crossRefService);
+        var fileSaverService = new FileSaverService(xmlService);
+        var validationCoordinator = new ValidationCoordinator(validationService);
+
+        return new FileEditManager(
+            context,
+            schemaService,
+            new UndoRedoService(),
+            fileLoaderService,
+            fileSaverService,
+            validationCoordinator,
+            crossRefService,
+            tupleListService);
+    }
+
+    public FileTabViewModel(
+        string filePath,
+        FileEditManager fileEditManager,
+        IUndoRedoService undoRedoService,
+        CrossReferenceService crossRefService,
+        TupleListService tupleListService,
+        FilePathResolver filePathResolver)
+    {
+        _fileEditManager = fileEditManager;
         _undoRedoService = undoRedoService;
-        _gitValueService = gitValueService;
-        _schemaService = schemaService;
-        _validationService = validationService;
         _crossRefService = crossRefService;
         _tupleListService = tupleListService;
+        _filePathResolver = filePathResolver;
         FilePath = filePath;
         Title = Path.GetFileName(filePath);
 
         // Load schema for this file type
-        Schema = _schemaService.GetSchema(Title);
+        Context.Schema = fileEditManager.Context.Schema ?? _fileEditManager.Context.Schema;
+        var fileName = Path.GetFileName(filePath);
+        if (Context.Schema == null)
+        {
+            var schemaService = new SchemaService();
+            Context.Schema = schemaService.GetSchema(fileName);
+        }
 
         // Load cross-reference data if schema defines any
         LoadCrossReferences();
@@ -311,11 +333,11 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
                 if (string.IsNullOrEmpty(config.SourceFile))
                 {
                     // Direct cross-reference: load available IDs from target file for validation/autocomplete
-                    var targetFilePath = FindSourceFile(baseDir, config.TargetFile);
+                    var targetFilePath = _filePathResolver.FindSourceFile(baseDir, config.TargetFile);
                     if (targetFilePath != null && !string.IsNullOrEmpty(config.TargetKeyField))
                     {
                         var availableIds = _crossRefService.LoadTargetKeys(targetFilePath, config.TargetKeyField);
-                        _availableIds[fieldName] = availableIds;
+                        Context.AvailableIds[fieldName] = availableIds;
                         Console.WriteLine($"[CrossRef] Loaded {availableIds.Count} available IDs for direct crossref {fieldName} from {config.TargetFile}");
                     }
                     else
@@ -326,7 +348,7 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
                 else
                 {
                     // Indirect cross-reference: load from mapping file
-                    var sourceFilePath = FindSourceFile(baseDir, config.SourceFile);
+                    var sourceFilePath = _filePathResolver.FindSourceFile(baseDir, config.SourceFile);
                     if (sourceFilePath != null)
                     {
                         Dictionary<string, List<string>> crossRefData;
@@ -344,18 +366,18 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
                             Console.WriteLine($"[CrossRef] Loaded {crossRefData.Count} references for {fieldName} from {config.SourceFile}");
 
                             // For editable cross-references, load available target IDs for autocomplete
-                            var targetFilePath = FindSourceFile(baseDir, config.TargetFile);
+                            var targetFilePath = _filePathResolver.FindSourceFile(baseDir, config.TargetFile);
                             if (targetFilePath != null && !string.IsNullOrEmpty(config.TargetKeyField))
                             {
                                 var availableIds = _crossRefService.LoadTargetKeys(targetFilePath, config.TargetKeyField);
-                                _availableIds[fieldName] = availableIds;
+                                Context.AvailableIds[fieldName] = availableIds;
                                 Console.WriteLine($"[CrossRef] Loaded {availableIds.Count} available IDs for {fieldName} autocomplete");
 
                                 // Also load descriptions from the target file if available
-                                var descriptions = LoadTargetDescriptions(targetFilePath, config.TargetKeyField);
+                                var descriptions = _crossRefService.LoadTargetDescriptions(targetFilePath, config.TargetKeyField);
                                 if (descriptions.Count > 0)
                                 {
-                                    _crossRefDescriptions[fieldName] = descriptions;
+                                    Context.CrossRefDescriptions[fieldName] = descriptions;
                                     Console.WriteLine($"[CrossRef] Loaded {descriptions.Count} descriptions for {fieldName}");
                                 }
                             }
@@ -394,7 +416,7 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
                 var config = fieldDef.TupleList;
 
                 // Find the source file
-                var sourceFilePath = FindSourceFile(baseDir, config.SourceFile);
+                var sourceFilePath = _filePathResolver.FindSourceFile(baseDir, config.SourceFile);
                 if (sourceFilePath != null)
                 {
                     var tupleData = _tupleListService.LoadTupleData(sourceFilePath, config);
@@ -531,139 +553,11 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>
-    /// Finds a source file by searching in the base directory and parent directories.
-    /// </summary>
-    private string? FindSourceFile(string baseDir, string fileName)
-    {
-        Console.WriteLine($"[FindSourceFile] Looking for {fileName} from base {baseDir}");
-
-        // FIRST: Check TORTools/data for tool-specific data files (highest priority)
-        // This allows tool-specific files like tor_attributes.xml to live in TORTools
-        var torToolsDataPath = FindTorToolsDataPath(baseDir, fileName);
-        if (torToolsDataPath != null)
-        {
-            Console.WriteLine($"[FindSourceFile] Found in TORTools/data: {torToolsDataPath}");
-            return torToolsDataPath;
-        }
-
-        // Check same directory
-        var path = Path.Combine(baseDir, fileName);
-        if (File.Exists(path))
-        {
-            Console.WriteLine($"[FindSourceFile] Found at: {path}");
-            return path;
-        }
-
-        // Check tor_custom_xmls subdirectory (common location)
-        path = Path.Combine(baseDir, "tor_custom_xmls", fileName);
-        if (File.Exists(path))
-        {
-            Console.WriteLine($"[FindSourceFile] Found at: {path}");
-            return path;
-        }
-
-        // Navigate up to find Modules directory
-        // Structure: Modules/TOR_Armory/ModuleData/tor_armors.xml
-        // We need: Modules/TOR_Core/ModuleData/tor_custom_xmls/tor_extendeditemproperties.xml
-        var current = baseDir;
-        for (int i = 0; i < 5; i++) // Safety limit
-        {
-            var parent = Path.GetDirectoryName(current);
-            if (string.IsNullOrEmpty(parent)) break;
-
-            var parentName = Path.GetFileName(parent);
-            if (parentName?.Equals("Modules", StringComparison.OrdinalIgnoreCase) == true)
-            {
-                // Check TOR_Core/ModuleData/tor_custom_xmls
-                var torCorePath = Path.Combine(parent, "TOR_Core", "ModuleData", "tor_custom_xmls", fileName);
-                Console.WriteLine($"[FindSourceFile] Checking TOR_Core path: {torCorePath}");
-                if (File.Exists(torCorePath))
-                {
-                    Console.WriteLine($"[FindSourceFile] Found at: {torCorePath}");
-                    return torCorePath;
-                }
-
-                // Also check TOR_Core/ModuleData directly
-                torCorePath = Path.Combine(parent, "TOR_Core", "ModuleData", fileName);
-                if (File.Exists(torCorePath))
-                {
-                    Console.WriteLine($"[FindSourceFile] Found at: {torCorePath}");
-                    return torCorePath;
-                }
-                break;
-            }
-            current = parent;
-        }
-
-        Console.WriteLine($"[FindSourceFile] Not found: {fileName}");
-        return null;
-    }
-
-    /// <summary>
-    /// Helper to find TORTools/data path for tool-specific data files.
-    /// </summary>
-    private string? FindTorToolsDataPath(string baseDir, string fileName)
-    {
-        var current = baseDir;
-        for (int i = 0; i < 5; i++) // Safety limit
-        {
-            var parent = Path.GetDirectoryName(current);
-            if (string.IsNullOrEmpty(parent)) break;
-
-            var parentName = Path.GetFileName(parent);
-            if (parentName?.Equals("Modules", StringComparison.OrdinalIgnoreCase) == true)
-            {
-                // Found Modules directory - check TORTools/data
-                var torToolsPath = Path.Combine(parent, "TORTools", "data", fileName);
-                if (File.Exists(torToolsPath))
-                {
-                    return torToolsPath;
-                }
-                break;
-            }
-            current = parent;
-        }
-        return null;
-    }
-
-    /// <summary>
-    /// Loads descriptions from a target XML file.
-    /// Looks for "display_description" first (player-friendly), then falls back to "description".
-    /// </summary>
-    private Dictionary<string, string> LoadTargetDescriptions(string filePath, string keyField)
-    {
-        var descriptions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-        try
-        {
-            var doc = XDocument.Load(filePath);
-            foreach (var element in doc.Root?.Elements() ?? Enumerable.Empty<XElement>())
-            {
-                var key = element.Attribute(keyField)?.Value;
-                // Prefer display_description (player-friendly), fallback to description
-                var description = element.Attribute("display_description")?.Value
-                               ?? element.Attribute("description")?.Value;
-
-                if (!string.IsNullOrEmpty(key) && !string.IsNullOrEmpty(description))
-                {
-                    descriptions[key] = description;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[LoadTargetDescriptions] Error loading {filePath}: {ex.Message}");
-        }
-
-        return descriptions;
-    }
-
-    /// <summary>
     /// Gets the description for a cross-reference target item.
     /// </summary>
     public string? GetCrossRefDescription(string fieldName, string itemId)
     {
-        if (_crossRefDescriptions.TryGetValue(fieldName, out var descriptions))
+        if (Context.CrossRefDescriptions.TryGetValue(fieldName, out var descriptions))
         {
             if (descriptions.TryGetValue(itemId, out var description))
             {
@@ -749,325 +643,12 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     public void RunValidation()
     {
         // Run validation asynchronously on background thread
-        Task.Run(() => RunValidationAsync());
+        Task.Run(() => _fileEditManager.RunValidationAsync());
     }
 
-    /// <summary>
-    /// Runs full file validation asynchronously on a background thread.
-    /// </summary>
-    private async Task RunValidationAsync()
-    {
-        Console.WriteLine($"[Validation] Starting validation of {Rows.Count} entries...");
+    // RunValidationAsync, ValidateUpgradeTargetsAsync, ValidateSkillTemplateTiersAsync, and
+    // ValidateCrossReferencesAsync are now handled by ValidationCoordinator
 
-        // Clear previous validation issues on UI thread
-        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-        {
-            ValidationManager.ClearByPrefix("basic_");
-            ValidationManager.ClearByPrefix("upgrade_");
-            ValidationManager.ClearByPrefix("crossref_");
-        });
-
-        // Capture row data for thread-safe processing
-        var rowData = new List<(int index, string id, Dictionary<string, string> values)>();
-        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-        {
-            for (int i = 0; i < Rows.Count; i++)
-            {
-                var row = Rows[i];
-                var values = new Dictionary<string, string>();
-                foreach (var col in ColumnNames)
-                {
-                    values[col] = row[col] ?? "";
-                }
-                rowData.Add((i, row["id"] ?? "", values));
-            }
-        });
-
-        // Run basic validation
-        // Skip duplicate ID check for equipment sets (variations share same roster ID)
-        var skipDuplicateIdCheck = Schema?.HasNestedVariations == true;
-        var entries = rowData.Select(r => (IDictionary<string, string>)r.values).ToList();
-        var result = _validationService.ValidateAll(entries, Schema, skipDuplicateIdCheck);
-
-        // Register basic validation issues
-        foreach (var issue in result.Issues)
-        {
-            var key = $"basic_{issue.RowIndex}_{issue.AttributeName}_{issue.CurrentValue ?? "empty"}";
-            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                ValidationManager.RegisterError(key, issue);
-            });
-        }
-
-        // Run upgrade target validation
-        await ValidateUpgradeTargetsAsync(rowData);
-
-        // Run skill template tier validation
-        await ValidateSkillTemplateTiersAsync(rowData);
-
-        // Run cross-reference validation for all crossRef fields
-        await ValidateCrossReferencesAsync(rowData);
-
-        Console.WriteLine($"[Validation] Completed validation. Errors: {ValidationManager.ErrorCount}, Warnings: {ValidationManager.WarningCount}");
-    }
-
-    /// <summary>
-    /// Validates upgrade targets asynchronously.
-    /// </summary>
-    private async Task ValidateUpgradeTargetsAsync(List<(int index, string id, Dictionary<string, string> values)> rowData)
-    {
-        // Check if this file has upgrade target fields
-        var hasUpgradeTargets = Schema?.Fields.ContainsKey("upgrade_target_1") == true;
-        if (!hasUpgradeTargets) return;
-
-        // Build lookups
-        var idToLevel = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        foreach (var (index, id, values) in rowData)
-        {
-            if (!string.IsNullOrEmpty(id) && int.TryParse(values.GetValueOrDefault("level", "0"), out var level))
-            {
-                idToLevel[id] = level;
-            }
-        }
-
-        var problemTargets = new Dictionary<string, (int sourceRowIndex, string fieldName, string sourceId, int sourceLevel)>(StringComparer.OrdinalIgnoreCase);
-
-        // Process all rows
-        foreach (var (rowIndex, sourceId, values) in rowData)
-        {
-            var sourceLevel = idToLevel.GetValueOrDefault(sourceId, 0);
-
-            for (int i = 1; i <= 3; i++)
-            {
-                var fieldName = $"upgrade_target_{i}";
-                var targetId = values.GetValueOrDefault(fieldName, "");
-
-                var fieldDef = GetFieldDefinition(fieldName);
-                if (fieldDef?.PrefixToStrip != null && targetId.StartsWith(fieldDef.PrefixToStrip, StringComparison.OrdinalIgnoreCase))
-                {
-                    targetId = targetId.Substring(fieldDef.PrefixToStrip.Length);
-                }
-
-                if (!string.IsNullOrEmpty(targetId))
-                {
-                    if (!idToLevel.ContainsKey(targetId))
-                    {
-                        var key = $"upgrade_{rowIndex}_{fieldName}_notfound";
-                        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-                        {
-                            ValidationManager.RegisterError(key, new TORTools.Core.Validation.ValidationIssue
-                            {
-                                Severity = TORTools.Core.Validation.ValidationSeverity.Error,
-                                RowIndex = rowIndex,
-                                AttributeName = fieldName,
-                                Message = $"Upgrade target '{targetId}' not found in this file",
-                                EntryId = sourceId,
-                                CurrentValue = targetId
-                            });
-                        });
-                    }
-                    else
-                    {
-                        var targetLevel = idToLevel[targetId];
-                        if (targetLevel <= sourceLevel)
-                        {
-                            if (!problemTargets.TryGetValue(targetId, out var existing) || sourceLevel > existing.sourceLevel)
-                            {
-                                problemTargets[targetId] = (rowIndex, fieldName, sourceId, sourceLevel);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Register tier warnings
-        foreach (var kvp in problemTargets)
-        {
-            var targetId = kvp.Key;
-            var (sourceRowIndex, fieldName, sourceId, sourceLevel) = kvp.Value;
-            var targetLevel = idToLevel.GetValueOrDefault(targetId, 0);
-
-            var key = $"upgrade_{sourceRowIndex}_{fieldName}_tier";
-            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                ValidationManager.RegisterError(key, new TORTools.Core.Validation.ValidationIssue
-                {
-                    Severity = TORTools.Core.Validation.ValidationSeverity.Warning,
-                    RowIndex = sourceRowIndex,
-                    AttributeName = fieldName,
-                    Message = $"'{targetId}' has level {targetLevel}, should be higher than {sourceLevel}",
-                    EntryId = sourceId,
-                    CurrentValue = targetId
-                });
-            });
-        }
-    }
-
-    /// <summary>
-    /// Validates skill template tiers asynchronously.
-    /// </summary>
-    private async Task ValidateSkillTemplateTiersAsync(List<(int index, string id, Dictionary<string, string> values)> rowData)
-    {
-        var hasSkillTemplate = Schema?.Fields.ContainsKey("skill_template") == true;
-        if (!hasSkillTemplate) return;
-
-        int checkedCount = 0;
-        int skippedNoLevel = 0;
-        int mismatchCount = 0;
-
-        foreach (var (rowIndex, entryId, values) in rowData)
-        {
-            var levelStr = values.GetValueOrDefault("level", "1");
-            var skillTemplate = values.GetValueOrDefault("skill_template", "");
-
-            if (string.IsNullOrEmpty(skillTemplate)) continue;
-            if (!int.TryParse(levelStr, out var level)) continue;
-
-            var expectedTier = (level - 1) / 5;
-
-            // Try to extract tier from skill template name
-            // Pattern 1: tor_skills_levelNN (e.g., tor_skills_level11)
-            // Pattern 2: _tN_ (e.g., _t2_)
-            int? templateTier = null;
-
-            var levelMatch = System.Text.RegularExpressions.Regex.Match(skillTemplate, @"level(\d+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            if (levelMatch.Success && int.TryParse(levelMatch.Groups[1].Value, out var templateLevel))
-            {
-                templateTier = (templateLevel - 1) / 5;
-            }
-            else
-            {
-                var tierMatch = System.Text.RegularExpressions.Regex.Match(skillTemplate, @"_t(\d+)_");
-                if (tierMatch.Success && int.TryParse(tierMatch.Groups[1].Value, out var parsedTier))
-                {
-                    templateTier = parsedTier;
-                }
-            }
-
-            if (!templateTier.HasValue)
-            {
-                skippedNoLevel++;
-                continue;
-            }
-
-            checkedCount++;
-
-            if (templateTier.Value != expectedTier)
-            {
-                mismatchCount++;
-                var key = $"upgrade_{rowIndex}_skill_template_tier";
-                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-                {
-                    ValidationManager.RegisterError(key, new TORTools.Core.Validation.ValidationIssue
-                    {
-                        Severity = TORTools.Core.Validation.ValidationSeverity.Warning,
-                        RowIndex = rowIndex,
-                        AttributeName = "skill_template",
-                        Message = $"Skill template is Tier {templateTier.Value} but troop is Tier {expectedTier} (level {level})",
-                        EntryId = entryId,
-                        CurrentValue = skillTemplate
-                    });
-                });
-            }
-        }
-
-        Console.WriteLine($"[Validation] Skill template tier check: {checkedCount} checked, {skippedNoLevel} skipped (no level pattern), {mismatchCount} mismatches");
-    }
-
-    /// <summary>
-    /// Validates cross-reference fields asynchronously.
-    /// </summary>
-    private async Task ValidateCrossReferencesAsync(List<(int index, string id, Dictionary<string, string> values)> rowData)
-    {
-        if (Schema == null) return;
-
-        // Find all crossReference fields
-        var crossRefFields = Schema.Fields
-            .Where(f => f.Value.Type == "crossReference" && f.Value.CrossReference != null)
-            .ToList();
-
-        if (!crossRefFields.Any()) return;
-
-        Console.WriteLine($"[Validation] Cross-ref fields to validate: {crossRefFields.Count}");
-
-        foreach (var (fieldName, fieldDef) in crossRefFields)
-        {
-            var crossRef = fieldDef.CrossReference!;
-
-            // Get available IDs from the already-loaded cache
-            if (!_availableIds.TryGetValue(fieldName, out var availableIdsList) || availableIdsList.Count == 0)
-            {
-                Console.WriteLine($"[Validation] No available IDs for {fieldName}, skipping");
-                continue;
-            }
-
-            Console.WriteLine($"[Validation] Validating {fieldName} with {availableIdsList.Count} valid IDs");
-            Console.WriteLine($"[Validation] Sample valid IDs: {string.Join(", ", availableIdsList.Take(5))}");
-            Console.WriteLine($"[Validation] PrefixToStrip: '{crossRef.PrefixToStrip ?? "(none)"}'");
-
-            // Debug: check for specific IDs that might be missing
-            var debugIds = new[] { "tor_skills_level21", "tor_skills_dwarf_irondrake", "tor_skills_level1", "tor_skills_level16" };
-            foreach (var debugId in debugIds)
-            {
-                var exists = availableIdsList.Any(id => id.Equals(debugId, StringComparison.OrdinalIgnoreCase));
-                Console.WriteLine($"[Validation] Debug: '{debugId}' exists in valid IDs: {exists}");
-            }
-
-            var validIdsSet = new HashSet<string>(availableIdsList, StringComparer.OrdinalIgnoreCase);
-
-            // Debug: log some sample values from the data
-            var sampleValues = rowData.Take(5).Select(r => r.values.GetValueOrDefault(fieldName, "(empty)")).ToList();
-            Console.WriteLine($"[Validation] Sample data values: {string.Join(", ", sampleValues)}");
-
-            int invalidCount = 0;
-            foreach (var (rowIndex, entryId, values) in rowData)
-            {
-                var rawValue = values.GetValueOrDefault(fieldName, "");
-                if (string.IsNullOrEmpty(rawValue)) continue;
-
-                // Handle multi-value fields (colon-separated or comma-separated)
-                var ids = rawValue.Split(new[] { ':', ',' }, StringSplitOptions.RemoveEmptyEntries);
-
-                foreach (var id in ids)
-                {
-                    var cleanId = id.Trim();
-                    if (string.IsNullOrEmpty(cleanId)) continue;
-
-                    // Strip prefix if configured
-                    if (!string.IsNullOrEmpty(crossRef.PrefixToStrip) &&
-                        cleanId.StartsWith(crossRef.PrefixToStrip, StringComparison.OrdinalIgnoreCase))
-                    {
-                        cleanId = cleanId.Substring(crossRef.PrefixToStrip.Length);
-                    }
-
-                    if (!validIdsSet.Contains(cleanId))
-                    {
-                        invalidCount++;
-                        if (invalidCount <= 5)
-                        {
-                            Console.WriteLine($"[Validation] Invalid crossref: row {rowIndex}, {fieldName}='{cleanId}' (original: '{id}')");
-                        }
-                        var key = $"crossref_{rowIndex}_{fieldName}_{cleanId}";
-                        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-                        {
-                            ValidationManager.RegisterError(key, new TORTools.Core.Validation.ValidationIssue
-                            {
-                                Severity = TORTools.Core.Validation.ValidationSeverity.Error,
-                                RowIndex = rowIndex,
-                                AttributeName = fieldName,
-                                Message = $"'{cleanId}' not found in {crossRef.TargetFile}",
-                                EntryId = entryId,
-                                CurrentValue = cleanId
-                            });
-                        });
-                    }
-                }
-            }
-
-            Console.WriteLine($"[Validation] CrossRef {fieldName}: {invalidCount} invalid entries found");
-        }
-    }
 
     /// <summary>
     /// Navigates to the row with the specified validation issue.
@@ -1135,6 +716,7 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     {
         LoadFile();
         _undoRedoService.Clear();
+        Context.HasUnsavedChanges = false;
         HasUnsavedChanges = false;
         OnPropertyChanged(nameof(Rows));
     }
@@ -1143,38 +725,25 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     {
         try
         {
-            // Check if this schema defines multiple source files to merge
-            if (Schema?.AdditionalSourceFiles != null && Schema.AdditionalSourceFiles.Count > 0)
+            // Delegate to FileEditManager for loading
+            _fileEditManager.LoadFileAsync(FilePath).Wait();
+
+            // Copy state from Context to ViewModel properties
+            HasError = Context.HasError;
+            ErrorMessage = Context.ErrorMessage;
+            HasUnsavedChanges = Context.HasUnsavedChanges;
+
+            if (!HasError)
             {
-                LoadMergedFiles();
-            }
-            else
-            {
-                // Standard single-file loading
-                _document = _xmlService.Load(FilePath);
-                var entries = _xmlService.GetEntries(_document);
-
-                XmlEntries.Clear();
-                XmlEntries.AddRange(entries);
-
-                // Load git committed values for comparison
-                _gitCommittedValues = _gitValueService.LoadGitCommittedValues(FilePath);
-
-                // Check if this is an equipment set file with nested variations
-                if (Schema?.HasNestedVariations == true && !string.IsNullOrEmpty(Schema.VariationElement))
+                // Populate cross-reference values for all rows
+                foreach (var row in Rows)
                 {
-                    // Flatten equipment sets - each variation becomes a row
-                    LoadEquipmentSetVariations(entries);
-                }
-                else
-                {
-                    // Normal loading
-                    DiscoverColumns(entries);
-                    CreateRows(entries);
+                    var entry = row.XmlEntry;
+                    PopulateCrossReferenceValues(row, entry);
                 }
 
-                HasError = false;
-                ErrorMessage = "";
+                // Subscribe rows to cell change events for undo/redo and auto-fill
+                SubscribeRowEvents();
 
                 // Run validation on file load
                 RunValidation();
@@ -1184,394 +753,32 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         {
             HasError = true;
             ErrorMessage = $"Error loading file: {ex.Message}";
+            Context.HasError = true;
+            Context.ErrorMessage = ex.Message;
         }
     }
 
     /// <summary>
-    /// Loads entries from multiple source files and merges them into a single view.
+    /// Subscribes all rows to the CellValueChanged event for undo/redo tracking.
     /// </summary>
-    private void LoadMergedFiles()
+    private void SubscribeRowEvents()
     {
-        if (Schema == null) return;
-
-        var allEntries = new List<XmlEntry>();
-        var baseDir = Path.GetDirectoryName(FilePath);
-        if (string.IsNullOrEmpty(baseDir)) return;
-
-        // Load main file
-        Console.WriteLine($"[LoadMergedFiles] Loading main file: {FilePath}");
-        _document = _xmlService.Load(FilePath);
-        var mainEntries = _xmlService.GetEntries(_document);
-        Console.WriteLine($"[LoadMergedFiles] Loaded {mainEntries.Count} entries from main file");
-
-        // Set source file field on main entries (if specified)
-        if (!string.IsNullOrEmpty(Schema.SourceFileField))
-        {
-            foreach (var entry in mainEntries)
-            {
-                // Main file entries get the "default" value (usually "false" for is_custom_battle_lord)
-                entry.SetAttributeValue(Schema.SourceFileField, "false");
-            }
-        }
-
-        allEntries.AddRange(mainEntries);
-
-        // Load additional source files
-        foreach (var additionalFile in Schema.AdditionalSourceFiles)
-        {
-            var additionalFilePath = FindSourceFile(baseDir, additionalFile.FileName);
-            if (additionalFilePath == null)
-            {
-                Console.WriteLine($"[LoadMergedFiles] Additional file not found: {additionalFile.FileName}");
-                continue;
-            }
-
-            Console.WriteLine($"[LoadMergedFiles] Loading additional file: {additionalFilePath}");
-            var additionalDoc = _xmlService.Load(additionalFilePath);
-            var additionalEntries = _xmlService.GetEntries(additionalDoc);
-            Console.WriteLine($"[LoadMergedFiles] Loaded {additionalEntries.Count} entries from {additionalFile.FileName}");
-
-            // Set source file field on additional entries
-            if (!string.IsNullOrEmpty(Schema.SourceFileField) && !string.IsNullOrEmpty(additionalFile.SourceValue))
-            {
-                foreach (var entry in additionalEntries)
-                {
-                    entry.SetAttributeValue(Schema.SourceFileField, additionalFile.SourceValue);
-                }
-            }
-
-            allEntries.AddRange(additionalEntries);
-        }
-
-        Console.WriteLine($"[LoadMergedFiles] Total merged entries: {allEntries.Count}");
-
-        // Merge data from merged data file (e.g., tor_heroes.xml)
-        if (Schema.MergedDataFile != null)
-        {
-            MergeDataFromFile(allEntries, baseDir);
-        }
-
-        XmlEntries.Clear();
-        XmlEntries.AddRange(allEntries);
-
-        // Load git committed values for comparison
-        _gitCommittedValues = _gitValueService.LoadGitCommittedValues(FilePath);
-
-        // Normal loading
-        DiscoverColumns(allEntries);
-        CreateRows(allEntries);
-
-        HasError = false;
-        ErrorMessage = "";
-
-        // Run validation on file load
-        RunValidation();
-    }
-
-    /// <summary>
-    /// Merges data from a separate data file into the loaded entries.
-    /// Used for merging hero data (faction, text) from tor_heroes.xml into lords.
-    /// </summary>
-    private void MergeDataFromFile(List<XmlEntry> entries, string baseDir)
-    {
-        if (Schema?.MergedDataFile == null) return;
-
-        var mergedConfig = Schema.MergedDataFile;
-        var mergedFilePath = FindSourceFile(baseDir, mergedConfig.FileName);
-        if (mergedFilePath == null)
-        {
-            Console.WriteLine($"[MergeData] Merged data file not found: {mergedConfig.FileName}");
-            return;
-        }
-
-        Console.WriteLine($"[MergeData] Loading merged data from: {mergedFilePath}");
-
-        try
-        {
-            var mergedDoc = XDocument.Load(mergedFilePath);
-            var mergedRoot = mergedDoc.Root;
-            if (mergedRoot == null) return;
-
-            // Find the entry element name
-            var entryElementName = mergedConfig.EntryElement ?? "Hero";
-            var matchField = mergedConfig.MatchField ?? "id";
-
-            // Build a dictionary of merged data keyed by match field
-            var mergedData = new Dictionary<string, XElement>(StringComparer.OrdinalIgnoreCase);
-            foreach (var element in mergedRoot.Elements(entryElementName))
-            {
-                var key = element.Attribute(matchField)?.Value;
-                if (!string.IsNullOrEmpty(key))
-                {
-                    mergedData[key] = element;
-                }
-            }
-
-            Console.WriteLine($"[MergeData] Loaded {mergedData.Count} entries from {mergedConfig.FileName}");
-
-            // Merge data into entries
-            foreach (var entry in entries)
-            {
-                var entryId = entry.GetAttributeValue(matchField);
-                if (string.IsNullOrEmpty(entryId)) continue;
-
-                if (mergedData.TryGetValue(entryId, out var mergedElement))
-                {
-                    // Apply field mappings
-                    if (mergedConfig.FieldMappings != null)
-                    {
-                        foreach (var mapping in mergedConfig.FieldMappings)
-                        {
-                            var sourceField = mapping.Value; // "faction" or "text"
-                            var targetField = mapping.Key;   // "clan" or "encyclopedia_text"
-
-                            var sourceValue = mergedElement.Attribute(sourceField)?.Value;
-                            if (!string.IsNullOrEmpty(sourceValue))
-                            {
-                                entry.SetAttributeValue(targetField, sourceValue);
-                            }
-                        }
-                    }
-                }
-            }
-
-            Console.WriteLine($"[MergeData] Merged data complete");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[MergeData] Error loading {mergedFilePath}: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Loads equipment sets by flattening variations into rows.
-    /// Each EquipmentSet variation becomes its own row with equipment slots as columns.
-    /// </summary>
-    /// <remarks>
-    /// NOTE: Vanilla Bannerlord supports a Flags element on EquipmentRoster with attributes like
-    /// IsCivilianTemplate, IsCombatantTemplate, IsWandererEquipment. TOR doesn't use this element
-    /// (XmlGenerator doesn't support it). Only the 'civilian' attribute on EquipmentSet is used.
-    /// If TOR adopts the vanilla Flags element in future, we'll need to add support here.
-    /// </remarks>
-    private void LoadEquipmentSetVariations(IReadOnlyList<XmlEntry> rosterEntries)
-    {
-        // Build column list: roster fields + variation attributes + equipment slots
-        // Note: civilian column removed - civilian sets are auto-generated on save
-        ColumnNames.Clear();
-        ColumnNames.Add("id");           // Roster ID
-        ColumnNames.Add("culture");      // Roster culture
-        ColumnNames.Add("_variation");   // Variation index (internal tracking)
-
-        // Add equipment slots from schema
-        if (Schema?.EquipmentSlots != null)
-        {
-            foreach (var slot in Schema.EquipmentSlots.OrderBy(s => s.Order))
-            {
-                ColumnNames.Add(slot.Slot);
-            }
-        }
-
-        // Unsubscribe from old rows
         foreach (var row in Rows)
         {
-            row.CellValueChanged -= OnCellValueChanged;
+            row.CellValueChanged -= OnCellValueChanged; // Unsubscribe first to avoid duplicates
+            row.CellValueChanged += OnCellValueChanged;
         }
-        Rows.Clear();
-
-        int rowNum = 1;
-        var variationElementName = Schema!.VariationElement!;
-        var equipmentElementName = Schema.EquipmentItemElement ?? "Equipment";
-
-        foreach (var roster in rosterEntries)
-        {
-            var rosterId = roster.GetAttributeValue("id") ?? "";
-            var rosterCulture = roster.GetAttributeValue("culture") ?? "";
-
-            // Get all EquipmentSet variations
-            var variations = roster.Children.Where(c => c.ElementName == variationElementName).ToList();
-
-            if (variations.Count == 0)
-            {
-                // No variations - create a single row for the roster
-                var emptyRow = CreateEquipmentRow(roster, null, rosterId, rosterCulture, 0, false, new Dictionary<string, string>(), rowNum++);
-                Rows.Add(emptyRow);
-            }
-            else
-            {
-                int variationIndex = 0;
-                foreach (var variation in variations)
-                {
-                    var isCivilian = variation.GetAttributeValue("civilian")?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
-
-                    // TODO: Future consideration - allow editing separate civilian equipment.
-                    // Currently civilian sets are always clones of combat sets (per XmlGenerator behavior).
-                    // Skip civilian variations - they will be auto-generated on save.
-                    if (isCivilian) continue;
-
-                    // Extract equipment from this variation
-                    var equipment = new Dictionary<string, string>();
-                    foreach (var equipItem in variation.Children.Where(c => c.ElementName == equipmentElementName))
-                    {
-                        var slot = equipItem.GetAttributeValue("slot");
-                        var itemId = equipItem.GetAttributeValue("id");
-                        if (!string.IsNullOrEmpty(slot) && !string.IsNullOrEmpty(itemId))
-                        {
-                            equipment[slot] = itemId;
-                        }
-                    }
-
-                    var row = CreateEquipmentRow(roster, variation, rosterId, rosterCulture, variationIndex, false, equipment, rowNum++);
-                    Rows.Add(row);
-                    variationIndex++;
-                }
-            }
-        }
-
-        Console.WriteLine($"[EquipmentSets] Loaded {Rows.Count} variations from {rosterEntries.Count} rosters");
     }
 
-    /// <summary>
-    /// Creates a row for an equipment set variation.
-    /// </summary>
-    private EntryRowViewModel CreateEquipmentRow(
-        XmlEntry roster,
-        XmlEntry? variation,
-        string rosterId,
-        string rosterCulture,
-        int variationIndex,
-        bool isCivilian,
-        Dictionary<string, string> equipment,
-        int rowNum)
-    {
-        // Get git committed values for this entry
-        var gitKey = $"{rosterId}_{variationIndex}";
-        var gitValues = GetGitCommittedValues(gitKey);
-
-        var row = new EntryRowViewModel(roster, ColumnNames, gitValues);
-        row.RowNumber = rowNum;
-        row.VariationEntry = variation;
-        row.VariationIndex = variationIndex;
-        row.RosterId = rosterId;
-
-        // NOTE: Do NOT subscribe to CellValueChanged yet - we're just populating initial values
-        // Set roster-level values (these are display-only, not persisted to roster attributes)
-        row.SetValueWithoutNotify("id", rosterId);
-        row.SetValueWithoutNotify("culture", rosterCulture);
-        row.SetValueWithoutNotify("_variation", variationIndex.ToString());
-        row.SetValueWithoutNotify("civilian", isCivilian ? "true" : "false");
-
-        // Set equipment slot values
-        if (Schema?.EquipmentSlots != null)
-        {
-            foreach (var slot in Schema.EquipmentSlots)
-            {
-                if (equipment.TryGetValue(slot.Slot, out var itemId))
-                {
-                    row.SetValueWithoutNotify(slot.Slot, itemId);
-                }
-                else
-                {
-                    row.SetValueWithoutNotify(slot.Slot, "");
-                }
-            }
-        }
-
-        // NOW subscribe to changes - after initial values are set
-        row.CellValueChanged += OnCellValueChanged;
-
-        return row;
-    }
+    // LoadMergedFiles, MergeDataFromFile, LoadEquipmentSetVariations, CreateEquipmentRow,
+    // DiscoverColumns, and CreateRows are now handled by FileLoaderService
 
     /// <summary>
-    /// Gets the git committed values for an entry, if available.
+    /// Gets the git committed values for an entry, if available - now accessed through Context.
     /// </summary>
     public Dictionary<string, string>? GetGitCommittedValues(string entryId)
     {
-        return _gitCommittedValues.TryGetValue(entryId, out var values) ? values : null;
-    }
-
-    private void DiscoverColumns(IReadOnlyList<XmlEntry> entries)
-    {
-        ColumnNames.Clear();
-        var columnSet = new HashSet<string>();
-
-        // Always put 'id' and 'name' first if they exist
-        var priorityColumns = new[] { "id", "name" };
-
-        foreach (var entry in entries)
-        {
-            foreach (var attr in entry.Attributes)
-            {
-                columnSet.Add(attr.Name);
-            }
-        }
-
-        // Add priority columns first
-        foreach (var col in priorityColumns)
-        {
-            if (columnSet.Contains(col))
-            {
-                ColumnNames.Add(col);
-                columnSet.Remove(col);
-            }
-        }
-
-        // Add remaining columns in alphabetical order
-        ColumnNames.AddRange(columnSet.OrderBy(c => c));
-
-        // Add cross-reference, nested, and tupleList columns from schema (these may not be direct attributes)
-        if (Schema != null)
-        {
-            foreach (var kvp in Schema.Fields)
-            {
-                if (kvp.Value.CrossReference != null && !ColumnNames.Contains(kvp.Key))
-                {
-                    ColumnNames.Add(kvp.Key);
-                }
-                else if (kvp.Value.TupleList != null && !ColumnNames.Contains(kvp.Key))
-                {
-                    ColumnNames.Add(kvp.Key);
-                }
-                else if (kvp.Value.Nested && !string.IsNullOrEmpty(kvp.Value.NestedPath) && !ColumnNames.Contains(kvp.Key))
-                {
-                    ColumnNames.Add(kvp.Key);
-                }
-            }
-        }
-    }
-
-    private void CreateRows(IReadOnlyList<XmlEntry> entries)
-    {
-        // Unsubscribe from old rows
-        foreach (var row in Rows)
-        {
-            row.CellValueChanged -= OnCellValueChanged;
-        }
-
-        Rows.Clear();
-        int rowNum = 1;
-        foreach (var entry in entries)
-        {
-            var isNew = _newEntries.Contains(entry);
-
-            // Get git committed values for this entry (by ID)
-            var entryId = entry.GetAttribute("id")?.DisplayValue ?? "";
-            var gitValues = GetGitCommittedValues(entryId);
-
-            var row = new EntryRowViewModel(entry, ColumnNames, gitValues);
-            row.IsNew = isNew;
-            row.IsIdLocked = !isNew; // New entries have unlocked ID
-            row.RowNumber = rowNum++;
-            row.CellValueChanged += OnCellValueChanged;
-
-            // Populate cross-reference values
-            PopulateCrossReferenceValues(row, entry);
-
-            // Populate nested field values
-            PopulateNestedValues(row, entry);
-
-            Rows.Add(row);
-        }
+        return Context.GitCommittedValues.TryGetValue(entryId, out var values) ? values : null;
     }
 
     /// <summary>
@@ -1605,33 +812,10 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         }
     }
 
-    /// <summary>
-    /// Populates nested field values for a row based on schema nested paths.
-    /// </summary>
-    private void PopulateNestedValues(EntryRowViewModel row, XmlEntry entry)
-    {
-        if (Schema == null) return;
-
-        foreach (var kvp in Schema.Fields)
-        {
-            var fieldName = kvp.Key;
-            var fieldDef = kvp.Value;
-
-            if (fieldDef.Nested && !string.IsNullOrEmpty(fieldDef.NestedPath))
-            {
-                var value = entry.GetNestedValue(fieldDef.NestedPath);
-                if (!string.IsNullOrEmpty(value))
-                {
-                    row.SetOriginalValue(fieldName, value);
-                }
-            }
-        }
-    }
-
     private void OnCellValueChanged(object? sender, CellValueChangedEventArgs e)
     {
         if (sender is not EntryRowViewModel rowVm) return;
-        if (_document == null) return;
+        if (Context.Document == null) return;
 
         // Handle equipment set variations specially
         if (rowVm.IsEquipmentSetVariation)
@@ -1646,7 +830,7 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         var nestedPath = (fieldDef?.Nested == true) ? fieldDef.NestedPath : null;
 
         // Create and execute an edit command
-        var command = new CellEditUndoCommand(rowVm, e.ColumnName, e.OldValue, e.NewValue, nestedPath);
+        var command = new CellEditCommand(rowVm, e.ColumnName, e.OldValue, e.NewValue, nestedPath);
 
         // Don't use Execute() here since the value is already changed
         // Just push to undo stack
@@ -1732,9 +916,9 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
             else
             {
                 // Create new equipment element
-                var newElement = new System.Xml.Linq.XElement(equipmentElementName,
-                    new System.Xml.Linq.XAttribute("slot", slotName),
-                    new System.Xml.Linq.XAttribute("id", itemId));
+                var newElement = new XElement(equipmentElementName,
+                    new XAttribute("slot", slotName),
+                    new XAttribute("id", itemId));
                 variation.OriginalElement.Add(newElement);
                 variation.Children.Add(new XmlEntry(newElement));
                 Console.WriteLine($"[EquipmentSet] Added {slotName} = {itemId}");
@@ -1781,7 +965,7 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         // e.g., "HeadArmor" → "head_armor"
         if (targetField.Equals("subtype", StringComparison.OrdinalIgnoreCase))
         {
-            return ConvertPascalToSnakeCase(sourceValue);
+            return StringCaseConverter.ConvertPascalToSnakeCase(sourceValue);
         }
 
         // subtype → Type: convert snake_case to PascalCase
@@ -1789,96 +973,32 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         if (targetField.Equals("Type", StringComparison.OrdinalIgnoreCase) ||
             sourceField.Equals("subtype", StringComparison.OrdinalIgnoreCase))
         {
-            return ConvertSnakeToPascalCase(sourceValue);
+            return StringCaseConverter.ConvertSnakeToPascalCase(sourceValue);
         }
 
         // Default: use source value as-is
         return sourceValue;
     }
 
-    /// <summary>
-    /// Converts PascalCase to snake_case.
-    /// E.g., "HeadArmor" → "head_armor"
-    /// </summary>
-    private static string ConvertPascalToSnakeCase(string value)
-    {
-        var result = new System.Text.StringBuilder();
-        for (int i = 0; i < value.Length; i++)
-        {
-            char c = value[i];
-            if (char.IsUpper(c))
-            {
-                if (i > 0)
-                    result.Append('_');
-                result.Append(char.ToLower(c));
-            }
-            else
-            {
-                result.Append(c);
-            }
-        }
-        return result.ToString();
-    }
-
-    /// <summary>
-    /// Converts snake_case to PascalCase.
-    /// E.g., "head_armor" → "HeadArmor"
-    /// </summary>
-    private static string ConvertSnakeToPascalCase(string value)
-    {
-        var result = new System.Text.StringBuilder();
-        bool capitalizeNext = true;
-        foreach (char c in value)
-        {
-            if (c == '_')
-            {
-                capitalizeNext = true;
-            }
-            else
-            {
-                result.Append(capitalizeNext ? char.ToUpper(c) : c);
-                capitalizeNext = false;
-            }
-        }
-        return result.ToString();
-    }
-
     public void Save()
     {
-        if (_document == null)
+        if (Context.Document == null)
             return;
 
         _isSaving = true;
         try
         {
-            // Sync changes from dynamic entries back to XmlEntries
-            SyncChangesToXml();
+            // Delegate to FileEditManager for save logic
+            _fileEditManager.Save();
 
-            // For equipment sets: auto-generate civilian clones before saving
-            if (Schema?.HasNestedVariations == true)
-            {
-                GenerateCivilianClones();
-            }
-
-            // Check if this is a multi-file schema that needs split saving
-            if (Schema?.AdditionalSourceFiles != null && Schema.AdditionalSourceFiles.Count > 0)
-            {
-                SaveMergedFiles();
-            }
-            else
-            {
-                // Standard single-file save
-                var compactFormat = Schema?.CompactFormat ?? true;
-                _xmlService.Save(_document, null, compactFormat);
-            }
-
-            HasUnsavedChanges = false;
-            HasError = false;
-            ErrorMessage = "";
+            // Copy state from Context to ViewModel properties
+            HasUnsavedChanges = Context.HasUnsavedChanges;
+            HasError = Context.HasError;
+            ErrorMessage = Context.ErrorMessage;
 
             // After save, all entries are no longer "new" - they're in the file now
             // Also mark modified fields as "saved" (for orange/green text indicator)
-            _newEntries.Clear();
+            Context.NewEntries.Clear();
             foreach (var row in Rows)
             {
                 // MarkFieldsAsSaved must be called BEFORE IsNew = false
@@ -1894,6 +1014,8 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         {
             HasError = true;
             ErrorMessage = $"Error saving file: {ex.Message}";
+            Context.HasError = true;
+            Context.ErrorMessage = ex.Message;
         }
         finally
         {
@@ -1902,293 +1024,17 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         }
     }
 
-    /// <summary>
-    /// Saves multi-file schemas by splitting entries back to their source files.
-    /// Also saves merged data (e.g., hero data) back to separate files.
-    /// </summary>
-    private void SaveMergedFiles()
-    {
-        if (Schema == null) return;
-
-        var baseDir = Path.GetDirectoryName(FilePath);
-        if (string.IsNullOrEmpty(baseDir)) return;
-
-        var compactFormat = Schema.CompactFormat;
-
-        // Group entries by source file field (e.g., is_custom_battle_lord)
-        var mainEntries = new List<XmlEntry>();
-        var additionalFileEntries = new Dictionary<string, List<XmlEntry>>();
-
-        foreach (var entry in XmlEntries)
-        {
-            if (!string.IsNullOrEmpty(Schema.SourceFileField))
-            {
-                var sourceValue = entry.GetAttributeValue(Schema.SourceFileField);
-
-                // Check if this entry belongs to an additional file
-                var additionalFile = Schema.AdditionalSourceFiles.FirstOrDefault(f => f.SourceValue == sourceValue);
-                if (additionalFile != null)
-                {
-                    if (!additionalFileEntries.ContainsKey(additionalFile.FileName))
-                    {
-                        additionalFileEntries[additionalFile.FileName] = new List<XmlEntry>();
-                    }
-                    additionalFileEntries[additionalFile.FileName].Add(entry);
-                }
-                else
-                {
-                    mainEntries.Add(entry);
-                }
-            }
-            else
-            {
-                mainEntries.Add(entry);
-            }
-        }
-
-        // Save main file
-        Console.WriteLine($"[SaveMergedFiles] Saving {mainEntries.Count} entries to main file: {FilePath}");
-        var mainXDoc = CreateDocumentFromEntries(mainEntries, Schema.RootElement ?? "NPCCharacters");
-        var mainDoc = new XmlDocumentWrapper(mainXDoc, FilePath, _document!.HasBom, _document.Encoding, _document.IndentString);
-        _xmlService.Save(mainDoc, FilePath, compactFormat);
-
-        // Save additional files
-        foreach (var kvp in additionalFileEntries)
-        {
-            var fileName = kvp.Key;
-            var entries = kvp.Value;
-            var filePath = FindSourceFile(baseDir, fileName);
-
-            if (filePath != null)
-            {
-                Console.WriteLine($"[SaveMergedFiles] Saving {entries.Count} entries to: {filePath}");
-                var xdoc = CreateDocumentFromEntries(entries, Schema.RootElement ?? "NPCCharacters");
-                var doc = new XmlDocumentWrapper(xdoc, filePath, _document!.HasBom, _document.Encoding, _document.IndentString);
-                _xmlService.Save(doc, filePath, compactFormat);
-            }
-        }
-
-        // Save merged data file if configured (e.g., tor_heroes.xml)
-        if (Schema.MergedDataFile != null)
-        {
-            SaveMergedDataFile(baseDir);
-        }
-    }
-
-    /// <summary>
-    /// Creates an XDocument from a list of XmlEntry objects.
-    /// </summary>
-    private XDocument CreateDocumentFromEntries(List<XmlEntry> entries, string rootElementName)
-    {
-        var root = new XElement(rootElementName);
-        foreach (var entry in entries)
-        {
-            // Remove the source file field attribute before saving (it's only for internal tracking)
-            if (!string.IsNullOrEmpty(Schema?.SourceFileField))
-            {
-                entry.OriginalElement.Attribute(Schema.SourceFileField)?.Remove();
-            }
-            root.Add(entry.OriginalElement);
-        }
-        return new XDocument(root);
-    }
-
-    /// <summary>
-    /// Saves merged data fields back to the merged data file (e.g., tor_heroes.xml).
-    /// Extracts clan → faction and encyclopedia_text → text mappings.
-    /// </summary>
-    private void SaveMergedDataFile(string baseDir)
-    {
-        if (Schema?.MergedDataFile == null) return;
-
-        var mergedConfig = Schema.MergedDataFile;
-        var mergedFilePath = FindSourceFile(baseDir, mergedConfig.FileName);
-        if (mergedFilePath == null)
-        {
-            Console.WriteLine($"[SaveMergedData] Merged data file not found: {mergedConfig.FileName}");
-            return;
-        }
-
-        Console.WriteLine($"[SaveMergedData] Updating merged data file: {mergedFilePath}");
-
-        try
-        {
-            // Load existing merged data file
-            var mergedDoc = XDocument.Load(mergedFilePath);
-            var mergedRoot = mergedDoc.Root;
-            if (mergedRoot == null) return;
-
-            var entryElementName = mergedConfig.EntryElement ?? "Hero";
-            var matchField = mergedConfig.MatchField ?? "id";
-
-            // Build a dictionary of existing entries
-            var existingEntries = new Dictionary<string, XElement>(StringComparer.OrdinalIgnoreCase);
-            foreach (var element in mergedRoot.Elements(entryElementName))
-            {
-                var key = element.Attribute(matchField)?.Value;
-                if (!string.IsNullOrEmpty(key))
-                {
-                    existingEntries[key] = element;
-                }
-            }
-
-            // Update entries with data from our rows
-            int updatedCount = 0;
-            foreach (var entry in XmlEntries)
-            {
-                var entryId = entry.GetAttributeValue(matchField);
-                if (string.IsNullOrEmpty(entryId)) continue;
-
-                if (existingEntries.TryGetValue(entryId, out var heroElement))
-                {
-                    // Apply reverse field mappings (targetField → sourceField)
-                    if (mergedConfig.FieldMappings != null)
-                    {
-                        foreach (var mapping in mergedConfig.FieldMappings)
-                        {
-                            var targetField = mapping.Key;   // "clan" or "encyclopedia_text"
-                            var sourceField = mapping.Value; // "faction" or "text"
-
-                            var value = entry.GetAttributeValue(targetField);
-                            if (!string.IsNullOrEmpty(value))
-                            {
-                                var oldValue = heroElement.Attribute(sourceField)?.Value;
-                                if (oldValue != value)
-                                {
-                                    heroElement.SetAttributeValue(sourceField, value);
-                                    updatedCount++;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            Console.WriteLine($"[SaveMergedData] Updated {updatedCount} fields in {mergedFilePath}");
-
-            // Save the merged data file with compact format
-            var compactFormat = Schema.CompactFormat;
-            var mergedDocWrapper = new XmlDocumentWrapper(mergedDoc, mergedFilePath, _document!.HasBom, _document.Encoding, _document.IndentString);
-            _xmlService.Save(mergedDocWrapper, mergedFilePath, compactFormat);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[SaveMergedData] Error saving {mergedFilePath}: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Auto-generates civilian clone EquipmentSets for each combat EquipmentSet.
-    /// This matches XmlGenerator behavior where civilian sets are identical clones.
-    /// TODO: Future consideration - allow editing separate civilian equipment.
-    /// </summary>
-    private void GenerateCivilianClones()
-    {
-        if (XmlEntries.Count == 0) return;
-
-        var variationElementName = Schema?.VariationElement ?? "EquipmentSet";
-        var cloneCount = 0;
-
-        foreach (var roster in XmlEntries)
-        {
-            // Remove existing civilian clones first
-            var civilianSets = roster.Children
-                .Where(c => c.ElementName == variationElementName &&
-                            c.GetAttributeValue("civilian")?.Equals("true", StringComparison.OrdinalIgnoreCase) == true)
-                .ToList();
-
-            foreach (var civilianSet in civilianSets)
-            {
-                civilianSet.OriginalElement.Remove();
-                roster.Children.Remove(civilianSet);
-            }
-
-            // Get all combat sets (no civilian attribute)
-            var combatSets = roster.Children
-                .Where(c => c.ElementName == variationElementName &&
-                            c.GetAttributeValue("civilian")?.Equals("true", StringComparison.OrdinalIgnoreCase) != true)
-                .ToList();
-
-            // Clone each combat set as civilian
-            foreach (var combatSet in combatSets)
-            {
-                var civilianClone = new System.Xml.Linq.XElement(combatSet.OriginalElement);
-                civilianClone.SetAttributeValue("civilian", "true");
-
-                // Add after the combat set
-                combatSet.OriginalElement.AddAfterSelf(civilianClone);
-                cloneCount++;
-            }
-        }
-
-        Console.WriteLine($"[EquipmentSets] Generated {cloneCount} civilian clones");
-    }
-
-    private void SyncChangesToXml()
-    {
-        foreach (var rowVm in Rows)
-        {
-            // Skip equipment set variation rows - their changes are applied directly
-            // via HandleEquipmentSetCellChange() during editing
-            if (rowVm.IsEquipmentSetVariation)
-                continue;
-
-            var xmlEntry = rowVm.XmlEntry;
-
-            foreach (var columnName in ColumnNames)
-            {
-                // Skip cross-reference columns - they're virtual and stored in other files
-                var fieldDef = GetFieldDefinition(columnName);
-                if (fieldDef?.CrossReference != null)
-                    continue;
-
-                var currentValue = rowVm[columnName];
-
-                // Handle nested fields
-                if (fieldDef?.Nested == true && !string.IsNullOrEmpty(fieldDef.NestedPath))
-                {
-                    var existingValue = xmlEntry.GetNestedValue(fieldDef.NestedPath) ?? "";
-                    var normalizedCurrent = currentValue ?? "";
-                    if (existingValue != normalizedCurrent)
-                    {
-                        xmlEntry.SetNestedValue(fieldDef.NestedPath, currentValue);
-                        _document!.HasUnsavedChanges = true;
-                    }
-                    continue;
-                }
-
-                var attr = xmlEntry.GetAttribute(columnName);
-
-                if (attr != null)
-                {
-                    // Existing attribute - update if changed
-                    if (attr.DisplayValue != currentValue)
-                    {
-                        xmlEntry.SetAttributeValue(columnName,
-                            LocalizationHelper.Wrap(attr.LocalizationKey, currentValue));
-                        _document!.HasUnsavedChanges = true;
-                    }
-                }
-                else if (!string.IsNullOrEmpty(currentValue))
-                {
-                    // New attribute on new entry - add it
-                    xmlEntry.SetAttributeValue(columnName, currentValue);
-                    _document!.HasUnsavedChanges = true;
-                }
-            }
-        }
-
-        HasUnsavedChanges = _document?.HasUnsavedChanges ?? false;
-    }
+    // SaveMergedFiles, CreateDocumentFromEntries, SaveMergedDataFile, GenerateCivilianClones,
+    // and SyncChangesToXml are now handled by FileSaverService
 
     private CancellationTokenSource? _validationDebounceToken;
 
     public void MarkAsModified()
     {
         HasUnsavedChanges = true;
-        if (_document != null)
+        if (Context.Document != null)
         {
-            _document.HasUnsavedChanges = true;
+            Context.Document.HasUnsavedChanges = true;
         }
 
         // Debounced validation - wait 500ms after last edit before validating
@@ -2243,11 +1089,11 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     /// </summary>
     public void AddRowAtIndex(int insertIndex)
     {
-        if (_document == null) return;
+        if (Context.Document == null) return;
 
         var xmlEntryCollection = new ObservableCollection<XmlEntry>(XmlEntries);
 
-        var command = new AddRowCommand(_document, xmlEntryCollection, insertIndex);
+        var command = new AddRowCommand(Context.Document, xmlEntryCollection, insertIndex);
         _undoRedoService.Execute(command);
 
         // Sync collections
@@ -2274,7 +1120,7 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     public void DeleteRow()
     {
-        if (_document == null || SelectedIndex < 0 || SelectedIndex >= XmlEntries.Count)
+        if (Context.Document == null || SelectedIndex < 0 || SelectedIndex >= XmlEntries.Count)
             return;
 
         var indexToDelete = SelectedIndex;
@@ -2284,8 +1130,8 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         if (!rowToDelete.IsNew)
         {
             rowToDelete.IsRemoved = true;
-            _removedEntries.Add(rowToDelete);
-            Console.WriteLine($"[Removed] Stored removed entry: {rowToDelete["id"]} (total: {_removedEntries.Count})");
+            Context.RemovedEntries.Add(rowToDelete);
+            Console.WriteLine($"[Removed] Stored removed entry: {rowToDelete["id"]} (total: {Context.RemovedEntries.Count})");
         }
 
         var xmlEntryCollection = new ObservableCollection<XmlEntry>(XmlEntries);
@@ -2294,7 +1140,7 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         // Remove from new entries tracking
         _newEntries.Remove(entryToDelete);
 
-        var command = new DeleteRowCommand(_document, xmlEntryCollection, entryToDelete);
+        var command = new DeleteRowCommand(Context.Document, xmlEntryCollection, entryToDelete);
         _undoRedoService.Execute(command);
 
         // Sync collections
@@ -2327,14 +1173,14 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     public void DuplicateRow()
     {
-        if (_document == null || SelectedIndex < 0 || SelectedIndex >= XmlEntries.Count)
+        if (Context.Document == null || SelectedIndex < 0 || SelectedIndex >= XmlEntries.Count)
             return;
 
         var xmlEntryCollection = new ObservableCollection<XmlEntry>(XmlEntries);
         var entryToDuplicate = xmlEntryCollection[SelectedIndex];
         var insertIndex = SelectedIndex + 1;
 
-        var command = new DuplicateRowCommand(_document, xmlEntryCollection, entryToDuplicate);
+        var command = new DuplicateRowCommand(Context.Document, xmlEntryCollection, entryToDuplicate);
         _undoRedoService.Execute(command);
 
         // Sync collections
@@ -2467,22 +1313,76 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
 
     private void RefreshRows()
     {
-        // Rediscover columns in case new entries have different attributes
-        DiscoverColumns(XmlEntries);
-
-        // Recreate the rows (CreateRows handles IsNew tracking via _newEntries)
-        CreateRows(XmlEntries);
+        // After undo/redo operations, we need to recreate rows from XmlEntries
+        // This is a simplified version that doesn't reload from disk
+        RecreateRowsFromEntries();
 
         // Add removed entries at the end if toggle is on
         if (ShowRemovedEntries)
         {
-            foreach (var removedRow in _removedEntries)
+            foreach (var removedRow in Context.RemovedEntries)
             {
                 if (!Rows.Contains(removedRow))
                 {
                     Rows.Add(removedRow);
                 }
             }
+        }
+
+        // Ensure all rows are subscribed to change events
+        SubscribeRowEvents();
+
+        // Notify UI of changes
+        OnPropertyChanged(nameof(Rows));
+    }
+
+    /// <summary>
+    /// Recreates row view models from the current XmlEntries collection.
+    /// Used after add/delete/duplicate operations.
+    /// </summary>
+    private void RecreateRowsFromEntries()
+    {
+        Rows.Clear();
+        int rowNum = 1;
+
+        foreach (var entry in XmlEntries)
+        {
+            var entryId = entry.GetAttribute("id")?.DisplayValue ?? "";
+            var isNew = Context.NewEntries.Contains(entryId);
+            var gitValues = GetGitCommittedValues(entryId);
+
+            var row = new EntryRowViewModel(entry, ColumnNames, gitValues);
+            row.IsNew = isNew;
+            row.IsIdLocked = !isNew;
+            row.RowNumber = rowNum++;
+
+            // Populate values from entry
+            foreach (var columnName in ColumnNames)
+            {
+                var fieldDef = GetFieldDefinition(columnName);
+                string? value = null;
+
+                // Handle nested fields
+                if (fieldDef?.Nested == true && !string.IsNullOrEmpty(fieldDef.NestedPath))
+                {
+                    value = entry.GetNestedValue(fieldDef.NestedPath);
+                }
+                else if (fieldDef?.CrossReference == null) // Skip cross-ref fields
+                {
+                    var attr = entry.GetAttribute(columnName);
+                    value = attr?.DisplayValue;
+                }
+
+                if (value != null)
+                {
+                    row.SetValueWithoutNotify(columnName, value);
+                }
+            }
+
+            // Populate cross-reference values
+            PopulateCrossReferenceValues(row, entry);
+
+            Rows.Add(row);
         }
     }
 
@@ -2491,12 +1391,12 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     /// </summary>
     private void RefreshRowsWithRemovedEntries()
     {
-        Console.WriteLine($"[Removed] RefreshRowsWithRemovedEntries called, ShowRemovedEntries={ShowRemovedEntries}, count={_removedEntries.Count}");
+        Console.WriteLine($"[Removed] RefreshRowsWithRemovedEntries called, ShowRemovedEntries={ShowRemovedEntries}, count={Context.RemovedEntries.Count}");
         if (ShowRemovedEntries)
         {
             // Insert removed entries at their original positions
             // Sort by RowNumber to insert in correct order
-            foreach (var removedRow in _removedEntries.OrderBy(r => r.RowNumber))
+            foreach (var removedRow in Context.RemovedEntries.OrderBy(r => r.RowNumber))
             {
                 if (!Rows.Contains(removedRow))
                 {
@@ -2518,24 +1418,11 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         else
         {
             // Remove the removed entries from display
-            foreach (var removedRow in _removedEntries.ToList())
+            foreach (var removedRow in Context.RemovedEntries.ToList())
             {
                 Rows.Remove(removedRow);
             }
         }
-    }
-
-    private void RefreshFromXmlEntries()
-    {
-        // Reload XmlEntries from document
-        if (_document == null) return;
-
-        var entries = _xmlService.GetEntries(_document);
-        XmlEntries.Clear();
-        XmlEntries.AddRange(entries);
-
-        RefreshRows();
-        HasUnsavedChanges = _document.HasUnsavedChanges;
     }
 
     public void Dispose()
@@ -2547,97 +1434,6 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
             _fileWatcher.Dispose();
             _fileWatcher = null;
         }
-    }
-}
-
-/// <summary>
-/// Command for undoing/redoing cell edits in the UI.
-/// </summary>
-internal class CellEditUndoCommand : IEditCommand
-{
-    private readonly EntryRowViewModel _rowVm;
-    private readonly string _columnName;
-    private readonly string _oldValue;
-    private readonly string _newValue;
-    private readonly string? _nestedPath;
-
-    public string Description => $"Edit {_columnName}";
-
-    public CellEditUndoCommand(EntryRowViewModel rowVm, string columnName, string oldValue, string newValue, string? nestedPath = null)
-    {
-        _rowVm = rowVm;
-        _columnName = columnName;
-        _oldValue = oldValue;
-        _newValue = newValue;
-        _nestedPath = nestedPath;
-    }
-
-    public void Execute()
-    {
-        _rowVm.SetValueSilent(_columnName, _newValue);
-        UpdateXmlEntry(_newValue);
-    }
-
-    public void Undo()
-    {
-        _rowVm.SetValueSilent(_columnName, _oldValue);
-        UpdateXmlEntry(_oldValue);
-    }
-
-    private void UpdateXmlEntry(string value)
-    {
-        // Handle nested fields
-        if (!string.IsNullOrEmpty(_nestedPath))
-        {
-            _rowVm.XmlEntry.SetNestedValue(_nestedPath, value);
-            return;
-        }
-
-        var attr = _rowVm.XmlEntry.GetAttribute(_columnName);
-        if (attr != null)
-        {
-            var rawValue = LocalizationHelper.Wrap(attr.LocalizationKey, value);
-            _rowVm.XmlEntry.SetAttributeValue(_columnName, rawValue);
-        }
-        else
-        {
-            // New attribute - add it directly without localization wrapping
-            _rowVm.XmlEntry.SetAttributeValue(_columnName, value);
-        }
-    }
-}
-
-/// <summary>
-/// Wrapper for a command that has already been executed on first call.
-/// First Execute() does nothing, subsequent calls delegate to inner.
-/// </summary>
-internal class AlreadyExecutedCommand : IEditCommand
-{
-    private readonly IEditCommand _inner;
-    private bool _firstExecute = true;
-
-    public string Description => _inner.Description;
-
-    public AlreadyExecutedCommand(IEditCommand inner)
-    {
-        _inner = inner;
-    }
-
-    public void Execute()
-    {
-        if (_firstExecute)
-        {
-            // First time - already executed by the UI
-            _firstExecute = false;
-            return;
-        }
-        // Subsequent calls (redo) - actually execute
-        _inner.Execute();
-    }
-
-    public void Undo()
-    {
-        _inner.Undo();
     }
 }
 

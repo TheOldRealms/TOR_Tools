@@ -486,4 +486,47 @@ public class CrossReferenceService
 
         return result;
     }
+
+    /// <summary>
+    /// Loads descriptions from a target XML file for display in cross-reference fields.
+    /// Prefers "display_description" attribute (player-friendly), falls back to "description".
+    /// </summary>
+    /// <param name="targetFilePath">Path to the target XML file</param>
+    /// <param name="keyField">Name of the key attribute (e.g., "id")</param>
+    /// <returns>Dictionary mapping IDs to their descriptions</returns>
+    public Dictionary<string, string> LoadTargetDescriptions(string targetFilePath, string keyField)
+    {
+        var descriptions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        if (!File.Exists(targetFilePath))
+        {
+            Console.WriteLine($"[CrossReferenceService] Target file not found for descriptions: {targetFilePath}");
+            return descriptions;
+        }
+
+        try
+        {
+            var doc = XDocument.Load(targetFilePath);
+            foreach (var element in doc.Root?.Elements() ?? Enumerable.Empty<XElement>())
+            {
+                var key = element.Attribute(keyField)?.Value;
+                // Prefer display_description (player-friendly), fallback to description
+                var description = element.Attribute("display_description")?.Value
+                               ?? element.Attribute("description")?.Value;
+
+                if (!string.IsNullOrEmpty(key) && !string.IsNullOrEmpty(description))
+                {
+                    descriptions[key] = description;
+                }
+            }
+
+            Console.WriteLine($"[CrossReferenceService] Loaded {descriptions.Count} descriptions from {Path.GetFileName(targetFilePath)}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[CrossReferenceService] Error loading descriptions from {targetFilePath}: {ex.Message}");
+        }
+
+        return descriptions;
+    }
 }
