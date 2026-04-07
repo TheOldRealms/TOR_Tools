@@ -364,6 +364,20 @@
       "type": "string",
       "order": 3,
       "width": 300
+    },
+    "TriggeredEffects": {
+      "displayName": "Triggered Effects",
+      "description": "Triggered effects used by this ability (explosions, area effects, etc.). Click to navigate to triggered effect definition.",
+      "type": "crossReference",
+      "nested": true,
+      "nestedPath": "TriggeredEffect",
+      "order": 99,
+      "width": 280,
+      "crossReference": {
+        "targetFile": "tor_triggeredeffects.xml",
+        "targetKeyField": "StringID",
+        "localKeyField": "TriggeredEffect"
+      }
     }
   }
 }

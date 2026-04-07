@@ -379,8 +379,21 @@ public partial class FileTabView : UserControl
             {
                 var isReverseCrossRef = fieldDef!.Type == "reverseCrossReference";
                 var valueType = fieldDef.CrossReference?.ValueType ?? "crossRef";
+                var renderAs = fieldDef.RenderAs ?? "advanced";
 
-                if (valueType == "enum" && fieldDef.EnumValues?.Count > 0)
+                if (renderAs == "dropdown")
+                {
+                    // Simple dropdown for cross-references (like culture selection)
+                    column = new DataGridTemplateColumn
+                    {
+                        Header = CreateColumnHeader(displayInfo, fieldDef),
+                        Width = new DataGridLength(displayInfo.Width),
+                        IsReadOnly = false,
+                        CellTemplate = CreateCrossRefDropdownTemplate(displayInfo.AttributeName, fieldDef, vm),
+                        CellEditingTemplate = CreateCrossRefDropdownEditingTemplate(displayInfo.AttributeName, fieldDef, vm)
+                    };
+                }
+                else if (valueType == "enum" && fieldDef.EnumValues?.Count > 0)
                 {
                     // External value with enum rendering
                     column = new DataGridTemplateColumn
@@ -938,15 +951,25 @@ public partial class FileTabView : UserControl
                                 ? Color.FromRgb(255, 165, 0)   // Orange for saved
                                 : Color.FromRgb(0, 120, 215);  // Blue for normal
 
-                            // Check if this is an ability field and try to show icon
+                            // Check if this is an ability or trait field and try to show icon
                             var isAbilityField = fieldDef.CrossReference?.TargetFile == "tor_abilitytemplates.xml";
+                            var isTraitField = fieldDef.CrossReference?.TargetFile == "tor_itemtraits.xml";
                             string? iconPath = null;
+
                             if (isAbilityField && vm.AbilityCatalogService != null && vm.IconService != null)
                             {
                                 var spriteName = vm.AbilityCatalogService.GetAbilitySprite(displayId);
                                 if (!string.IsNullOrEmpty(spriteName))
                                 {
                                     iconPath = vm.IconService.GetIconPath(spriteName);
+                                }
+                            }
+                            else if (isTraitField && vm.ItemTraitCatalogService != null && vm.IconService != null)
+                            {
+                                var iconName = vm.ItemTraitCatalogService.GetTraitIcon(displayId);
+                                if (!string.IsNullOrEmpty(iconName))
+                                {
+                                    iconPath = vm.IconService.GetIconPath(iconName);
                                 }
                             }
 
@@ -989,10 +1012,22 @@ public partial class FileTabView : UserControl
                                 MinHeight = 0,
                                 MinWidth = 0
                             };
-                            // Use description as tooltip if available, otherwise show navigation hint
-                            var description = vm.GetCrossRefDescription(attributeName, displayId);
+                            // Use description as tooltip
+                            string? description = null;
+
+                            // For item traits, use ItemTraitCatalogService to get description
+                            if (isTraitField && vm.ItemTraitCatalogService != null)
+                            {
+                                description = vm.ItemTraitCatalogService.GetTraitDescription(displayId);
+                            }
+                            else
+                            {
+                                // For other fields, use cross-ref description
+                                description = vm.GetCrossRefDescription(attributeName, displayId);
+                            }
+
                             var tooltipText = !string.IsNullOrEmpty(description)
-                                ? $"{displayId}: {description}"
+                                ? description  // Show only description, no ID prefix
                                 : $"Click to navigate to: {capturedId}";
                             ToolTip.SetTip(linkButton, tooltipText);
                             linkButton.Click += (s, e) =>
@@ -1014,7 +1049,16 @@ public partial class FileTabView : UserControl
                                 FontSize = 12,
                                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
                             };
-                            ToolTip.SetTip(invalidText, $"ERROR: '{displayId}' does not exist in skill sets!");
+
+                            // Get entity type from target file for better error message
+                            var targetFile = fieldDef.CrossReference?.TargetFile ?? "";
+                            var entityType = targetFile
+                                .Replace("tor_", "")
+                                .Replace(".xml", "")
+                                .Replace("_", " ");
+                            if (string.IsNullOrEmpty(entityType)) entityType = "target entities";
+
+                            ToolTip.SetTip(invalidText, $"ERROR: '{displayId}' does not exist in {entityType}!");
                             linksPanel.Children.Add(invalidText);
                         }
                     }
@@ -1080,8 +1124,10 @@ public partial class FileTabView : UserControl
 
                 // Custom title based on field type
                 var isAbilityField = fieldDef.CrossReference?.TargetFile == "tor_abilitytemplates.xml";
+                var isItemTraitField = fieldDef.CrossReference?.TargetFile == "tor_itemtraits.xml";
                 var dialogTitle = isSkillTemplate ? "Edit Skill Set"
                     : isAbilityField ? "Edit Abilities"
+                    : isItemTraitField ? "Edit Item Traits"
                     : "Edit Traits";
 
                 // Get level for skill template default calculation
@@ -1726,6 +1772,144 @@ public partial class FileTabView : UserControl
 
             border.Child = text;
             return border;
+        });
+    }
+
+    /// <summary>
+    /// Creates a display template for cross-reference dropdown fields (renderAs="dropdown").
+    /// Shows the selected value with prefix stripped for clean display.
+    /// </summary>
+    private static IDataTemplate CreateCrossRefDropdownTemplate(string attributeName, FieldDefinition fieldDef, FileTabViewModel vm)
+    {
+        var prefixToStrip = fieldDef.CrossReference?.PrefixToStrip;
+
+        return new FuncDataTemplate<EntryRowViewModel>((rowVm, _) =>
+        {
+            var border = new Border();
+            border.Classes.Add("dataCell");
+
+            var text = new TextBlock();
+            text.Classes.Add("cellText");
+
+            if (rowVm != null)
+            {
+                var value = rowVm[attributeName];
+                var displayValue = value;
+
+                // Strip prefix for display
+                if (!string.IsNullOrEmpty(prefixToStrip) && !string.IsNullOrEmpty(displayValue) &&
+                    displayValue.StartsWith(prefixToStrip, StringComparison.OrdinalIgnoreCase))
+                {
+                    displayValue = displayValue.Substring(prefixToStrip.Length);
+                }
+
+                text.Text = string.IsNullOrEmpty(displayValue) ? "" : displayValue;
+
+                // Subscribe to refresh event for updates
+                vm.CellRefreshRequested += (s, args) =>
+                {
+                    var newValue = rowVm[attributeName];
+                    var newDisplayValue = newValue;
+
+                    if (!string.IsNullOrEmpty(prefixToStrip) && !string.IsNullOrEmpty(newDisplayValue) &&
+                        newDisplayValue.StartsWith(prefixToStrip, StringComparison.OrdinalIgnoreCase))
+                    {
+                        newDisplayValue = newDisplayValue.Substring(prefixToStrip.Length);
+                    }
+
+                    text.Text = string.IsNullOrEmpty(newDisplayValue) ? "" : newDisplayValue;
+
+                    // Update cell state
+                    CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
+                };
+            }
+
+            border.Child = text;
+
+            // Apply initial cell state
+            if (rowVm != null)
+            {
+                CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
+            }
+
+            return border;
+        });
+    }
+
+    /// <summary>
+    /// Creates an editing template for cross-reference dropdown fields (renderAs="dropdown").
+    /// Simple ComboBox populated from GetAvailableIds with prefix handling.
+    /// </summary>
+    private static IDataTemplate CreateCrossRefDropdownEditingTemplate(string attributeName, FieldDefinition fieldDef, FileTabViewModel vm)
+    {
+        return new FuncDataTemplate<EntryRowViewModel>((rowVm, _) =>
+        {
+            var comboBox = new ComboBox
+            {
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
+                Padding = new Thickness(4, 0),
+                MinHeight = 0
+            };
+
+            if (rowVm == null) return comboBox;
+
+            var prefixToStrip = fieldDef.CrossReference?.PrefixToStrip;
+            var prefixToAdd = fieldDef.CrossReference?.PrefixToAdd;
+
+            // Get available IDs from cross-reference
+            var availableIds = vm.GetAvailableIds(attributeName).ToList();
+
+            // Create items from available IDs
+            var items = new List<ComboBoxItem>();
+
+            // Add empty option
+            items.Add(new ComboBoxItem { Content = "", Tag = "" });
+
+            foreach (var id in availableIds)
+            {
+                var item = new ComboBoxItem
+                {
+                    Content = id,  // Already stripped by GetAvailableIds
+                    Tag = id
+                };
+                items.Add(item);
+            }
+
+            comboBox.ItemsSource = items;
+
+            // Get current value and strip prefix for selection
+            var currentValue = rowVm[attributeName];
+            var currentDisplayValue = currentValue;
+
+            if (!string.IsNullOrEmpty(prefixToStrip) && !string.IsNullOrEmpty(currentDisplayValue) &&
+                currentDisplayValue.StartsWith(prefixToStrip, StringComparison.OrdinalIgnoreCase))
+            {
+                currentDisplayValue = currentDisplayValue.Substring(prefixToStrip.Length);
+            }
+
+            // Select current value
+            var selectedItem = items.FirstOrDefault(i => i.Tag?.ToString() == currentDisplayValue);
+            comboBox.SelectedItem = selectedItem;
+
+            // Handle selection change
+            comboBox.SelectionChanged += (s, e) =>
+            {
+                if (comboBox.SelectedItem is ComboBoxItem selectedComboItem)
+                {
+                    var newValue = selectedComboItem.Tag?.ToString() ?? "";
+
+                    // Add prefix when saving
+                    if (!string.IsNullOrEmpty(newValue) && !string.IsNullOrEmpty(prefixToAdd))
+                    {
+                        newValue = prefixToAdd + newValue;
+                    }
+
+                    rowVm[attributeName] = newValue;
+                }
+            };
+
+            return comboBox;
         });
     }
 

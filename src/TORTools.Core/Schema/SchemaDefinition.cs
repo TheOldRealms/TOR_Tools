@@ -303,6 +303,15 @@ public class FieldDefinition
     /// </summary>
     [JsonPropertyName("delimiter")]
     public string? Delimiter { get; set; }
+
+    /// <summary>
+    /// How to render cross-reference fields:
+    /// - "dropdown": Simple dropdown/ComboBox (for 1:1 relations like culture, occupation)
+    /// - "advanced" (default): Advanced editor with clickable links, edit button, icons (for abilities, traits, skill sets)
+    /// Only applies when Type is "crossReference".
+    /// </summary>
+    [JsonPropertyName("renderAs")]
+    public string? RenderAs { get; set; }
 }
 
 /// <summary>

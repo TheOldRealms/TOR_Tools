@@ -97,23 +97,18 @@
     },
     "culture": {
       "displayName": "Culture",
-      "description": "Culture affiliation.",
-      "type": "enum",
+      "description": "Culture affiliation. Click to navigate to culture definition.",
+      "type": "crossReference",
+      "renderAs": "dropdown",
       "order": 7,
       "width": 130,
-      "enumValues": [
-        { "value": "Culture.empire", "displayName": "Empire" },
-        { "value": "Culture.vlandia", "displayName": "Bretonnia" },
-        { "value": "Culture.khuzait", "displayName": "Sylvania" },
-        { "value": "Culture.mousillon", "displayName": "Mousillon" },
-        { "value": "Culture.battania", "displayName": "Asrai (Wood Elves)" },
-        { "value": "Culture.eonir", "displayName": "Eonir" },
-        { "value": "Culture.druchii", "displayName": "Druchii (Dark Elves)" },
-        { "value": "Culture.sturgia", "displayName": "Dawi (Dwarfs)" },
-        { "value": "Culture.aserai", "displayName": "Greenskin" },
-        { "value": "Culture.chaos_culture", "displayName": "Chaos" },
-        { "value": "Culture.neutral_culture", "displayName": "Neutral" }
-      ]
+      "crossReference": {
+        "targetFile": "tor_cultures.xml",
+        "targetKeyField": "id",
+        "localKeyField": "culture",
+        "prefixToStrip": "Culture.",
+        "prefixToAdd": "Culture."
+      }
     },
     "clan": {
       "displayName": "Clan/Faction",

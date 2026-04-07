@@ -4,6 +4,7 @@
   "description": "Kingdom definitions with relationships, policies, and banner configurations.",
   "rootElement": "Kingdoms",
   "entryElement": "Kingdom",
+  "compactFormat": true,
   "fields": {
     "id": {
       "displayName": "ID",
@@ -51,25 +52,18 @@
     },
     "culture": {
       "displayName": "Culture",
-      "description": "Culture affiliation.",
-      "type": "enum",
+      "description": "Culture affiliation. Click to navigate to culture definition.",
+      "type": "crossReference",
+      "renderAs": "dropdown",
       "order": 7,
       "width": 130,
-      "enumValues": [
-        { "value": "Culture.empire", "displayName": "Empire" },
-        { "value": "Culture.vlandia", "displayName": "Bretonnia" },
-        { "value": "Culture.khuzait", "displayName": "Sylvania" },
-        { "value": "Culture.mousillon", "displayName": "Mousillon" },
-        { "value": "Culture.battania", "displayName": "Asrai (Wood Elves)" },
-        { "value": "Culture.eonir", "displayName": "Eonir" },
-        { "value": "Culture.druchii", "displayName": "Druchii (Dark Elves)" },
-        { "value": "Culture.sturgia", "displayName": "Dawi (Dwarfs)" },
-        { "value": "Culture.aserai", "displayName": "Greenskin" },
-        { "value": "Culture.greenskin_bandit", "displayName": "Greenskin Bandit" },
-        { "value": "Culture.steppe_bandits", "displayName": "Beastmen" },
-        { "value": "Culture.chaos_culture", "displayName": "Chaos" },
-        { "value": "Culture.neutral_culture", "displayName": "Neutral" }
-      ]
+      "crossReference": {
+        "targetFile": "tor_cultures.xml",
+        "targetKeyField": "id",
+        "localKeyField": "culture",
+        "prefixToStrip": "Culture.",
+        "prefixToAdd": "Culture."
+      }
     },
     "banner_key": {
       "displayName": "Banner",
@@ -77,6 +71,48 @@
       "type": "banner",
       "order": 3,
       "width": 120
+    },
+    "primary_banner_color": {
+      "displayName": "Primary Color",
+      "description": "Primary banner color in hex format (0xFFRRGGBB).",
+      "type": "color",
+      "hidden": true
+    },
+    "secondary_banner_color": {
+      "displayName": "Secondary Color",
+      "description": "Secondary banner color in hex format (0xFFRRGGBB).",
+      "type": "color",
+      "hidden": true
+    },
+    "label_color": {
+      "displayName": "Label Color",
+      "description": "Label color in hex format (FFRRGGBB).",
+      "type": "color",
+      "hidden": true
+    },
+    "color": {
+      "displayName": "Color",
+      "description": "Primary color in hex format (FFRRGGBB).",
+      "type": "color",
+      "hidden": true
+    },
+    "color2": {
+      "displayName": "Color 2",
+      "description": "Secondary color in hex format (FFRRGGBB).",
+      "type": "color",
+      "hidden": true
+    },
+    "alternative_color": {
+      "displayName": "Alt Color",
+      "description": "Alternative color in hex format (FFRRGGBB).",
+      "type": "color",
+      "hidden": true
+    },
+    "alternative_color2": {
+      "displayName": "Alt Color 2",
+      "description": "Alternative color 2 in hex format (FFRRGGBB).",
+      "type": "color",
+      "hidden": true
     },
     "settlement_banner_mesh": {
       "displayName": "Banner Mesh",

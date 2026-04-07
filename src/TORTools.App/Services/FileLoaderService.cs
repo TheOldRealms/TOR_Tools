@@ -352,12 +352,12 @@ public class FileLoaderService
             if (variations.Count == 0)
             {
                 // No variations - create single row for roster
-                var emptyRow = CreateEquipmentRow(context, roster, null, rosterId, rosterCulture, 0, rowNum++);
+                var emptyRow = CreateEquipmentRow(context, roster, null, rosterId, rosterCulture, 1, rowNum++);
                 context.Rows.Add(emptyRow);
             }
             else
             {
-                int variationIndex = 0;
+                int variationIndex = 1;
                 foreach (var variation in variations)
                 {
                     var isCivilian = variation.GetAttributeValue("civilian")?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
@@ -427,6 +427,8 @@ public class FileLoaderService
         row.SetValueWithoutNotify("culture", rosterCulture);
         row.SetValueWithoutNotify("_variation", variationIndex.ToString());
 
+        Console.WriteLine($"[EquipmentRow] Created row for {rosterId}, variation index: {variationIndex}");
+
         return row;
     }
 
@@ -459,9 +461,10 @@ public class FileLoaderService
 
         context.Rows.Clear();
 
+        int rowNum = 1;
         foreach (var entry in entries)
         {
-            var rowVm = CreateRow(context, entry);
+            var rowVm = CreateRow(context, entry, rowNum++);
             context.Rows.Add(rowVm);
         }
 
@@ -471,13 +474,14 @@ public class FileLoaderService
     /// <summary>
     /// Creates a single row view model from an XML entry.
     /// </summary>
-    private EntryRowViewModel CreateRow(FileEditContext context, XmlEntry entry)
+    private EntryRowViewModel CreateRow(FileEditContext context, XmlEntry entry, int rowNum)
     {
         // Get git committed values for this entry
         var entryId = entry.GetAttributeValue("id") ?? "";
         var gitValues = context.GitCommittedValues.TryGetValue(entryId, out var values) ? values : null;
 
         var row = new EntryRowViewModel(entry, context.ColumnNames, gitValues);
+        row.RowNumber = rowNum;
 
         // Set values for all columns
         foreach (var columnName in context.ColumnNames)

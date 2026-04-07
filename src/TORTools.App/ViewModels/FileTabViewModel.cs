@@ -126,7 +126,7 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     /// Whether to show entries that were removed (exist in git but not in current file).
     /// </summary>
     [ObservableProperty]
-    private bool _showRemovedEntries = false;
+    private bool _showRemovedEntries;
 
     partial void OnShowRemovedEntriesChanged(bool value)
     {
@@ -170,6 +170,11 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     /// Ability catalog service for ability icons and info. Set after construction by MainWindowViewModel.
     /// </summary>
     public AbilityCatalogService? AbilityCatalogService { get; set; }
+
+    /// <summary>
+    /// Item trait catalog service for trait icons and info. Set after construction by MainWindowViewModel.
+    /// </summary>
+    public ItemTraitCatalogService? ItemTraitCatalogService { get; set; }
 
     /// <summary>
     /// The schema definition for this file type - now accessed through Context.
@@ -285,21 +290,6 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         _filePathResolver = filePathResolver;
         FilePath = filePath;
         Title = Path.GetFileName(filePath);
-
-        // Load schema for this file type
-        Context.Schema = fileEditManager.Context.Schema ?? _fileEditManager.Context.Schema;
-        var fileName = Path.GetFileName(filePath);
-        if (Context.Schema == null)
-        {
-            var schemaService = new SchemaService();
-            Context.Schema = schemaService.GetSchema(fileName);
-        }
-
-        // Load cross-reference data if schema defines any
-        LoadCrossReferences();
-
-        // Load tuple list data if schema defines any
-        LoadTupleListData();
 
         // Subscribe to validation manager changes
         ValidationManager.IssuesChanged += OnValidationIssuesChanged;
@@ -735,6 +725,12 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
 
             if (!HasError)
             {
+                // Load cross-reference data now that schema and file are loaded
+                LoadCrossReferences();
+
+                // Load tuple list data
+                LoadTupleListData();
+
                 // Populate cross-reference values for all rows
                 foreach (var row in Rows)
                 {
@@ -752,9 +748,11 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         catch (Exception ex)
         {
             HasError = true;
-            ErrorMessage = $"Error loading file: {ex.Message}";
+            // Unwrap AggregateException from .Wait() to get the real error
+            var actualException = ex is AggregateException aggEx ? aggEx.InnerException ?? ex : ex;
+            ErrorMessage = $"Error loading file: {actualException.Message}";
             Context.HasError = true;
-            Context.ErrorMessage = ex.Message;
+            Context.ErrorMessage = actualException.Message;
         }
     }
 
@@ -1052,11 +1050,6 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>
-    /// Tracks which XmlEntry objects are new (for IsNew styling).
-    /// </summary>
-    private readonly HashSet<XmlEntry> _newEntries = new();
-
-    /// <summary>
     /// Stores the copied row data (column name -> value).
     /// </summary>
     private Dictionary<string, string>? _copiedRowData;
@@ -1103,7 +1096,11 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         // Mark the new entry as new
         if (insertIndex < XmlEntries.Count)
         {
-            _newEntries.Add(XmlEntries[insertIndex]);
+            var newEntryId = XmlEntries[insertIndex].GetAttribute("id")?.DisplayValue ?? "";
+            if (!string.IsNullOrEmpty(newEntryId))
+            {
+                Context.NewEntries.Add(newEntryId);
+            }
         }
 
         // Recreate dynamic entries
@@ -1138,7 +1135,11 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         var entryToDelete = xmlEntryCollection[indexToDelete];
 
         // Remove from new entries tracking
-        _newEntries.Remove(entryToDelete);
+        var entryId = entryToDelete.GetAttribute("id")?.DisplayValue ?? "";
+        if (!string.IsNullOrEmpty(entryId))
+        {
+            Context.NewEntries.Remove(entryId);
+        }
 
         var command = new DeleteRowCommand(Context.Document, xmlEntryCollection, entryToDelete);
         _undoRedoService.Execute(command);
@@ -1190,7 +1191,11 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         // Mark the duplicated entry as new
         if (insertIndex < XmlEntries.Count)
         {
-            _newEntries.Add(XmlEntries[insertIndex]);
+            var newEntryId = XmlEntries[insertIndex].GetAttribute("id")?.DisplayValue ?? "";
+            if (!string.IsNullOrEmpty(newEntryId))
+            {
+                Context.NewEntries.Add(newEntryId);
+            }
         }
 
         // Recreate dynamic entries

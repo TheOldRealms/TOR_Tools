@@ -47,26 +47,18 @@
     },
     "culture": {
       "displayName": "Culture",
-      "description": "Cultural origin of this item.",
-      "type": "enum",
+      "description": "Cultural origin of this item. Click to navigate to culture definition.",
+      "type": "crossReference",
+      "renderAs": "dropdown",
       "order": 10,
       "width": 140,
-      "enumValues": [
-        { "value": "Culture.empire", "displayName": "Empire" },
-        { "value": "Culture.vlandia", "displayName": "Bretonnia" },
-        { "value": "Culture.khuzait", "displayName": "Sylvania" },
-        { "value": "Culture.mousillon", "displayName": "Mousillon" },
-        { "value": "Culture.battania", "displayName": "Asrai (Wood Elves)" },
-        { "value": "Culture.eonir", "displayName": "Eonir" },
-        { "value": "Culture.druchii", "displayName": "Druchii (Dark Elves)" },
-        { "value": "Culture.sturgia", "displayName": "Dawi (Dwarfs)" },
-        { "value": "Culture.aserai", "displayName": "Greenskin" },
-        { "value": "Culture.greenskin_bandit", "displayName": "Greenskin Bandit" },
-        { "value": "Culture.steppe_bandits", "displayName": "Beastmen" },
-        { "value": "Culture.desert_bandits", "displayName": "Herrimault" },
-        { "value": "Culture.chaos_culture", "displayName": "Chaos" },
-        { "value": "Culture.neutral_culture", "displayName": "Neutral" }
-      ]
+      "crossReference": {
+        "targetFile": "tor_cultures.xml",
+        "targetKeyField": "id",
+        "localKeyField": "culture",
+        "prefixToStrip": "Culture.",
+        "prefixToAdd": "Culture."
+      }
     },
     "RaceLock": {
       "displayName": "Race Lock",

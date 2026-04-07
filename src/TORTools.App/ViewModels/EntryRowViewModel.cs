@@ -57,10 +57,10 @@ public class EntryRowViewModel : INotifyPropertyChanged
     public bool IsEquipmentSetVariation => VariationEntry != null;
 
     /// <summary>
-    /// Whether this is the first variation of a roster (variation index 0).
+    /// Whether this is the first variation of a roster (variation index 1).
     /// Used for visual grouping - only first variation shows the roster ID.
     /// </summary>
-    public bool IsFirstVariation => VariationIndex == 0;
+    public bool IsFirstVariation => VariationIndex == 1;
 
     /// <summary>
     /// The roster ID this variation belongs to. Used for grouping.

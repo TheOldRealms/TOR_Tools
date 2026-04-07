@@ -4,6 +4,7 @@
   "description": "Faction/clan definitions including bandit factions, minor factions, and noble clans.",
   "rootElement": "Factions",
   "entryElement": "Faction",
+  "compactFormat": true,
   "fields": {
     "id": {
       "displayName": "ID",
@@ -30,30 +31,18 @@
     },
     "culture": {
       "displayName": "Culture",
-      "description": "Culture affiliation.",
-      "type": "enum",
+      "description": "Culture affiliation. Click to navigate to culture definition.",
+      "type": "crossReference",
+      "renderAs": "dropdown",
       "order": 4,
       "width": 130,
-      "enumValues": [
-        { "value": "Culture.empire", "displayName": "Empire" },
-        { "value": "Culture.vlandia", "displayName": "Bretonnia" },
-        { "value": "Culture.khuzait", "displayName": "Sylvania" },
-        { "value": "Culture.mousillon", "displayName": "Mousillon" },
-        { "value": "Culture.battania", "displayName": "Asrai (Wood Elves)" },
-        { "value": "Culture.eonir", "displayName": "Eonir" },
-        { "value": "Culture.druchii", "displayName": "Druchii (Dark Elves)" },
-        { "value": "Culture.sturgia", "displayName": "Dawi (Dwarfs)" },
-        { "value": "Culture.aserai", "displayName": "Greenskin" },
-        { "value": "Culture.greenskin_bandit", "displayName": "Greenskin Bandit" },
-        { "value": "Culture.steppe_bandits", "displayName": "Beastmen" },
-        { "value": "Culture.forest_bandits", "displayName": "Chaos Cultists" },
-        { "value": "Culture.desert_bandits", "displayName": "Herrimault" },
-        { "value": "Culture.chaos_culture", "displayName": "Chaos" },
-        { "value": "Culture.neutral_culture", "displayName": "Neutral" },
-        { "value": "Culture.sea_raiders", "displayName": "Sea Raiders" },
-        { "value": "Culture.looters", "displayName": "Goblin Bandits" },
-        { "value": "Culture.mountain_bandits", "displayName": "Deserters" }
-      ]
+      "crossReference": {
+        "targetFile": "tor_cultures.xml",
+        "targetKeyField": "id",
+        "localKeyField": "culture",
+        "prefixToStrip": "Culture.",
+        "prefixToAdd": "Culture."
+      }
     },
     "super_faction": {
       "displayName": "Kingdom",
@@ -84,6 +73,36 @@
       "type": "banner",
       "order": 3,
       "width": 120
+    },
+    "label_color": {
+      "displayName": "Label Color",
+      "description": "Label color in hex format (FFRRGGBB).",
+      "type": "color",
+      "hidden": true
+    },
+    "color": {
+      "displayName": "Color",
+      "description": "Primary color in hex format (FFRRGGBB).",
+      "type": "color",
+      "hidden": true
+    },
+    "color2": {
+      "displayName": "Color 2",
+      "description": "Secondary color in hex format (FFRRGGBB).",
+      "type": "color",
+      "hidden": true
+    },
+    "alternative_color": {
+      "displayName": "Alt Color",
+      "description": "Alternative color in hex format (FFRRGGBB).",
+      "type": "color",
+      "hidden": true
+    },
+    "alternative_color2": {
+      "displayName": "Alt Color 2",
+      "description": "Alternative color 2 in hex format (FFRRGGBB).",
+      "type": "color",
+      "hidden": true
     },
     "is_noble": {
       "displayName": "Noble",

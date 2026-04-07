@@ -1,0 +1,117 @@
+{
+  "file": "tor_statuseffects.xml",
+  "displayName": "Status Effects",
+  "description": "Status effect templates for damage over time, buffs, debuffs, and temporary effects.",
+  "rootElement": "StatusEffects",
+  "entryElement": "StatusEffectTemplate",
+  "fields": {
+    "id": {
+      "displayName": "ID",
+      "description": "Unique identifier for this status effect.",
+      "type": "string",
+      "required": true,
+      "order": 1,
+      "width": 250
+    },
+    "type": {
+      "displayName": "Type",
+      "description": "Type of status effect.",
+      "type": "enum",
+      "required": true,
+      "order": 5,
+      "width": 180,
+      "enumValues": [
+        { "value": "DamageOverTime", "displayName": "Damage Over Time", "description": "Deals damage each tick" },
+        { "value": "HealthOverTime", "displayName": "Health Over Time", "description": "Heals health each tick" },
+        { "value": "WindsOverTime", "displayName": "Winds Over Time", "description": "Regenerates winds of magic each tick" },
+        { "value": "MovementManipulation", "displayName": "Movement Manipulation", "description": "Modifies movement speed" },
+        { "value": "AttackSpeedManipulation", "displayName": "Attack Speed Manipulation", "description": "Modifies attack/swing speed" },
+        { "value": "ReloadSpeedManipulation", "displayName": "Reload Speed Manipulation", "description": "Modifies reload speed" },
+        { "value": "DamageAmplification", "displayName": "Damage Amplification", "description": "Increases damage dealt" },
+        { "value": "Resistance", "displayName": "Resistance", "description": "Reduces damage taken" },
+        { "value": "LanceSteadiness", "displayName": "Lance Steadiness", "description": "Improves lance charge stability" },
+        { "value": "TemporaryAttributeOnly", "displayName": "Temporary Attribute", "description": "Applies temporary attribute without other effects" }
+      ]
+    },
+    "particle_id": {
+      "displayName": "Particle Effect",
+      "description": "Particle effect prefab ID for visual feedback.",
+      "type": "string",
+      "order": 10,
+      "width": 200
+    },
+    "particle_intensity": {
+      "displayName": "Particle Intensity",
+      "description": "Intensity of the particle effect.",
+      "type": "enum",
+      "order": 11,
+      "width": 100,
+      "enumValues": [
+        { "value": "Low", "displayName": "Low" },
+        { "value": "High", "displayName": "High" }
+      ]
+    },
+    "do_not_attach_to_agent_skeleton": {
+      "displayName": "Detached Particle",
+      "description": "Whether particle is detached from agent skeleton.",
+      "type": "enum",
+      "order": 12,
+      "width": 100,
+      "enumValues": [
+        { "value": "true", "displayName": "Yes" },
+        { "value": "false", "displayName": "No" }
+      ]
+    },
+    "base_effect_value": {
+      "displayName": "Base Effect Value",
+      "description": "Base value for the effect (damage, healing, speed multiplier, etc.).",
+      "type": "float",
+      "order": 20,
+      "width": 120
+    },
+    "damage_type": {
+      "displayName": "Damage Type",
+      "description": "Type of damage dealt or amplified.",
+      "type": "enum",
+      "order": 25,
+      "width": 120,
+      "enumValues": [
+        { "value": "Physical", "displayName": "Physical" },
+        { "value": "Fire", "displayName": "Fire" },
+        { "value": "Frost", "displayName": "Frost" },
+        { "value": "Lightning", "displayName": "Lightning" },
+        { "value": "Holy", "displayName": "Holy" },
+        { "value": "Magical", "displayName": "Magical" },
+        { "value": "All", "displayName": "All" }
+      ]
+    },
+    "applies_for_attack_type": {
+      "displayName": "Attack Type",
+      "description": "Which attack type this effect applies to.",
+      "type": "enum",
+      "order": 30,
+      "width": 120,
+      "enumValues": [
+        { "value": "Melee", "displayName": "Melee" },
+        { "value": "Ranged", "displayName": "Ranged" },
+        { "value": "Spell", "displayName": "Spell" },
+        { "value": "All", "displayName": "All" }
+      ]
+    },
+    "UsedByAbilities": {
+      "displayName": "Used By Abilities",
+      "description": "Abilities that reference this status effect.",
+      "type": "reverseCrossReference",
+      "order": 2,
+      "width": 250,
+      "crossReference": {
+        "sourceFile": "tor_triggeredeffects.xml",
+        "sourceKeyField": "StringID",
+        "sourceValuePath": "ImbuedStatusEffect",
+        "targetFiles": ["tor_abilitytemplates.xml"],
+        "targetKeyField": "StringID",
+        "localKeyField": "id"
+      }
+    }
+  }
+}

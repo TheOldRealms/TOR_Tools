@@ -15,6 +15,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly ItemCatalogService _itemCatalogService;
     private readonly FactionCatalogService _factionCatalogService;
     private readonly AbilityCatalogService _abilityCatalogService;
+    private readonly ItemTraitCatalogService _itemTraitCatalogService;
     private readonly BannerImageService? _bannerImageService;
     private WorkspaceConfig _config;
 
@@ -47,6 +48,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _itemCatalogService = new ItemCatalogService();
         _factionCatalogService = new FactionCatalogService();
         _abilityCatalogService = new AbilityCatalogService("");
+        _itemTraitCatalogService = new ItemTraitCatalogService("");
 
         // Initialize icon service if TOR_Armory path is available
         if (!string.IsNullOrEmpty(_config.TorArmoryPath))
@@ -83,6 +85,7 @@ public partial class MainWindowViewModel : ViewModelBase
             {
                 _factionCatalogService.LoadFactions(coreModuleDataPath, armoryAssetSourcesPath);
                 _abilityCatalogService = new AbilityCatalogService(coreModuleDataPath);
+                _itemTraitCatalogService = new ItemTraitCatalogService(coreModuleDataPath);
             }
         }
 
@@ -153,6 +156,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
         // Assign ability catalog service for ability icons
         newTab.AbilityCatalogService = _abilityCatalogService;
+
+        // Assign item trait catalog service for trait icons
+        newTab.ItemTraitCatalogService = _itemTraitCatalogService;
 
         // Subscribe to cross-reference navigation events
         newTab.NavigateToCrossReference += OnNavigateToCrossReference;

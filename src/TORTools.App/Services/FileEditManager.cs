@@ -56,6 +56,11 @@ public class FileEditManager
             var fileName = Path.GetFileName(filePath);
             Context.Schema = _schemaService.GetSchema(fileName);
 
+            if (Context.Schema == null)
+            {
+                throw new InvalidOperationException($"No schema defined for '{fileName}'. Create a schema file in the 'schemas/' folder.");
+            }
+
             // Delegate to FileLoaderService
             _fileLoaderService.LoadFile(Context);
 
