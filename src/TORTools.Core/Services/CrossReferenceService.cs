@@ -12,6 +12,78 @@ public class CrossReferenceService
     private readonly object _cacheLock = new();
 
     /// <summary>
+    /// Parses a source value path into element parts and optional attribute name.
+    /// Handles: @AttrName, Container/Element, Container/Element/@AttrName
+    /// </summary>
+    private static (string[] elementParts, string? attributeToExtract) ParseSourceValuePath(string sourcePath)
+    {
+        if (sourcePath.StartsWith("@"))
+        {
+            // Direct attribute from entry element: @AttrName
+            return (Array.Empty<string>(), sourcePath.Substring(1));
+        }
+        else if (sourcePath.Contains("/@"))
+        {
+            // Nested path with attribute: Container/Element/@AttrName
+            var attrIndex = sourcePath.LastIndexOf("/@");
+            var attributeToExtract = sourcePath.Substring(attrIndex + 2);
+            var elementPath = sourcePath.Substring(0, attrIndex);
+            return (elementPath.Split('/'), attributeToExtract);
+        }
+        else
+        {
+            // Pure element path: Container/Element (extract text content)
+            return (sourcePath.Split('/'), null);
+        }
+    }
+
+    /// <summary>
+    /// Extracts values from an XML entry based on parsed path.
+    /// </summary>
+    private static List<string> ExtractValuesFromEntry(XElement entry, string[] elementParts, string? attributeToExtract)
+    {
+        var values = new List<string>();
+
+        if (attributeToExtract != null && elementParts.Length == 0)
+        {
+            // Read attribute value directly from the entry element
+            var attrValue = entry.Attribute(attributeToExtract)?.Value?.Trim();
+            if (!string.IsNullOrEmpty(attrValue))
+                values.Add(attrValue);
+        }
+        else
+        {
+            // Navigate the element path
+            IEnumerable<XElement> currentElements = new[] { entry };
+            foreach (var part in elementParts)
+            {
+                currentElements = currentElements.SelectMany(e => e.Elements(part));
+            }
+
+            // Collect values - either attribute or text content
+            foreach (var valueElement in currentElements)
+            {
+                string? value;
+                if (attributeToExtract != null)
+                {
+                    // Extract attribute from nested elements
+                    value = valueElement.Attribute(attributeToExtract)?.Value?.Trim();
+                }
+                else
+                {
+                    // Extract text content
+                    value = valueElement.Value?.Trim();
+                }
+
+                if (!string.IsNullOrEmpty(value))
+                    values.Add(value);
+            }
+        }
+
+        return values;
+    }
+
+    /// <summary>
     /// Loads cross-reference data from a source XML file.
     /// </summary>
     /// <param name="sourceFilePath">Path to the source XML file (e.g., tor_extendeditemproperties.xml)</param>
@@ -42,30 +114,7 @@ public class CrossReferenceService
             if (root == null)
                 return result;
 
-            // Parse the path - check for attribute extraction (/@AttrName at end or @AttrName at start)
-            var sourcePath = config.SourceValuePath;
-            string? attributeToExtract = null;
-            string[] elementParts;
-
-            if (sourcePath.StartsWith("@"))
-            {
-                // Direct attribute from entry element: @AttrName
-                attributeToExtract = sourcePath.Substring(1);
-                elementParts = Array.Empty<string>();
-            }
-            else if (sourcePath.Contains("/@"))
-            {
-                // Nested path with attribute: Container/Element/@AttrName
-                var attrIndex = sourcePath.LastIndexOf("/@");
-                attributeToExtract = sourcePath.Substring(attrIndex + 2);
-                var elementPath = sourcePath.Substring(0, attrIndex);
-                elementParts = elementPath.Split('/');
-            }
-            else
-            {
-                // Pure element path: Container/Element (extract text content)
-                elementParts = sourcePath.Split('/');
-            }
+            var (elementParts, attributeToExtract) = ParseSourceValuePath(config.SourceValuePath);
 
             foreach (var entry in root.Elements())
             {
@@ -75,43 +124,7 @@ public class CrossReferenceService
                     continue;
 
                 var key = keyAttr.Value;
-                var values = new List<string>();
-
-                if (attributeToExtract != null && elementParts.Length == 0)
-                {
-                    // Read attribute value directly from the entry element
-                    var attrValue = entry.Attribute(attributeToExtract)?.Value?.Trim();
-                    if (!string.IsNullOrEmpty(attrValue))
-                        values.Add(attrValue);
-                }
-                else
-                {
-                    // Navigate the element path
-                    IEnumerable<XElement> currentElements = new[] { entry };
-                    foreach (var part in elementParts)
-                    {
-                        currentElements = currentElements.SelectMany(e => e.Elements(part));
-                    }
-
-                    // Collect values - either attribute or text content
-                    foreach (var valueElement in currentElements)
-                    {
-                        string? value;
-                        if (attributeToExtract != null)
-                        {
-                            // Extract attribute from nested elements
-                            value = valueElement.Attribute(attributeToExtract)?.Value?.Trim();
-                        }
-                        else
-                        {
-                            // Extract text content
-                            value = valueElement.Value?.Trim();
-                        }
-
-                        if (!string.IsNullOrEmpty(value))
-                            values.Add(value);
-                    }
-                }
+                var values = ExtractValuesFromEntry(entry, elementParts, attributeToExtract);
 
                 if (values.Count > 0)
                 {
@@ -200,11 +213,7 @@ public class CrossReferenceService
             if (root == null)
                 return result;
 
-            // Check if this is an attribute path (starts with "@")
-            var isAttributePath = config.SourceValuePath.StartsWith("@");
-            var pathParts = isAttributePath
-                ? new[] { config.SourceValuePath.Substring(1) }
-                : config.SourceValuePath.Split('/');
+            var (elementParts, attributeToExtract) = ParseSourceValuePath(config.SourceValuePath);
 
             foreach (var entry in root.Elements())
             {
@@ -214,65 +223,27 @@ public class CrossReferenceService
                     continue;
 
                 var sourceKey = keyAttr.Value;
+                var values = ExtractValuesFromEntry(entry, elementParts, attributeToExtract);
 
-                if (isAttributePath)
+                // Add each value to the reverse mapping
+                foreach (var value in values)
                 {
-                    // Read attribute value directly
-                    var value = entry.Attribute(pathParts[0])?.Value?.Trim();
-                    if (!string.IsNullOrEmpty(value))
+                    // Strip prefix if configured (e.g., "SkillSet." from "SkillSet.tor_skills_level26")
+                    var normalizedValue = value;
+                    if (!string.IsNullOrEmpty(config.PrefixToStrip) &&
+                        value.StartsWith(config.PrefixToStrip, StringComparison.OrdinalIgnoreCase))
                     {
-                        // Strip prefix if configured (e.g., "SkillSet." from "SkillSet.tor_skills_level26")
-                        var normalizedValue = value;
-                        if (!string.IsNullOrEmpty(config.PrefixToStrip) &&
-                            value.StartsWith(config.PrefixToStrip, StringComparison.OrdinalIgnoreCase))
-                        {
-                            normalizedValue = value.Substring(config.PrefixToStrip.Length);
-                        }
-
-                        if (!result.TryGetValue(normalizedValue, out var keyList))
-                        {
-                            keyList = new List<string>();
-                            result[normalizedValue] = keyList;
-                        }
-                        if (!keyList.Contains(sourceKey))
-                        {
-                            keyList.Add(sourceKey);
-                        }
-                    }
-                }
-                else
-                {
-                    // Navigate the path to get values
-                    IEnumerable<XElement> currentElements = new[] { entry };
-                    foreach (var part in pathParts)
-                    {
-                        currentElements = currentElements.SelectMany(e => e.Elements(part));
+                        normalizedValue = value.Substring(config.PrefixToStrip.Length);
                     }
 
-                    // For each value, add the source key to the reverse mapping
-                    foreach (var valueElement in currentElements)
+                    if (!result.TryGetValue(normalizedValue, out var keyList))
                     {
-                        var value = valueElement.Value?.Trim();
-                        if (!string.IsNullOrEmpty(value))
-                        {
-                            // Strip prefix if configured
-                            var normalizedValue = value;
-                            if (!string.IsNullOrEmpty(config.PrefixToStrip) &&
-                                value.StartsWith(config.PrefixToStrip, StringComparison.OrdinalIgnoreCase))
-                            {
-                                normalizedValue = value.Substring(config.PrefixToStrip.Length);
-                            }
-
-                            if (!result.TryGetValue(normalizedValue, out var keyList))
-                            {
-                                keyList = new List<string>();
-                                result[normalizedValue] = keyList;
-                            }
-                            if (!keyList.Contains(sourceKey))
-                            {
-                                keyList.Add(sourceKey);
-                            }
-                        }
+                        keyList = new List<string>();
+                        result[normalizedValue] = keyList;
+                    }
+                    if (!keyList.Contains(sourceKey))
+                    {
+                        keyList.Add(sourceKey);
                     }
                 }
             }

@@ -602,7 +602,26 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         }
 
         var config = fieldDef.CrossReference;
-        var targetFiles = config.GetAllTargetFiles().ToList();
+        var isReverseCrossRef = fieldDef.Type == "reverseCrossReference";
+
+        // For reverse cross-references, navigate to the SOURCE file (e.g., lords file)
+        // For forward cross-references, navigate to the TARGET file (e.g., traits file)
+        List<string> navigationFiles;
+        string keyField;
+
+        if (isReverseCrossRef && !string.IsNullOrEmpty(config.SourceFile))
+        {
+            // Reverse: UsedBy shows lord IDs, clicking should go to the lords file
+            navigationFiles = new List<string> { config.SourceFile };
+            keyField = config.SourceKeyField ?? "id";
+            Console.WriteLine($"[Navigate] Reverse cross-ref: sourceFile={config.SourceFile}, sourceKeyField={keyField}");
+        }
+        else
+        {
+            // Forward: normal cross-reference to target file
+            navigationFiles = config.GetAllTargetFiles().ToList();
+            keyField = config.TargetKeyField;
+        }
 
         // Strip the prefix before navigating (e.g., "SkillSet.tor_skills_level21" -> "tor_skills_level21")
         var targetValue = referenceId;
@@ -612,11 +631,11 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
             targetValue = targetValue.Substring(config.PrefixToStrip.Length);
         }
 
-        Console.WriteLine($"[Navigate] Using config: targetFiles=[{string.Join(", ", targetFiles)}], targetKey={config.TargetKeyField}");
+        Console.WriteLine($"[Navigate] Using config: files=[{string.Join(", ", navigationFiles)}], keyField={keyField}, value={targetValue}");
 
         NavigateToCrossReference?.Invoke(this, new CrossReferenceNavigationEventArgs(
-            targetFiles,
-            config.TargetKeyField,
+            navigationFiles,
+            keyField,
             targetValue
         ));
     }

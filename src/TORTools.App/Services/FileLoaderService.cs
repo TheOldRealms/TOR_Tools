@@ -337,6 +337,17 @@ public class FileLoaderService
             }
         }
 
+        // Add reverse cross-reference fields (e.g., UsedBy)
+        var reverseCrossRefFields = context.Schema.Fields
+            .Where(f => f.Value.Type == "reverseCrossReference" && f.Value.Hidden != true)
+            .OrderBy(f => f.Value.Order)
+            .Select(f => f.Key)
+            .ToList();
+        foreach (var field in reverseCrossRefFields)
+        {
+            context.ColumnNames.Add(field);
+        }
+
         context.Rows.Clear();
 
         int rowNum = 1;

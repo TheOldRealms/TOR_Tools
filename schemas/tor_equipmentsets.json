@@ -151,6 +151,21 @@
       "width": 220,
       "prefixToStrip": "Item.",
       "prefixToAdd": "Item."
+    },
+    "UsedBy": {
+      "displayName": "Used By",
+      "description": "Lords and troops that use this equipment set. Click to navigate.",
+      "type": "reverseCrossReference",
+      "order": 40,
+      "width": 300,
+      "crossReference": {
+        "sourceFile": "tor_npccharacters/tor_campaign_lords.xml",
+        "sourceKeyField": "id",
+        "sourceValuePath": "Equipments/EquipmentSet/@id",
+        "targetFile": "tor_equipment_sets.xml",
+        "targetKeyField": "id",
+        "localKeyField": "id"
+      }
     }
   },
   "equipmentSlots": [
