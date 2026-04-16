@@ -283,8 +283,9 @@ public class CrossReferenceService
     /// <param name="config">Cross-reference configuration from the schema</param>
     /// <param name="localKey">The local key (e.g., item ID)</param>
     /// <param name="newValues">The new values to set</param>
+    /// <param name="compactFormat">If true, write attributes on single line; if false, each on new line</param>
     /// <returns>True if update was successful</returns>
-    public bool UpdateCrossReference(string sourceFilePath, CrossReferenceConfig config, string localKey, List<string> newValues)
+    public bool UpdateCrossReference(string sourceFilePath, CrossReferenceConfig config, string localKey, List<string> newValues, bool compactFormat = true)
     {
         if (!File.Exists(sourceFilePath))
         {
@@ -397,24 +398,8 @@ public class CrossReferenceService
                 }
             }
 
-            // Save the file with UTF-8 BOM and uppercase encoding declaration
-            // First save to memory to get the content
-            string xmlContent;
-            using (var memStream = new MemoryStream())
-            {
-                doc.Save(memStream);
-                memStream.Position = 0;
-                using (var reader = new StreamReader(memStream))
-                {
-                    xmlContent = reader.ReadToEnd();
-                }
-            }
-
-            // Replace lowercase utf-8 with uppercase UTF-8
-            xmlContent = xmlContent.Replace("encoding=\"utf-8\"", "encoding=\"UTF-8\"");
-
-            // Write with BOM
-            File.WriteAllText(sourceFilePath, xmlContent, new System.Text.UTF8Encoding(true));
+            // Save with proper formatting based on compactFormat parameter
+            SaveDocument(doc, sourceFilePath, compactFormat);
             Console.WriteLine($"[CrossReferenceService] Saved file to: {sourceFilePath}");
             Console.WriteLine($"[CrossReferenceService] Updated {localKey} with {newValues.Count} values in {Path.GetFileName(sourceFilePath)}");
 
@@ -428,6 +413,152 @@ public class CrossReferenceService
             Console.WriteLine($"[CrossReferenceService] Error updating {sourceFilePath}: {ex.Message}");
             return false;
         }
+    }
+
+    /// <summary>
+    /// Saves an XDocument with the specified format.
+    /// </summary>
+    private static void SaveDocument(XDocument doc, string filePath, bool compactFormat)
+    {
+        var sb = new System.Text.StringBuilder();
+        var indent = "  "; // 2 spaces
+
+        // Write XML declaration
+        sb.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+
+        var root = doc.Root;
+        if (root != null)
+        {
+            // Write root element
+            sb.AppendLine($"<{root.Name.LocalName}>");
+
+            // Write each entry with appropriate formatting
+            foreach (var element in root.Elements())
+            {
+                if (compactFormat)
+                    WriteElementCompact(sb, element, indent);
+                else
+                    WriteElementWithMultiLineAttributes(sb, element, indent);
+            }
+
+            sb.Append($"</{root.Name.LocalName}>");
+        }
+
+        var content = sb.ToString();
+
+        // Write with UTF-8 BOM
+        using var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
+        byte[] bom = { 0xEF, 0xBB, 0xBF };
+        stream.Write(bom, 0, bom.Length);
+
+        using var writer = new StreamWriter(stream, new System.Text.UTF8Encoding(false));
+        writer.Write(content);
+    }
+
+    /// <summary>
+    /// Writes an element with all attributes on a single line (compact format).
+    /// </summary>
+    private static void WriteElementCompact(System.Text.StringBuilder sb, XElement element, string baseIndent, int depth = 1)
+    {
+        var indent = string.Concat(Enumerable.Repeat(baseIndent, depth));
+        var elementName = element.Name.LocalName;
+        var attributes = element.Attributes().ToList();
+        var children = element.Elements().ToList();
+        var hasTextContent = !string.IsNullOrWhiteSpace(element.Value) && !children.Any();
+
+        sb.Append(indent);
+        sb.Append($"<{elementName}");
+
+        // Write all attributes on one line
+        foreach (var attr in attributes)
+        {
+            sb.Append($" {attr.Name.LocalName}=\"{EscapeXmlAttributeValue(attr.Value)}\"");
+        }
+
+        // Close element
+        if (children.Any())
+        {
+            sb.AppendLine(">");
+            foreach (var child in children)
+            {
+                WriteElementCompact(sb, child, baseIndent, depth + 1);
+            }
+            sb.AppendLine($"{indent}</{elementName}>");
+        }
+        else if (hasTextContent)
+        {
+            sb.AppendLine($">{EscapeXmlText(element.Value)}</{elementName}>");
+        }
+        else
+        {
+            sb.AppendLine(" />");
+        }
+    }
+
+    /// <summary>
+    /// Writes an element with each attribute on its own line (rich format).
+    /// </summary>
+    private static void WriteElementWithMultiLineAttributes(System.Text.StringBuilder sb, XElement element, string baseIndent, int depth = 1)
+    {
+        var indent = string.Concat(Enumerable.Repeat(baseIndent, depth));
+        var elementName = element.Name.LocalName;
+        var attributes = element.Attributes().ToList();
+        var children = element.Elements().ToList();
+        var hasTextContent = !string.IsNullOrWhiteSpace(element.Value) && !children.Any();
+
+        // Calculate alignment padding (align under first attribute)
+        var alignPad = new string(' ', indent.Length + elementName.Length + 2);
+
+        sb.Append(indent);
+        sb.Append($"<{elementName}");
+
+        // Write attributes
+        for (int i = 0; i < attributes.Count; i++)
+        {
+            var attr = attributes[i];
+            var attrStr = $"{attr.Name.LocalName}=\"{EscapeXmlAttributeValue(attr.Value)}\"";
+
+            if (i == 0)
+            {
+                sb.Append($" {attrStr}");
+            }
+            else
+            {
+                sb.AppendLine();
+                sb.Append($"{alignPad}{attrStr}");
+            }
+        }
+
+        // Close element
+        if (children.Any())
+        {
+            sb.AppendLine(">");
+            foreach (var child in children)
+            {
+                WriteElementWithMultiLineAttributes(sb, child, baseIndent, depth + 1);
+            }
+            sb.AppendLine($"{indent}</{elementName}>");
+        }
+        else if (hasTextContent)
+        {
+            sb.AppendLine($">{EscapeXmlText(element.Value)}</{elementName}>");
+        }
+        else
+        {
+            sb.AppendLine(" />");
+        }
+    }
+
+    private static string EscapeXmlText(string value)
+    {
+        if (string.IsNullOrEmpty(value)) return value;
+        return value.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
+    }
+
+    private static string EscapeXmlAttributeValue(string value)
+    {
+        if (string.IsNullOrEmpty(value)) return value;
+        return value.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;");
     }
 
     /// <summary>

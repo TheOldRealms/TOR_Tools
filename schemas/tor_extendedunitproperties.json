@@ -4,6 +4,7 @@
   "description": "Extended combat properties for troops: damage types, resistances, abilities, and resource costs.",
   "rootElement": "ArrayOfCharacterExtendedInfo",
   "entryElement": "CharacterExtendedInfo",
+  "compactFormat": true,
   "fields": {
     "id": {
       "displayName": "ID",

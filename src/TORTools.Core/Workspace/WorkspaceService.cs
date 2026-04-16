@@ -33,7 +33,7 @@ public class WorkspaceService : IWorkspaceService
         ["tor_campaign_lords.xml"] = ("Unit Catalog", "Campaign Lords"),
         ["tor_troopdefinitions.xml"] = ("Unit Catalog", "Troop Definitions"),
         ["tor_charactertemplates.xml"] = ("Unit Catalog", "Character Templates"),
-        ["tor_dummyNPCs.xml"] = ("Unit Catalog", "Dummy NPCs"),
+        // ["tor_dummyNPCs.xml"] = ("Unit Catalog", "Dummy NPCs"), // Tournament templates - not editable
         // tor_extendedunitproperties.xml - data accessed via cross-references in Troops table (Attributes, Abilities, etc.)
         ["tor_bodyproperties.xml"] = ("Unit Catalog", "Body Properties"),
 
@@ -116,7 +116,7 @@ public class WorkspaceService : IWorkspaceService
         ["tor_charactertemplates.xml"] = 12,
         ["tor_bodyproperties.xml"] = 20,
         ["tor_extendedunitproperties.xml"] = 21,
-        ["tor_dummyNPCs.xml"] = 30,
+        // ["tor_dummyNPCs.xml"] = 30, // Tournament templates - not editable
 
         // Factions Catalog - kingdoms, clans, cultures
         ["tor_kingdoms.xml"] = 1,

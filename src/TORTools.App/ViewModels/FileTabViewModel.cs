@@ -523,8 +523,14 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
 
         Console.WriteLine($"[CrossRef] Updating {fieldName} for {localKey}: {string.Join(", ", valueList)}");
 
+        // Look up the schema for the source file to get its compactFormat setting
+        var sourceFileName = Path.GetFileName(sourceFilePath);
+        var schemaService = new SchemaService();
+        var sourceSchema = schemaService.GetSchema(sourceFileName);
+        var compactFormat = sourceSchema?.CompactFormat ?? true; // Default to compact if schema not found
+
         // Update the source file
-        var success = _crossRefService.UpdateCrossReference(sourceFilePath, fieldDef.CrossReference, localKey, valueList);
+        var success = _crossRefService.UpdateCrossReference(sourceFilePath, fieldDef.CrossReference, localKey, valueList, compactFormat);
 
         if (success)
         {
@@ -597,12 +603,21 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
 
         var config = fieldDef.CrossReference;
         var targetFiles = config.GetAllTargetFiles().ToList();
+
+        // Strip the prefix before navigating (e.g., "SkillSet.tor_skills_level21" -> "tor_skills_level21")
+        var targetValue = referenceId;
+        if (!string.IsNullOrEmpty(config.PrefixToStrip) &&
+            targetValue.StartsWith(config.PrefixToStrip, StringComparison.OrdinalIgnoreCase))
+        {
+            targetValue = targetValue.Substring(config.PrefixToStrip.Length);
+        }
+
         Console.WriteLine($"[Navigate] Using config: targetFiles=[{string.Join(", ", targetFiles)}], targetKey={config.TargetKeyField}");
 
         NavigateToCrossReference?.Invoke(this, new CrossReferenceNavigationEventArgs(
             targetFiles,
             config.TargetKeyField,
-            referenceId
+            targetValue
         ));
     }
 

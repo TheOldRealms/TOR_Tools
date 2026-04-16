@@ -207,6 +207,12 @@ public class FileSaverService
         var rootElementName = context.Schema?.RootElement ?? "NPCCharacters";
         var root = new XElement(rootElementName);
 
+        // Get list of linked fields that should NOT be saved to the main file
+        var linkedFields = context.Schema?.Fields
+            .Where(f => f.Value.LinkedField == true)
+            .Select(f => f.Key)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase) ?? new HashSet<string>();
+
         foreach (var entry in entries)
         {
             // Remove the source file field attribute before saving (it's only for internal tracking)
@@ -214,10 +220,21 @@ public class FileSaverService
             {
                 entry.OriginalElement.Attribute(context.Schema.SourceFileField)?.Remove();
             }
+
+            // Remove linked field attributes (they belong in a separate file like tor_heroes.xml)
+            foreach (var linkedField in linkedFields)
+            {
+                entry.OriginalElement.Attribute(linkedField)?.Remove();
+            }
+
             root.Add(entry.OriginalElement);
         }
 
-        return new XDocument(root);
+        // Include XML declaration from the original document
+        var declaration = context.Document?.Document.Declaration
+            ?? new XDeclaration("1.0", "UTF-8", null);
+
+        return new XDocument(declaration, root);
     }
 
     /// <summary>
@@ -292,8 +309,8 @@ public class FileSaverService
 
             Console.WriteLine($"[SaveMergedData] Updated {updatedCount} fields in {mergedFilePath}");
 
-            // Save the merged data file with compact format
-            var compactFormat = context.Schema.CompactFormat;
+            // Save the merged data file with its own compact format setting (default: true)
+            var compactFormat = mergedConfig.CompactFormat;
             var mergedDocWrapper = new XmlDocumentWrapper(mergedDoc, mergedFilePath,
                 context.Document!.HasBom, context.Document.Encoding, context.Document.IndentString);
             _xmlService.Save(mergedDocWrapper, mergedFilePath, compactFormat);
@@ -363,6 +380,15 @@ public class FileSaverService
         var basePath = Path.Combine(baseDir, fileName);
         if (File.Exists(basePath))
             return basePath;
+
+        // Check parent directory (e.g., tor_heroes.xml is in ModuleData, not ModuleData/tor_npccharacters)
+        var parentDir = Path.GetDirectoryName(baseDir);
+        if (!string.IsNullOrEmpty(parentDir))
+        {
+            var parentPath = Path.Combine(parentDir, fileName);
+            if (File.Exists(parentPath))
+                return parentPath;
+        }
 
         return null;
     }

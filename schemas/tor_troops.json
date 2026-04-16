@@ -4,6 +4,7 @@
   "description": "Troop and NPC character definitions with upgrade paths and equipment references.",
   "rootElement": "NPCCharacters",
   "entryElement": "NPCCharacter",
+  "compactFormat": true,
   "fields": {
     "id": {
       "displayName": "ID",
@@ -257,7 +258,7 @@
         "sourceKeyField": "id",
         "sourceValuePath": "Abilities/string",
         "targetFile": "tor_abilitytemplates.xml",
-        "targetKeyField": "id",
+        "targetKeyField": "StringID",
         "localKeyField": "id"
       }
     },

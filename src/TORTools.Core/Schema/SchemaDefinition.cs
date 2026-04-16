@@ -671,4 +671,11 @@ public class MergedDataFileConfig
     /// </summary>
     [JsonPropertyName("fieldMappings")]
     public Dictionary<string, string> FieldMappings { get; set; } = new();
+
+    /// <summary>
+    /// Whether to use compact format when saving this merged data file.
+    /// Default is true (all attributes on one line).
+    /// </summary>
+    [JsonPropertyName("compactFormat")]
+    public bool CompactFormat { get; set; } = true;
 }
