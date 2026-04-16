@@ -152,6 +152,22 @@
       "type": "string",
       "order": 19,
       "width": 300
+    },
+    "Members": {
+      "displayName": "Members",
+      "description": "Lords who belong to this clan. Click to navigate.",
+      "type": "reverseCrossReference",
+      "order": 20,
+      "width": 350,
+      "crossReference": {
+        "sourceFile": "tor_heroes.xml",
+        "sourceKeyField": "id",
+        "sourceValuePath": "@faction",
+        "targetFile": "tor_campaign_lords.xml",
+        "targetKeyField": "id",
+        "localKeyField": "id",
+        "prefixToStrip": "Faction."
+      }
     }
   }
 }

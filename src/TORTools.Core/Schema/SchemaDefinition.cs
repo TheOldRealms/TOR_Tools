@@ -403,6 +403,13 @@ public class CrossReferenceConfig
     /// </summary>
     [JsonPropertyName("prefixToAdd")]
     public string? PrefixToAdd { get; set; }
+
+    /// <summary>
+    /// If true, only a single value can be selected (e.g., clan, skill_template).
+    /// If false (default), multiple values can be selected (e.g., abilities, traits).
+    /// </summary>
+    [JsonPropertyName("singleValue")]
+    public bool SingleValue { get; set; } = false;
 }
 
 /// <summary>

@@ -112,14 +112,20 @@
     },
     "clan": {
       "displayName": "Clan/Faction",
-      "description": "The clan/faction this lord belongs to (from tor_heroes.xml).",
-      "type": "string",
+      "description": "The clan/faction this lord belongs to. Click to navigate.",
+      "type": "crossReference",
       "order": 8,
       "width": 200,
       "linkedField": true,
       "linkedSource": "faction",
-      "prefixToStrip": "Faction.",
-      "prefixToAdd": "Faction."
+      "crossReference": {
+        "targetFile": "tor_clans.xml",
+        "targetKeyField": "id",
+        "localKeyField": "clan",
+        "prefixToStrip": "Faction.",
+        "prefixToAdd": "Faction.",
+        "singleValue": true
+      }
     },
     "voice": {
       "displayName": "Voice",
@@ -172,17 +178,24 @@
         "targetKeyField": "id",
         "localKeyField": "skill_template",
         "prefixToStrip": "SkillSet.",
-        "prefixToAdd": "SkillSet."
+        "prefixToAdd": "SkillSet.",
+        "singleValue": true
       }
     },
     "EquipmentRosterId": {
       "displayName": "Equipment Set",
-      "description": "Combat equipment set ID.",
-      "type": "string",
+      "description": "Combat equipment set ID. Click to navigate.",
+      "type": "crossReference",
       "order": 14,
       "width": 200,
       "nested": true,
-      "nestedPath": "Equipments/EquipmentSet[1]/@id"
+      "nestedPath": "Equipments/EquipmentSet[1]/@id",
+      "crossReference": {
+        "targetFile": "tor_equipment_sets.xml",
+        "targetKeyField": "id",
+        "localKeyField": "EquipmentRosterId",
+        "singleValue": true
+      }
     },
     "bodyproperty_age": {
       "displayName": "BP Age",

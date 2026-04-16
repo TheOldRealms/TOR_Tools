@@ -1088,8 +1088,8 @@ public partial class FileTabView : UserControl
                 RebuildLinks();
             };
 
-            // Check if this is a skill_template field for custom UI
-            var isSkillTemplate = attributeName.Equals("skill_template", StringComparison.OrdinalIgnoreCase);
+            // Check if this is a single-value field (clan, skill_template, equipment set) vs multi-value (abilities, traits)
+            var isSingleValue = fieldDef.CrossReference?.SingleValue ?? false;
             var fieldDisplayName = fieldDef.DisplayName ?? attributeName;
             var buttonText = "...";
             var tooltipText = $"Edit {fieldDisplayName}";
@@ -1122,17 +1122,16 @@ public partial class FileTabView : UserControl
                 var localKeyField = fieldDef.CrossReference?.LocalKeyField ?? "id";
                 var localKey = rowVm[localKeyField] ?? "";
 
-                // Custom title based on field type
+                // Custom title based on field type - include entry ID and name for context
                 var isAbilityField = fieldDef.CrossReference?.TargetFile == "tor_abilitytemplates.xml";
-                var isItemTraitField = fieldDef.CrossReference?.TargetFile == "tor_itemtraits.xml";
-                var dialogTitle = isSkillTemplate ? "Edit Skill Set"
-                    : isAbilityField ? "Edit Abilities"
-                    : isItemTraitField ? "Edit Item Traits"
-                    : "Edit Traits";
+                var entryId = rowVm["id"] ?? "";
+                var entryName = rowVm["name"] ?? "";
+                var entryContext = !string.IsNullOrEmpty(entryName) ? $"{entryName} ({entryId})" : entryId;
+                var dialogTitle = $"Edit {fieldDisplayName} - {entryContext}";
 
-                // Get level for skill template default calculation
+                // Get level for skill template default calculation (only for skill_template field)
                 int? troopLevel = null;
-                if (isSkillTemplate)
+                if (attributeName.Equals("skill_template", StringComparison.OrdinalIgnoreCase))
                 {
                     var levelStr = rowVm["level"] ?? "1";
                     if (int.TryParse(levelStr, out var level))
@@ -1161,23 +1160,54 @@ public partial class FileTabView : UserControl
                 }
                 else
                 {
-                    ShowTraitEditorPopup(editButton, currentValue, availableIds, dialogTitle, prefixToStrip, troopLevel, null, (result) =>
+                    ShowTraitEditorPopup(editButton, currentValue, availableIds, dialogTitle, prefixToStrip, troopLevel, isSingleValue, null, (result) =>
                     {
                         if (result != null && result != currentValue)
                         {
-                            // Update the cross-reference in the source file
-                            var success = vm.UpdateCrossReferenceValue(attributeName, localKey, result);
-                            if (success)
-                            {
-                                rowVm[attributeName] = result;
-                                Console.WriteLine($"[CrossRef] Updated traits to: {result}");
+                            // Check if this is a direct cross-reference (no sourceFile) or indirect (with sourceFile)
+                            var isDirectCrossRef = string.IsNullOrEmpty(fieldDef.CrossReference?.SourceFile);
 
-                                // Rebuild the links to show the new values
+                            if (isDirectCrossRef)
+                            {
+                                // Direct cross-reference: value is stored on the entry itself (or linked file)
+                                // Update both the ViewModel and the underlying XmlEntry
+                                var valueToStore = result;
+                                // Add prefix if configured (e.g., "Faction." for clan)
+                                var prefixToAdd = fieldDef.CrossReference?.PrefixToAdd;
+                                if (!string.IsNullOrEmpty(prefixToAdd) && !string.IsNullOrEmpty(result) && !result.StartsWith(prefixToAdd, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    valueToStore = prefixToAdd + result;
+                                }
+                                // Update ViewModel
+                                rowVm[attributeName] = valueToStore;
+                                // Update underlying XmlEntry so it gets saved correctly
+                                // Check if this is a nested field (like EquipmentRosterId with nestedPath)
+                                if (fieldDef.Nested && !string.IsNullOrEmpty(fieldDef.NestedPath))
+                                {
+                                    rowVm.XmlEntry.SetNestedValue(fieldDef.NestedPath, valueToStore);
+                                    Console.WriteLine($"[CrossRef] Updated nested crossref {attributeName} at {fieldDef.NestedPath} to: {valueToStore}");
+                                }
+                                else
+                                {
+                                    rowVm.XmlEntry.SetAttributeValue(attributeName, valueToStore);
+                                    Console.WriteLine($"[CrossRef] Updated direct crossref {attributeName} to: {valueToStore}");
+                                }
                                 RebuildLinks();
                             }
                             else
                             {
-                                Console.WriteLine($"[CrossRef] Failed to update cross-reference");
+                                // Indirect cross-reference: update the source file (e.g., tor_extendedunitproperties.xml)
+                                var success = vm.UpdateCrossReferenceValue(attributeName, localKey, result);
+                                if (success)
+                                {
+                                    rowVm[attributeName] = result;
+                                    Console.WriteLine($"[CrossRef] Updated indirect crossref {attributeName} to: {result}");
+                                    RebuildLinks();
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"[CrossRef] Failed to update cross-reference");
+                                }
                             }
                         }
                     });
@@ -1196,7 +1226,7 @@ public partial class FileTabView : UserControl
     /// <summary>
     /// Shows a dialog window for editing traits/skills with autocomplete support.
     /// </summary>
-    private static void ShowTraitEditorPopup(Control anchor, string currentValue, List<string> availableIds, string title, string? prefixToStrip, int? troopLevel, FileTabViewModel? vmForIcons, Action<string?> onComplete)
+    private static void ShowTraitEditorPopup(Control anchor, string currentValue, List<string> availableIds, string title, string? prefixToStrip, int? troopLevel, bool isSingleValue, FileTabViewModel? vmForIcons, Action<string?> onComplete)
     {
         Console.WriteLine("[TraitEditor] Creating dialog...");
 
@@ -1208,12 +1238,12 @@ public partial class FileTabView : UserControl
             return;
         }
 
-        // Determine if this is a skill editor (single selection) vs trait editor (multi)
-        var isSkillEditor = title.Contains("Skill", StringComparison.OrdinalIgnoreCase);
-        var labelText = isSkillEditor ? "Skill Set:" : "Traits (comma-separated):";
+        // Single value fields (clan, skill_template, equipment set) vs multi-value (traits, abilities)
+        var labelText = isSingleValue ? "Value:" : "Values (comma-separated):";
 
-        // For skill editor, calculate the default skill set based on level
-        var defaultSkillSet = troopLevel.HasValue ? $"tor_skills_level{troopLevel.Value}" : null;
+        // For skill template fields, calculate the default skill set based on troop level
+        var hasDefaultSkillSet = troopLevel.HasValue;
+        var defaultSkillSet = hasDefaultSkillSet ? $"tor_skills_level{troopLevel.Value}" : null;
 
         // Check if current value matches the default (use default toggle should be ON)
         var currentWithoutPrefix = currentValue;
@@ -1221,7 +1251,7 @@ public partial class FileTabView : UserControl
         {
             currentWithoutPrefix = currentValue.Substring(prefixToStrip.Length);
         }
-        var isUsingDefault = isSkillEditor && (string.IsNullOrEmpty(currentValue) || currentWithoutPrefix == defaultSkillSet);
+        var isUsingDefault = hasDefaultSkillSet && (string.IsNullOrEmpty(currentValue) || currentWithoutPrefix == defaultSkillSet);
 
         // Create a dialog window
         var dialog = new Window
@@ -1249,7 +1279,7 @@ public partial class FileTabView : UserControl
         TextBox? textBox = null;
         StackPanel? customSection = null;
 
-        if (isSkillEditor && defaultSkillSet != null)
+        if (hasDefaultSkillSet && defaultSkillSet != null)
         {
             useDefaultCheckBox = new CheckBox
             {
@@ -1367,17 +1397,17 @@ public partial class FileTabView : UserControl
             textBox = new TextBox
             {
                 Text = displayValue,
-                Watermark = "Enter trait IDs...",
-                Height = 60,
-                AcceptsReturn = true,
-                TextWrapping = TextWrapping.Wrap
+                Watermark = isSingleValue ? "Select a value..." : "Enter values...",
+                Height = isSingleValue ? 32 : 60,
+                AcceptsReturn = !isSingleValue,
+                TextWrapping = isSingleValue ? TextWrapping.NoWrap : TextWrapping.Wrap
             };
             stack.Children.Add(textBox);
 
             // Autocomplete section
             var acLabel = new TextBlock
             {
-                Text = "Available traits (double-click to add):",
+                Text = isSingleValue ? "Available options (double-click to select):" : "Available values (double-click to add):",
                 FontSize = 12,
                 FontWeight = FontWeight.SemiBold,
                 Margin = new Thickness(0, 12, 0, 4)
@@ -1415,17 +1445,27 @@ public partial class FileTabView : UserControl
                 listBox.ItemsSource = filtered;
             };
 
-            // Double-click to add
+            // Double-click to add (or replace for single-value mode)
             listBox.DoubleTapped += (s, e) =>
             {
                 if (listBox.SelectedItem is string selected)
                 {
-                    var current = textBox.Text?.Trim() ?? "";
-                    if (string.IsNullOrEmpty(current))
+                    if (isSingleValue)
+                    {
+                        // Single-value mode: replace the current value
                         textBox.Text = selected;
+                        Console.WriteLine($"[TraitEditor] Selected: {selected}");
+                    }
                     else
-                        textBox.Text = current + ", " + selected;
-                    Console.WriteLine($"[TraitEditor] Added trait: {selected}");
+                    {
+                        // Multi-value mode: append to existing values
+                        var current = textBox.Text?.Trim() ?? "";
+                        if (string.IsNullOrEmpty(current))
+                            textBox.Text = selected;
+                        else
+                            textBox.Text = current + ", " + selected;
+                        Console.WriteLine($"[TraitEditor] Added trait: {selected}");
+                    }
                     searchBox.Text = "";
                 }
             };

@@ -221,10 +221,18 @@ public class CrossReferenceService
                     var value = entry.Attribute(pathParts[0])?.Value?.Trim();
                     if (!string.IsNullOrEmpty(value))
                     {
-                        if (!result.TryGetValue(value, out var keyList))
+                        // Strip prefix if configured (e.g., "SkillSet." from "SkillSet.tor_skills_level26")
+                        var normalizedValue = value;
+                        if (!string.IsNullOrEmpty(config.PrefixToStrip) &&
+                            value.StartsWith(config.PrefixToStrip, StringComparison.OrdinalIgnoreCase))
+                        {
+                            normalizedValue = value.Substring(config.PrefixToStrip.Length);
+                        }
+
+                        if (!result.TryGetValue(normalizedValue, out var keyList))
                         {
                             keyList = new List<string>();
-                            result[value] = keyList;
+                            result[normalizedValue] = keyList;
                         }
                         if (!keyList.Contains(sourceKey))
                         {
@@ -247,10 +255,18 @@ public class CrossReferenceService
                         var value = valueElement.Value?.Trim();
                         if (!string.IsNullOrEmpty(value))
                         {
-                            if (!result.TryGetValue(value, out var keyList))
+                            // Strip prefix if configured
+                            var normalizedValue = value;
+                            if (!string.IsNullOrEmpty(config.PrefixToStrip) &&
+                                value.StartsWith(config.PrefixToStrip, StringComparison.OrdinalIgnoreCase))
+                            {
+                                normalizedValue = value.Substring(config.PrefixToStrip.Length);
+                            }
+
+                            if (!result.TryGetValue(normalizedValue, out var keyList))
                             {
                                 keyList = new List<string>();
-                                result[value] = keyList;
+                                result[normalizedValue] = keyList;
                             }
                             if (!keyList.Contains(sourceKey))
                             {
