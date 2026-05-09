@@ -68,3 +68,9 @@ Desktop.ini
 # Claude Code
 .claude/
 tmpclaude-*
+
+# Distribution builds
+dist/
+
+# Windows reserved names (accidentally created)
+nul
