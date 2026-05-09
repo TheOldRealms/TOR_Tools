@@ -162,7 +162,8 @@ public partial class FileTabView : UserControl
             var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
             if (clipboard != null)
             {
-                var clipboardText = await clipboard.GetTextAsync();
+                var dataTransfer = await clipboard.TryGetDataAsync();
+                var clipboardText = dataTransfer != null ? await dataTransfer.TryGetTextAsync() : null;
                 if (!string.IsNullOrWhiteSpace(clipboardText))
                 {
                     // Check if it looks like equipment clipboard format (comma-separated, has Item. or "none")
@@ -683,7 +684,8 @@ public partial class FileTabView : UserControl
                         var clipboard = TopLevel.GetTopLevel(pasteButton)?.Clipboard;
                         if (clipboard == null) return;
 
-                        var clipboardText = await clipboard.GetTextAsync();
+                        var dataTransfer = await clipboard.TryGetDataAsync();
+                        var clipboardText = dataTransfer != null ? await dataTransfer.TryGetTextAsync() : null;
                         if (string.IsNullOrWhiteSpace(clipboardText)) return;
 
                         // Parse clipboard - support tab-separated, newline-separated, or comma-separated
@@ -1307,7 +1309,7 @@ public partial class FileTabView : UserControl
             textBox = new TextBox
             {
                 Text = displayValue,
-                Watermark = "Enter skill set ID...",
+                PlaceholderText = "Enter skill set ID...",
                 Height = 30,
                 AcceptsReturn = false,
                 TextWrapping = TextWrapping.NoWrap
@@ -1326,7 +1328,7 @@ public partial class FileTabView : UserControl
 
             var searchBox = new TextBox
             {
-                Watermark = "Type to filter..."
+                PlaceholderText = "Type to filter..."
             };
             customSection.Children.Add(searchBox);
 
@@ -1397,7 +1399,7 @@ public partial class FileTabView : UserControl
             textBox = new TextBox
             {
                 Text = displayValue,
-                Watermark = isSingleValue ? "Select a value..." : "Enter values...",
+                PlaceholderText = isSingleValue ? "Select a value..." : "Enter values...",
                 Height = isSingleValue ? 32 : 60,
                 AcceptsReturn = !isSingleValue,
                 TextWrapping = isSingleValue ? TextWrapping.NoWrap : TextWrapping.Wrap
@@ -1416,7 +1418,7 @@ public partial class FileTabView : UserControl
 
             var searchBox = new TextBox
             {
-                Watermark = "Type to filter..."
+                PlaceholderText = "Type to filter..."
             };
             stack.Children.Add(searchBox);
 
@@ -2198,7 +2200,7 @@ public partial class FileTabView : UserControl
                 else
                 {
                     // No prefix handling, use standard binding
-                    textBox.Bind(TextBox.TextProperty, new Binding($"[{attributeName}]", BindingMode.TwoWay));
+                    textBox.Bind(TextBox.TextProperty, new Binding { Path = $"[{attributeName}]", Mode = BindingMode.TwoWay });
                 }
             }
 
@@ -3208,7 +3210,7 @@ public partial class FileTabView : UserControl
         // Search box
         var searchBox = new TextBox
         {
-            Watermark = "Type to filter icons...",
+            PlaceholderText = "Type to filter icons...",
             Margin = new Thickness(0, 8, 0, 0)
         };
         mainStack.Children.Add(searchBox);

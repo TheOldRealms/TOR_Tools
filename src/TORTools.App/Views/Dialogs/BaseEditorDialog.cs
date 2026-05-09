@@ -141,7 +141,7 @@ public abstract class BaseEditorDialog : Window
     /// </summary>
     protected TextBox CreateSearchBox(string watermark = "Type to filter...")
     {
-        return new TextBox { Watermark = watermark };
+        return new TextBox { PlaceholderText = watermark };
     }
 
     /// <summary>
