@@ -234,6 +234,11 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     public ItemTraitCatalogService? ItemTraitCatalogService { get; set; }
 
     /// <summary>
+    /// Faction catalog service for faction lookups and kingdom color inheritance. Set after construction by MainWindowViewModel.
+    /// </summary>
+    public FactionCatalogService? FactionCatalogService { get; set; }
+
+    /// <summary>
     /// The schema definition for this file type - now accessed through Context.
     /// </summary>
     public SchemaDefinition? Schema => Context.Schema;

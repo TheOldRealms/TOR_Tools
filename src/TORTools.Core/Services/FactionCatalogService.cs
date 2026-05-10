@@ -129,6 +129,23 @@ public class FactionCatalogService
                             _bannerKeyToImageName[$"kingdom_{id}"] = imageName;
                         }
                     }
+
+                    // Store kingdom color for inheritance by clans
+                    // Use primary_banner_color, but fall back to secondary if primary is too dark
+                    var primaryColor = entry.Attribute("primary_banner_color")?.Value;
+                    var secondaryColor = entry.Attribute("secondary_banner_color")?.Value;
+
+                    // Check if primary color is too dark (luminance check)
+                    var colorToUse = primaryColor;
+                    if (!string.IsNullOrEmpty(primaryColor) && IsColorTooDark(primaryColor))
+                    {
+                        colorToUse = secondaryColor;
+                    }
+
+                    if (!string.IsNullOrEmpty(colorToUse))
+                    {
+                        _kingdomColors[id] = colorToUse;
+                    }
                 }
             }
 
@@ -172,6 +189,30 @@ public class FactionCatalogService
     }
 
     /// <summary>
+    /// Checks if a color value is too dark to be visible as a background.
+    /// </summary>
+    private static bool IsColorTooDark(string colorValue)
+    {
+        // Parse color value (formats: "0xffRRGGBB", "FFRRGGBB", "#RRGGBB")
+        var hex = colorValue.Replace("0x", "").Replace("#", "").TrimStart('f', 'F');
+        if (hex.Length >= 6)
+        {
+            // Take the last 6 characters (RGB portion)
+            hex = hex.Substring(hex.Length - 6);
+            if (int.TryParse(hex.Substring(0, 2), System.Globalization.NumberStyles.HexNumber, null, out var r) &&
+                int.TryParse(hex.Substring(2, 2), System.Globalization.NumberStyles.HexNumber, null, out var g) &&
+                int.TryParse(hex.Substring(4, 2), System.Globalization.NumberStyles.HexNumber, null, out var b))
+            {
+                // Calculate relative luminance (simplified)
+                var luminance = (0.299 * r + 0.587 * g + 0.114 * b);
+                // If luminance is below ~50, consider it too dark
+                return luminance < 50;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
     /// Extracts the banner image name from a banner_key string.
     /// Banner keys have format: "11.116.149...:kingdom_averland"
     /// Returns the part after the colon (e.g., "kingdom_averland").
@@ -212,6 +253,25 @@ public class FactionCatalogService
     /// Gets the banner icons base path.
     /// </summary>
     public string? BannerIconsBasePath => _bannerIconsBasePath;
+
+    /// <summary>
+    /// Gets the color for a kingdom by ID.
+    /// Used for clan color inheritance when clans don't have their own color.
+    /// </summary>
+    /// <param name="kingdomId">Kingdom ID (with or without "Kingdom." prefix)</param>
+    /// <returns>The kingdom color, or null if not found</returns>
+    public string? GetKingdomColor(string? kingdomId)
+    {
+        if (string.IsNullOrEmpty(kingdomId))
+            return null;
+
+        // Strip "Kingdom." prefix if present
+        var id = kingdomId.StartsWith("Kingdom.", StringComparison.OrdinalIgnoreCase)
+            ? kingdomId.Substring(8)
+            : kingdomId;
+
+        return _kingdomColors.TryGetValue(id, out var color) ? color : null;
+    }
 
     /// <summary>
     /// Checks if a clan ID exists in the catalog.
@@ -311,6 +371,7 @@ public class FactionCatalogService
             _kingdomIds.Clear();
             _cultureIds.Clear();
             _bannerKeyToImageName.Clear();
+            _kingdomColors.Clear();
             _isLoaded = false;
         }
     }

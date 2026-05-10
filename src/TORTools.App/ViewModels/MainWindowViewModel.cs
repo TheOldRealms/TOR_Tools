@@ -171,6 +171,9 @@ public partial class MainWindowViewModel : ViewModelBase
         // Assign item trait catalog service for trait icons
         newTab.ItemTraitCatalogService = _itemTraitCatalogService;
 
+        // Assign faction catalog service for kingdom color inheritance
+        newTab.FactionCatalogService = _factionCatalogService;
+
         // Subscribe to cross-reference navigation events
         newTab.NavigateToCrossReference += OnNavigateToCrossReference;
 

@@ -2543,6 +2543,17 @@ public partial class FileTabView : UserControl
                 // Try to get primary color for background
                 // Check various color field names used across different schemas
                 var primaryColorValue = rowVm["color"] ?? rowVm["primary_banner_color"];
+
+                // If no direct color, try to inherit from parent kingdom via super_faction
+                if (string.IsNullOrEmpty(primaryColorValue) && vm.FactionCatalogService != null)
+                {
+                    var superFaction = rowVm["super_faction"];
+                    if (!string.IsNullOrEmpty(superFaction))
+                    {
+                        primaryColorValue = vm.FactionCatalogService.GetKingdomColor(superFaction);
+                    }
+                }
+
                 var bgColor = ParseColorValue(primaryColorValue);
                 if (bgColor.HasValue)
                 {
