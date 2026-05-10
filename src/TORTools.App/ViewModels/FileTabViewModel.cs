@@ -128,6 +128,63 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private bool _showRemovedEntries;
 
+    /// <summary>
+    /// Text used to filter entries in the grid.
+    /// </summary>
+    [ObservableProperty]
+    private string _filterText = "";
+
+    /// <summary>
+    /// Filtered rows based on FilterText. If empty, returns null.
+    /// </summary>
+    public ObservableCollection<EntryRowViewModel>? FilteredRows { get; private set; }
+
+    /// <summary>
+    /// Rows to display in the grid - returns FilteredRows if filtering, otherwise Rows.
+    /// </summary>
+    public ObservableCollection<EntryRowViewModel> DisplayRows => FilteredRows ?? Rows;
+
+    partial void OnFilterTextChanged(string value)
+    {
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
+        if (string.IsNullOrWhiteSpace(FilterText))
+        {
+            FilteredRows = null; // Use Rows directly
+            OnPropertyChanged(nameof(FilteredRows));
+            OnPropertyChanged(nameof(DisplayRows));
+            return;
+        }
+
+        var searchTerms = FilterText.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var filtered = Rows.Where(row =>
+        {
+            // Check if any cell contains all search terms
+            foreach (var term in searchTerms)
+            {
+                bool termFound = false;
+                foreach (var colName in ColumnNames)
+                {
+                    var cellValue = row[colName]?.ToLowerInvariant() ?? "";
+                    if (cellValue.Contains(term))
+                    {
+                        termFound = true;
+                        break;
+                    }
+                }
+                if (!termFound) return false;
+            }
+            return true;
+        }).ToList();
+
+        FilteredRows = new ObservableCollection<EntryRowViewModel>(filtered);
+        OnPropertyChanged(nameof(FilteredRows));
+        OnPropertyChanged(nameof(DisplayRows));
+    }
+
     partial void OnShowRemovedEntriesChanged(bool value)
     {
         RefreshRowsWithRemovedEntries();
@@ -779,6 +836,58 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(Rows));
     }
 
+    /// <summary>
+    /// Updates the Title to use the schema display name with all related filenames in parenthesis.
+    /// </summary>
+    private void UpdateTitle()
+    {
+        var fileName = Path.GetFileName(FilePath);
+
+        if (Schema != null && !string.IsNullOrEmpty(Schema.DisplayName))
+        {
+            // Collect all related files from the schema
+            var relatedFiles = new List<string> { fileName };
+
+            // Add additional source files
+            if (Schema.AdditionalSourceFiles != null)
+            {
+                foreach (var sourceFile in Schema.AdditionalSourceFiles)
+                {
+                    if (!string.IsNullOrEmpty(sourceFile.FileName) && !relatedFiles.Contains(sourceFile.FileName))
+                    {
+                        relatedFiles.Add(sourceFile.FileName);
+                    }
+                }
+            }
+
+            // Add merged data file
+            if (Schema.MergedDataFile != null && !string.IsNullOrEmpty(Schema.MergedDataFile.FileName))
+            {
+                if (!relatedFiles.Contains(Schema.MergedDataFile.FileName))
+                {
+                    relatedFiles.Add(Schema.MergedDataFile.FileName);
+                }
+            }
+
+            // Add linked file
+            if (Schema.LinkedFile != null && !string.IsNullOrEmpty(Schema.LinkedFile.FileName))
+            {
+                if (!relatedFiles.Contains(Schema.LinkedFile.FileName))
+                {
+                    relatedFiles.Add(Schema.LinkedFile.FileName);
+                }
+            }
+
+            // Use schema display name with all filenames in parenthesis
+            Title = $"{Schema.DisplayName} ({string.Join(", ", relatedFiles)})";
+        }
+        else
+        {
+            // Fallback to just the filename
+            Title = fileName;
+        }
+    }
+
     private void LoadFile()
     {
         try
@@ -790,6 +899,9 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
             HasError = Context.HasError;
             ErrorMessage = Context.ErrorMessage;
             HasUnsavedChanges = Context.HasUnsavedChanges;
+
+            // Update title to use display name from schema
+            UpdateTitle();
 
             if (!HasError)
             {

@@ -108,7 +108,7 @@
         <!-- DataGrid when loaded successfully -->
         <Border Grid.Row="1" Padding="0,0,8,0">
             <DataGrid x:Name="EntryGrid"
-                      ItemsSource="{Binding Rows}"
+                      ItemsSource="{Binding DisplayRows}"
                       SelectedIndex="{Binding SelectedIndex}"
                       IsVisible="{Binding !HasError}"
                       AutoGenerateColumns="False"

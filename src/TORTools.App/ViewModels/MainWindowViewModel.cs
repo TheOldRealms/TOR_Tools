@@ -31,11 +31,22 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private FileTabViewModel? _activeTab;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSearchText))]
+    private string _searchText = "";
+
+    public bool HasSearchText => !string.IsNullOrEmpty(SearchText);
+
     public ObservableCollection<CatalogNode> Catalogs { get; } = new();
 
     public ObservableCollection<FileTabViewModel> OpenTabs { get; } = new();
 
     public bool HasOpenTabs => OpenTabs.Count > 0;
+
+    /// <summary>
+    /// Event raised when focus should be given to the search box.
+    /// </summary>
+    public event EventHandler? FocusSearchRequested;
 
     public MainWindowViewModel() : this(new WorkspaceService())
     {
@@ -254,11 +265,44 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         if (value != null)
         {
-            RowCountText = $"{value.Rows.Count} entries";
+            // Apply current search filter to newly active tab
+            value.FilterText = SearchText;
+            UpdateRowCountText();
         }
         else
         {
             RowCountText = "";
+        }
+    }
+
+    partial void OnSearchTextChanged(string value)
+    {
+        // Apply filter to active tab
+        if (ActiveTab != null)
+        {
+            ActiveTab.FilterText = value;
+            UpdateRowCountText();
+        }
+    }
+
+    private void UpdateRowCountText()
+    {
+        if (ActiveTab == null)
+        {
+            RowCountText = "";
+            return;
+        }
+
+        var visibleCount = ActiveTab.FilteredRows?.Count ?? ActiveTab.Rows.Count;
+        var totalCount = ActiveTab.Rows.Count;
+
+        if (visibleCount < totalCount)
+        {
+            RowCountText = $"{visibleCount} of {totalCount} entries";
+        }
+        else
+        {
+            RowCountText = $"{totalCount} entries";
         }
     }
 
@@ -382,6 +426,18 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         _config = _workspaceService.LoadConfig();
         LoadCatalogs();
+    }
+
+    [RelayCommand]
+    private void ClearSearch()
+    {
+        SearchText = "";
+    }
+
+    [RelayCommand]
+    private void FocusSearch()
+    {
+        FocusSearchRequested?.Invoke(this, EventArgs.Empty);
     }
 
     [RelayCommand]

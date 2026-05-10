@@ -12,6 +12,7 @@ public class FactionCatalogService
     private readonly HashSet<string> _kingdomIds = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _cultureIds = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, string> _bannerKeyToImageName = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, string> _kingdomColors = new(StringComparer.OrdinalIgnoreCase);
     private bool _isLoaded;
     private readonly object _loadLock = new();
     private string? _bannerIconsBasePath;

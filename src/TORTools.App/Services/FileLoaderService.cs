@@ -494,7 +494,7 @@ public class FileLoaderService
         var row = new EntryRowViewModel(entry, context.ColumnNames, gitValues);
         row.RowNumber = rowNum;
 
-        // Set values for all columns
+        // Set values for all columns (visible)
         foreach (var columnName in context.ColumnNames)
         {
             var fieldDef = context.Schema?.GetField(columnName);
@@ -513,6 +513,35 @@ public class FileLoaderService
             }
 
             row.SetValueWithoutNotify(columnName, value ?? "");
+        }
+
+        // Also populate hidden fields (needed for banner color display, etc.)
+        if (context.Schema != null)
+        {
+            var hiddenFields = context.Schema.Fields
+                .Where(f => f.Value.Hidden == true)
+                .Select(f => f.Key);
+
+            foreach (var fieldName in hiddenFields)
+            {
+                var fieldDef = context.Schema.GetField(fieldName);
+                string? value = null;
+
+                if (fieldDef?.Nested == true && !string.IsNullOrEmpty(fieldDef.NestedPath))
+                {
+                    value = entry.GetNestedValue(fieldDef.NestedPath);
+                }
+                else
+                {
+                    var attr = entry.GetAttribute(fieldName);
+                    value = attr?.DisplayValue;
+                }
+
+                if (!string.IsNullOrEmpty(value))
+                {
+                    row.SetValueWithoutNotify(fieldName, value);
+                }
+            }
         }
 
         return row;

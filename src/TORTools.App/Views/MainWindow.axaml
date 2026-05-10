@@ -20,6 +20,7 @@
         <KeyBinding Gesture="Ctrl+N" Command="{Binding AddRowCommand}"/>
         <KeyBinding Gesture="Ctrl+D" Command="{Binding DuplicateRowCommand}"/>
         <KeyBinding Gesture="Ctrl+Delete" Command="{Binding DeleteRowCommand}"/>
+        <KeyBinding Gesture="Ctrl+F" Command="{Binding FocusSearchCommand}"/>
     </Window.KeyBindings>
 
     <Window.DataTemplates>
@@ -97,20 +98,60 @@
                       ResizeDirection="Columns"
                       Background="Transparent"/>
 
-        <!-- Tab Panel for Open Files -->
-        <TabControl Grid.Row="1" Grid.Column="2"
-                    ItemsSource="{Binding OpenTabs}"
-                    SelectedItem="{Binding ActiveTab}">
-            <TabControl.ItemTemplate>
-                <DataTemplate x:DataType="vm:FileTabViewModel">
-                    <StackPanel Orientation="Horizontal" Spacing="5">
-                        <TextBlock Text="{Binding Title}"/>
-                        <TextBlock Text="*" IsVisible="{Binding HasUnsavedChanges}"
-                                   Foreground="Orange" FontWeight="Bold"/>
-                    </StackPanel>
-                </DataTemplate>
-            </TabControl.ItemTemplate>
-        </TabControl>
+        <!-- Main Content Panel -->
+        <Grid Grid.Row="1" Grid.Column="2" RowDefinitions="Auto,Auto,*">
+            <!-- File Title Header -->
+            <Border Grid.Row="0"
+                    Background="#36393f"
+                    BorderBrush="#202225"
+                    BorderThickness="0,0,0,1"
+                    Padding="16,10"
+                    IsVisible="{Binding HasOpenTabs}">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="{Binding ActiveTab.Title}"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Foreground="#ffffff"
+                               VerticalAlignment="Center"/>
+                    <TextBlock Text="*"
+                               IsVisible="{Binding ActiveTab.HasUnsavedChanges}"
+                               Foreground="Orange"
+                               FontWeight="Bold"
+                               FontSize="16"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Search/Filter Bar -->
+            <Border Grid.Row="1"
+                    Background="#2f3136"
+                    Padding="12,8"
+                    IsVisible="{Binding HasOpenTabs}">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <TextBlock Grid.Column="0"
+                               Text="Search:"
+                               VerticalAlignment="Center"
+                               Foreground="#b9bbbe"
+                               Margin="0,0,8,0"/>
+                    <TextBox Grid.Column="1"
+                             x:Name="SearchBox"
+                             Text="{Binding SearchText, Mode=TwoWay}"
+                             PlaceholderText="Filter entries... (Ctrl+F)"
+                             MinWidth="200"
+                             MaxWidth="400"/>
+                    <Button Grid.Column="2"
+                            Content="Clear"
+                            Command="{Binding ClearSearchCommand}"
+                            Margin="8,0,0,0"
+                            IsVisible="{Binding HasSearchText}"/>
+                </Grid>
+            </Border>
+
+            <!-- Active Tab Content -->
+            <ContentControl Grid.Row="2"
+                            Content="{Binding ActiveTab}"
+                            IsVisible="{Binding HasOpenTabs}"/>
+        </Grid>
 
         <!-- Welcome message when no tabs open -->
         <Border Grid.Row="1" Grid.Column="2"
