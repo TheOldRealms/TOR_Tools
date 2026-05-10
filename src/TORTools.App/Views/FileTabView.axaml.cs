@@ -518,7 +518,9 @@ public partial class FileTabView : UserControl
     {
         if (e.Row.DataContext is EntryRowViewModel rowVm)
         {
-            UpdateRowStyle(e.Row, rowVm);
+            var vm = DataContext as FileTabViewModel;
+            var factionService = vm?.FactionCatalogService;
+            UpdateRowStyle(e.Row, rowVm, factionService);
 
             // Subscribe to property changes to update styling dynamically
             rowVm.PropertyChanged += (s, args) =>
@@ -526,13 +528,13 @@ public partial class FileTabView : UserControl
                 if (args.PropertyName == nameof(EntryRowViewModel.IsNew) ||
                     args.PropertyName == nameof(EntryRowViewModel.IsSelectedForCopy))
                 {
-                    UpdateRowStyle(e.Row, rowVm);
+                    UpdateRowStyle(e.Row, rowVm, factionService);
                 }
             };
         }
     }
 
-    private static void UpdateRowStyle(DataGridRow row, EntryRowViewModel rowVm)
+    private static void UpdateRowStyle(DataGridRow row, EntryRowViewModel rowVm, FactionCatalogService? factionService)
     {
         // Equipment set roster grouping - apply alternating row background
         if (rowVm.IsEquipmentSetVariation && !string.IsNullOrEmpty(rowVm.RosterId))
@@ -571,6 +573,60 @@ public partial class FileTabView : UserControl
         {
             row.Classes.Remove("selectedForCopy");
         }
+
+        // Culture-based background tinting (subtle)
+        if (factionService != null && !rowVm.IsNew && !rowVm.IsSelectedForCopy)
+        {
+            var culture = rowVm["culture"];
+            var cultureColor = factionService.GetCultureColor(culture);
+            if (!string.IsNullOrEmpty(cultureColor))
+            {
+                // Parse the color and create a very subtle tint (alpha ~10-15%)
+                var color = ParseHexColor(cultureColor);
+                if (color.HasValue)
+                {
+                    var tint = Color.FromArgb(25, color.Value.R, color.Value.G, color.Value.B); // ~10% opacity
+                    row.Background = new SolidColorBrush(tint);
+                }
+            }
+            else
+            {
+                row.Background = null; // Clear any previous tint
+            }
+        }
+    }
+
+    /// <summary>
+    /// Parses a hex color string (0xFFRRGGBB, #RRGGBB, FFRRGGBB formats) to an Avalonia Color.
+    /// </summary>
+    private static Color? ParseHexColor(string? colorValue)
+    {
+        if (string.IsNullOrEmpty(colorValue))
+            return null;
+
+        try
+        {
+            var hex = colorValue.Replace("0x", "").Replace("#", "").TrimStart('f', 'F');
+            // Ensure we have at least 6 chars (RGB)
+            if (hex.Length < 6)
+                return null;
+
+            // Take last 6 characters (RGB portion)
+            hex = hex.Length > 6 ? hex.Substring(hex.Length - 6) : hex;
+
+            if (byte.TryParse(hex.Substring(0, 2), System.Globalization.NumberStyles.HexNumber, null, out var r) &&
+                byte.TryParse(hex.Substring(2, 2), System.Globalization.NumberStyles.HexNumber, null, out var g) &&
+                byte.TryParse(hex.Substring(4, 2), System.Globalization.NumberStyles.HexNumber, null, out var b))
+            {
+                return Color.FromRgb(r, g, b);
+            }
+        }
+        catch
+        {
+            // Ignore parsing errors
+        }
+
+        return null;
     }
 
     /// <summary>

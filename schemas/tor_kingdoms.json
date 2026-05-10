@@ -4,7 +4,7 @@
   "description": "Kingdom definitions with relationships, policies, and banner configurations.",
   "rootElement": "Kingdoms",
   "entryElement": "Kingdom",
-  "compactFormat": true,
+  "compactFormat": false,
   "fields": {
     "id": {
       "displayName": "ID",

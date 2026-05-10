@@ -84,7 +84,7 @@ public class FileSaverService
                 if (fieldDef?.CrossReference != null)
                     continue;
 
-                var currentValue = rowVm[columnName];
+                var currentValue = rowVm[columnName]?.Trim();
 
                 // Handle nested fields
                 if (fieldDef?.Nested == true && !string.IsNullOrEmpty(fieldDef.NestedPath))
@@ -107,7 +107,7 @@ public class FileSaverService
                     if (attr.DisplayValue != currentValue)
                     {
                         xmlEntry.SetAttributeValue(columnName,
-                            LocalizationHelper.Wrap(attr.LocalizationKey, currentValue));
+                            LocalizationHelper.Wrap(attr.LocalizationKey, currentValue ?? ""));
                         context.Document!.HasUnsavedChanges = true;
                     }
                 }

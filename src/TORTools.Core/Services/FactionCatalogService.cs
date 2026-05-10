@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Xml.Linq;
 
 namespace TORTools.Core.Services;
@@ -13,6 +14,13 @@ public class FactionCatalogService
     private readonly HashSet<string> _cultureIds = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, string> _bannerKeyToImageName = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, string> _kingdomColors = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, string> _cultureColors = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Culture colors loaded from JSON config file (data/culture_colors.json).
+    /// </summary>
+    private readonly Dictionary<string, string> _configuredCultureColors = new(StringComparer.OrdinalIgnoreCase);
+
     private bool _isLoaded;
     private readonly object _loadLock = new();
     private string? _bannerIconsBasePath;
@@ -50,6 +58,15 @@ public class FactionCatalogService
             // Load cultures
             var culturesPath = Path.Combine(coreModuleDataPath, "tor_cultures.xml");
             LoadCulturesFromFile(culturesPath);
+
+            // Load culture colors from JSON config
+            // Path is: TOR_Core/ModuleData -> ../../TORTools/data/culture_colors.json
+            var modulesPath = Path.GetDirectoryName(Path.GetDirectoryName(coreModuleDataPath));
+            if (!string.IsNullOrEmpty(modulesPath))
+            {
+                var cultureColorsPath = Path.Combine(modulesPath, "TORTools", "data", "culture_colors.json");
+                LoadCultureColorsFromJson(cultureColorsPath);
+            }
 
             Console.WriteLine($"[FactionCatalogService] Loaded {_clanIds.Count} clans, {_kingdomIds.Count} kingdoms, {_cultureIds.Count} cultures");
             _isLoaded = true;
@@ -145,11 +162,27 @@ public class FactionCatalogService
                     if (!string.IsNullOrEmpty(colorToUse))
                     {
                         _kingdomColors[id] = colorToUse;
+
+                        // Also store culture -> color mapping (first kingdom wins)
+                        var culture = entry.Attribute("culture")?.Value;
+                        if (!string.IsNullOrEmpty(culture))
+                        {
+                            // Strip "Culture." prefix if present
+                            var cultureId = culture.StartsWith("Culture.", StringComparison.OrdinalIgnoreCase)
+                                ? culture.Substring(8)
+                                : culture;
+
+                            // First kingdom with this culture sets the color
+                            if (!_cultureColors.ContainsKey(cultureId))
+                            {
+                                _cultureColors[cultureId] = colorToUse;
+                            }
+                        }
                     }
                 }
             }
 
-            Console.WriteLine($"[FactionCatalogService] Loaded {_kingdomIds.Count} kingdoms from {Path.GetFileName(filePath)}");
+            Console.WriteLine($"[FactionCatalogService] Loaded {_kingdomIds.Count} kingdoms, {_cultureColors.Count} culture colors from {Path.GetFileName(filePath)}");
         }
         catch (Exception ex)
         {
@@ -185,6 +218,42 @@ public class FactionCatalogService
         catch (Exception ex)
         {
             Console.WriteLine($"[FactionCatalogService] Error loading {filePath}: {ex.Message}");
+        }
+    }
+
+    private void LoadCultureColorsFromJson(string filePath)
+    {
+        _configuredCultureColors.Clear();
+
+        if (!File.Exists(filePath))
+        {
+            Console.WriteLine($"[FactionCatalogService] Culture colors file not found: {filePath}");
+            return;
+        }
+
+        try
+        {
+            var json = File.ReadAllText(filePath);
+            using var doc = JsonDocument.Parse(json);
+
+            if (doc.RootElement.TryGetProperty("colors", out var colorsElement))
+            {
+                foreach (var prop in colorsElement.EnumerateObject())
+                {
+                    var cultureId = prop.Name;
+                    var color = prop.Value.GetString();
+                    if (!string.IsNullOrEmpty(color))
+                    {
+                        _configuredCultureColors[cultureId] = color;
+                    }
+                }
+            }
+
+            Console.WriteLine($"[FactionCatalogService] Loaded {_configuredCultureColors.Count} culture colors from {Path.GetFileName(filePath)}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[FactionCatalogService] Error loading culture colors: {ex.Message}");
         }
     }
 
@@ -271,6 +340,30 @@ public class FactionCatalogService
             : kingdomId;
 
         return _kingdomColors.TryGetValue(id, out var color) ? color : null;
+    }
+
+    /// <summary>
+    /// Gets the color for a culture by ID.
+    /// Uses JSON-configured colors first, falls back to extracted kingdom colors.
+    /// </summary>
+    /// <param name="cultureId">Culture ID (with or without "Culture." prefix)</param>
+    /// <returns>The culture color, or null if not found</returns>
+    public string? GetCultureColor(string? cultureId)
+    {
+        if (string.IsNullOrEmpty(cultureId))
+            return null;
+
+        // Strip "Culture." prefix if present
+        var id = cultureId.StartsWith("Culture.", StringComparison.OrdinalIgnoreCase)
+            ? cultureId.Substring(8)
+            : cultureId;
+
+        // Try JSON-configured colors first
+        if (_configuredCultureColors.TryGetValue(id, out var configuredColor))
+            return configuredColor;
+
+        // Fall back to extracted kingdom colors
+        return _cultureColors.TryGetValue(id, out var color) ? color : null;
     }
 
     /// <summary>
@@ -372,6 +465,8 @@ public class FactionCatalogService
             _cultureIds.Clear();
             _bannerKeyToImageName.Clear();
             _kingdomColors.Clear();
+            _cultureColors.Clear();
+            _configuredCultureColors.Clear();
             _isLoaded = false;
         }
     }

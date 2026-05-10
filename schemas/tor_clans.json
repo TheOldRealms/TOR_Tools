@@ -4,7 +4,7 @@
   "description": "Faction/clan definitions including bandit factions, minor factions, and noble clans.",
   "rootElement": "Factions",
   "entryElement": "Faction",
-  "compactFormat": true,
+  "compactFormat": false,
   "fields": {
     "id": {
       "displayName": "ID",
