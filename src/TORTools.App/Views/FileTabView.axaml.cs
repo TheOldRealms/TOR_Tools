@@ -1836,14 +1836,7 @@ public partial class FileTabView : UserControl
             if (rowVm != null)
             {
                 var value = rowVm[attributeName];
-                var displayValue = value;
-
-                // Strip prefix for display
-                if (!string.IsNullOrEmpty(prefixToStrip) && !string.IsNullOrEmpty(displayValue) &&
-                    displayValue.StartsWith(prefixToStrip, StringComparison.OrdinalIgnoreCase))
-                {
-                    displayValue = displayValue.Substring(prefixToStrip.Length);
-                }
+                var displayValue = GetDisplayValue(value, prefixToStrip, attributeName, vm);
 
                 text.Text = string.IsNullOrEmpty(displayValue) ? "" : displayValue;
 
@@ -1851,13 +1844,7 @@ public partial class FileTabView : UserControl
                 vm.CellRefreshRequested += (s, args) =>
                 {
                     var newValue = rowVm[attributeName];
-                    var newDisplayValue = newValue;
-
-                    if (!string.IsNullOrEmpty(prefixToStrip) && !string.IsNullOrEmpty(newDisplayValue) &&
-                        newDisplayValue.StartsWith(prefixToStrip, StringComparison.OrdinalIgnoreCase))
-                    {
-                        newDisplayValue = newDisplayValue.Substring(prefixToStrip.Length);
-                    }
+                    var newDisplayValue = GetDisplayValue(newValue, prefixToStrip, attributeName, vm);
 
                     text.Text = string.IsNullOrEmpty(newDisplayValue) ? "" : newDisplayValue;
 
@@ -1876,6 +1863,25 @@ public partial class FileTabView : UserControl
 
             return border;
         });
+    }
+
+    /// <summary>
+    /// Gets the display value for a cross-reference field, using display names if available.
+    /// </summary>
+    private static string GetDisplayValue(string? value, string? prefixToStrip, string attributeName, FileTabViewModel vm)
+    {
+        if (string.IsNullOrEmpty(value))
+            return "";
+
+        // Strip prefix to get the ID
+        var id = value;
+        if (!string.IsNullOrEmpty(prefixToStrip) && value.StartsWith(prefixToStrip, StringComparison.OrdinalIgnoreCase))
+        {
+            id = value.Substring(prefixToStrip.Length);
+        }
+
+        // Try to get display name, fall back to ID
+        return vm.GetDisplayName(attributeName, id);
     }
 
     /// <summary>
@@ -1901,6 +1907,7 @@ public partial class FileTabView : UserControl
 
             // Get available IDs from cross-reference
             var availableIds = vm.GetAvailableIds(attributeName).ToList();
+            var displayNames = vm.GetDisplayNames(attributeName);
 
             // Create items from available IDs
             var items = new List<ComboBoxItem>();
@@ -1910,10 +1917,17 @@ public partial class FileTabView : UserControl
 
             foreach (var id in availableIds)
             {
+                // Use display name if available, otherwise use ID
+                var displayText = id;
+                if (displayNames != null && displayNames.TryGetValue(id, out var name))
+                {
+                    displayText = name;
+                }
+
                 var item = new ComboBoxItem
                 {
-                    Content = id,  // Already stripped by GetAvailableIds
-                    Tag = id
+                    Content = displayText,
+                    Tag = id  // Always store the ID for saving
                 };
                 items.Add(item);
             }

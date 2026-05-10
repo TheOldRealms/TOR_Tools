@@ -28,4 +28,12 @@
     <ProjectReference Include="..\TORTools.Core\TORTools.Core.csproj" />
   </ItemGroup>
 
+  <!-- Include schemas in publish output -->
+  <ItemGroup>
+    <Content Include="..\..\schemas\*.json" Link="schemas\%(Filename)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

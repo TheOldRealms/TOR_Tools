@@ -410,6 +410,14 @@ public class CrossReferenceConfig
     /// </summary>
     [JsonPropertyName("singleValue")]
     public bool SingleValue { get; set; } = false;
+
+    /// <summary>
+    /// Field in the target file to use for display instead of the key field.
+    /// For example, "name" to show culture names instead of IDs.
+    /// The key field is still used for storage/validation.
+    /// </summary>
+    [JsonPropertyName("targetDisplayField")]
+    public string? TargetDisplayField { get; set; }
 }
 
 /// <summary>

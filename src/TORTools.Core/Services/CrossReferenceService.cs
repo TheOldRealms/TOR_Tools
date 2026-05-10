@@ -606,6 +606,70 @@ public class CrossReferenceService
     }
 
     /// <summary>
+    /// Loads display names from a target XML file for dropdown display.
+    /// Maps key values to a specified display field (e.g., "name" for cultures).
+    /// </summary>
+    /// <param name="targetFilePath">Path to the target XML file</param>
+    /// <param name="keyField">Name of the key attribute (e.g., "id")</param>
+    /// <param name="displayField">Name of the display attribute (e.g., "name")</param>
+    /// <returns>Dictionary mapping IDs to their display names</returns>
+    public Dictionary<string, string> LoadTargetDisplayNames(string targetFilePath, string keyField, string displayField)
+    {
+        var displayNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        if (!File.Exists(targetFilePath))
+        {
+            Console.WriteLine($"[CrossReferenceService] Target file not found for display names: {targetFilePath}");
+            return displayNames;
+        }
+
+        try
+        {
+            var doc = XDocument.Load(targetFilePath);
+            foreach (var element in doc.Root?.Elements() ?? Enumerable.Empty<XElement>())
+            {
+                var key = element.Attribute(keyField)?.Value;
+                var displayName = element.Attribute(displayField)?.Value;
+
+                if (!string.IsNullOrEmpty(key) && !string.IsNullOrEmpty(displayName))
+                {
+                    // Strip localization key prefix like "{=str_id}Display Text" -> "Display Text"
+                    displayNames[key] = StripLocalizationKey(displayName);
+                }
+            }
+
+            Console.WriteLine($"[CrossReferenceService] Loaded {displayNames.Count} display names from {Path.GetFileName(targetFilePath)}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[CrossReferenceService] Error loading display names from {targetFilePath}: {ex.Message}");
+        }
+
+        return displayNames;
+    }
+
+    /// <summary>
+    /// Strips localization key prefix from a string (e.g., "{=str_id}Display Text" -> "Display Text").
+    /// </summary>
+    private static string StripLocalizationKey(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return value;
+
+        // Match pattern {=...} at the start
+        if (value.StartsWith("{="))
+        {
+            var endIndex = value.IndexOf('}');
+            if (endIndex > 0 && endIndex < value.Length - 1)
+            {
+                return value.Substring(endIndex + 1);
+            }
+        }
+
+        return value;
+    }
+
+    /// <summary>
     /// Loads descriptions from a target XML file for display in cross-reference fields.
     /// Prefers "display_description" attribute (player-friendly), falls back to "description".
     /// </summary>

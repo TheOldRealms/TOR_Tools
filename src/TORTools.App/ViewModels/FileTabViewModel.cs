@@ -200,6 +200,29 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>
+    /// Gets the display name for a cross-reference ID (e.g., culture name instead of ID).
+    /// </summary>
+    public string GetDisplayName(string fieldName, string id)
+    {
+        if (Context.CrossRefDisplayNames.TryGetValue(fieldName, out var displayNames))
+        {
+            if (displayNames.TryGetValue(id, out var displayName))
+                return displayName;
+        }
+        return id; // Fall back to ID if no display name
+    }
+
+    /// <summary>
+    /// Gets all display names for a field (ID -> display name mapping).
+    /// </summary>
+    public Dictionary<string, string>? GetDisplayNames(string fieldName)
+    {
+        if (Context.CrossRefDisplayNames.TryGetValue(fieldName, out var displayNames))
+            return displayNames;
+        return null;
+    }
+
+    /// <summary>
     /// Collection of validation issues.
     /// </summary>
     public ObservableCollection<ValidationIssue> ValidationIssues { get; } = new();
@@ -329,6 +352,17 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
                         var availableIds = _crossRefService.LoadTargetKeys(targetFilePath, config.TargetKeyField);
                         Context.AvailableIds[fieldName] = availableIds;
                         Console.WriteLine($"[CrossRef] Loaded {availableIds.Count} available IDs for direct crossref {fieldName} from {config.TargetFile}");
+
+                        // Load display names if configured
+                        if (!string.IsNullOrEmpty(config.TargetDisplayField))
+                        {
+                            var displayNames = _crossRefService.LoadTargetDisplayNames(targetFilePath, config.TargetKeyField, config.TargetDisplayField);
+                            if (displayNames.Count > 0)
+                            {
+                                Context.CrossRefDisplayNames[fieldName] = displayNames;
+                                Console.WriteLine($"[CrossRef] Loaded {displayNames.Count} display names for {fieldName}");
+                            }
+                        }
                     }
                     else
                     {

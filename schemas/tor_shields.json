@@ -43,6 +43,7 @@
       "crossReference": {
         "targetFile": "tor_cultures.xml",
         "targetKeyField": "id",
+        "targetDisplayField": "name",
         "localKeyField": "culture",
         "prefixToStrip": "Culture.",
         "prefixToAdd": "Culture."

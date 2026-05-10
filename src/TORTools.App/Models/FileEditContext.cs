@@ -63,6 +63,12 @@ public class FileEditContext
     public Dictionary<string, Dictionary<string, string>> CrossRefDescriptions { get; } = new();
 
     /// <summary>
+    /// Cross-reference display names (field name -> ID -> display name).
+    /// Used for showing friendly names in dropdowns while storing IDs.
+    /// </summary>
+    public Dictionary<string, Dictionary<string, string>> CrossRefDisplayNames { get; } = new();
+
+    /// <summary>
     /// Tracks which entries are new (not yet saved).
     /// </summary>
     public HashSet<string> NewEntries { get; } = new();
@@ -100,6 +106,7 @@ public class FileEditContext
         GitCommittedValues.Clear();
         AvailableIds.Clear();
         CrossRefDescriptions.Clear();
+        CrossRefDisplayNames.Clear();
         NewEntries.Clear();
         RemovedEntries.Clear();
         HasUnsavedChanges = false;
