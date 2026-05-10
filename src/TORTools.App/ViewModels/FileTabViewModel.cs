@@ -1475,8 +1475,10 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         if (!_undoRedoService.CanUndo) return;
         _undoRedoService.Undo();
         MarkAsModified();
-        // Force DataGrid to refresh by triggering collection reset
-        ForceRowsRefresh();
+        // Sync entries from document and refresh rows
+        SyncEntriesFromDocument();
+        RecreateRowsFromEntries();
+        SubscribeRowEvents();
     }
 
     /// <summary>
@@ -1487,8 +1489,31 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         if (!_undoRedoService.CanRedo) return;
         _undoRedoService.Redo();
         MarkAsModified();
-        // Force DataGrid to refresh by triggering collection reset
-        ForceRowsRefresh();
+        // Sync entries from document and refresh rows
+        SyncEntriesFromDocument();
+        RecreateRowsFromEntries();
+        SubscribeRowEvents();
+    }
+
+    /// <summary>
+    /// Synchronizes XmlEntries from the actual XML document.
+    /// Called after undo/redo to ensure the entries collection matches the document.
+    /// </summary>
+    private void SyncEntriesFromDocument()
+    {
+        if (Context.Document == null) return;
+
+        var root = Context.Document.Document.Root;
+        if (root == null) return;
+
+        var entryElementName = Context.Document.EntryElementName;
+
+        // Rebuild XmlEntries from the current XML elements
+        XmlEntries.Clear();
+        foreach (var element in root.Elements(entryElementName))
+        {
+            XmlEntries.Add(new XmlEntry(element));
+        }
     }
 
     /// <summary>
