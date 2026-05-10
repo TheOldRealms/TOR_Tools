@@ -96,13 +96,12 @@
     },
     "is_basic_troop": {
       "displayName": "Basic",
-      "description": "Is this a starting/recruitable troop.",
+      "description": "Is this a starting/recruitable troop. Empty = No.",
       "type": "enum",
       "order": 7,
       "width": 60,
       "enumValues": [
-        { "value": "true", "displayName": "Yes" },
-        { "value": "false", "displayName": "No" }
+        { "value": "true", "displayName": "Yes" }
       ]
     },
     "skill_template": {

@@ -85,23 +85,44 @@ public class XmlEntry
 
     /// <summary>
     /// Sets an attribute value. Creates the attribute if it doesn't exist.
+    /// Empty/null/whitespace values are treated as "remove attribute".
     /// </summary>
     public void SetAttributeValue(string name, string? value)
     {
-        var attr = GetAttribute(name);
-        if (attr != null)
+        // Treat empty, whitespace, "-", "none" as null (remove attribute)
+        var normalizedValue = value;
+        if (string.IsNullOrWhiteSpace(value) || value == "-" || value?.Equals("none", StringComparison.OrdinalIgnoreCase) == true)
         {
-            attr.RawValue = value ?? "";
-            attr.IsModified = true;
+            normalizedValue = null;
         }
-        else if (value != null)
+
+        var attr = GetAttribute(name);
+        if (normalizedValue == null)
         {
-            Attributes.Add(new XmlAttributeValue(name, value) { IsModified = true });
+            // Remove attribute if it exists
+            if (attr != null)
+            {
+                Attributes.Remove(attr);
+            }
+            // Remove from XElement
+            OriginalElement.SetAttributeValue(name, null);
+        }
+        else
+        {
+            // Set or create attribute
+            if (attr != null)
+            {
+                attr.RawValue = normalizedValue;
+                attr.IsModified = true;
+            }
+            else
+            {
+                Attributes.Add(new XmlAttributeValue(name, normalizedValue) { IsModified = true });
+            }
+            // Update the underlying XElement
+            OriginalElement.SetAttributeValue(name, normalizedValue);
         }
         IsModified = true;
-
-        // Update the underlying XElement
-        OriginalElement.SetAttributeValue(name, value);
     }
 
     /// <summary>

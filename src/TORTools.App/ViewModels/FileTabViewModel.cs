@@ -24,6 +24,8 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     private FileSystemWatcher? _fileWatcher;
     private bool _isReloading;
     private bool _isSaving;
+    private CancellationTokenSource? _filterCts;
+    private const int FilterDebounceMs = 300;
 
     /// <summary>
     /// Convenience accessor for the file edit context.
@@ -135,6 +137,12 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     private string _filterText = "";
 
     /// <summary>
+    /// Whether a filter/loading operation is in progress.
+    /// </summary>
+    [ObservableProperty]
+    private bool _isFiltering;
+
+    /// <summary>
     /// Filtered rows based on FilterText. If empty, returns null.
     /// </summary>
     public ObservableCollection<EntryRowViewModel>? FilteredRows { get; private set; }
@@ -146,27 +154,75 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
 
     partial void OnFilterTextChanged(string value)
     {
-        ApplyFilter();
+        // Cancel any pending filter operation
+        _filterCts?.Cancel();
+        _filterCts = new CancellationTokenSource();
+        var token = _filterCts.Token;
+
+        // Debounce: wait before applying filter
+        _ = ApplyFilterDebouncedAsync(value, token);
     }
 
-    private void ApplyFilter()
+    private async Task ApplyFilterDebouncedAsync(string filterText, CancellationToken token)
     {
-        if (string.IsNullOrWhiteSpace(FilterText))
+        try
         {
-            FilteredRows = null; // Use Rows directly
-            OnPropertyChanged(nameof(FilteredRows));
-            OnPropertyChanged(nameof(DisplayRows));
+            // Show loading indicator immediately if there's text
+            if (!string.IsNullOrWhiteSpace(filterText))
+            {
+                IsFiltering = true;
+            }
+
+            // Wait for debounce period
+            await Task.Delay(FilterDebounceMs, token);
+
+            // Check if cancelled
+            if (token.IsCancellationRequested) return;
+
+            // Apply filter on background thread for large datasets
+            await Task.Run(() => ApplyFilterCore(filterText, token), token);
+        }
+        catch (OperationCanceledException)
+        {
+            // Filter was cancelled by new input, ignore
+        }
+        finally
+        {
+            if (!token.IsCancellationRequested)
+            {
+                IsFiltering = false;
+            }
+        }
+    }
+
+    private void ApplyFilterCore(string filterText, CancellationToken token)
+    {
+        if (string.IsNullOrWhiteSpace(filterText))
+        {
+            // Clear filter on UI thread
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                FilteredRows = null;
+                OnPropertyChanged(nameof(FilteredRows));
+                OnPropertyChanged(nameof(DisplayRows));
+            });
             return;
         }
 
-        var searchTerms = FilterText.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        var filtered = Rows.Where(row =>
+        var searchTerms = filterText.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var columnNamesList = ColumnNames.ToList(); // Cache to avoid repeated enumeration
+
+        var filtered = new List<EntryRowViewModel>();
+        foreach (var row in Rows)
         {
+            if (token.IsCancellationRequested) return;
+
             // Check if any cell contains all search terms
+            bool allTermsFound = true;
             foreach (var term in searchTerms)
             {
                 bool termFound = false;
-                foreach (var colName in ColumnNames)
+                foreach (var colName in columnNamesList)
                 {
                     var cellValue = row[colName]?.ToLowerInvariant() ?? "";
                     if (cellValue.Contains(term))
@@ -175,14 +231,27 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
                         break;
                     }
                 }
-                if (!termFound) return false;
+                if (!termFound)
+                {
+                    allTermsFound = false;
+                    break;
+                }
             }
-            return true;
-        }).ToList();
+            if (allTermsFound)
+            {
+                filtered.Add(row);
+            }
+        }
 
-        FilteredRows = new ObservableCollection<EntryRowViewModel>(filtered);
-        OnPropertyChanged(nameof(FilteredRows));
-        OnPropertyChanged(nameof(DisplayRows));
+        if (token.IsCancellationRequested) return;
+
+        // Update UI on UI thread
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            FilteredRows = new ObservableCollection<EntryRowViewModel>(filtered);
+            OnPropertyChanged(nameof(FilteredRows));
+            OnPropertyChanged(nameof(DisplayRows));
+        });
     }
 
     partial void OnShowRemovedEntriesChanged(bool value)
@@ -1665,6 +1734,10 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
 
     public void Dispose()
     {
+        _filterCts?.Cancel();
+        _filterCts?.Dispose();
+        _filterCts = null;
+
         if (_fileWatcher != null)
         {
             _fileWatcher.Changed -= OnFileChangedExternally;
