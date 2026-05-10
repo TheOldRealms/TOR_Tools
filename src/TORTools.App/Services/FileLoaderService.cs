@@ -198,6 +198,7 @@ public class FileLoaderService
             Console.WriteLine($"[MergeData] Loaded {mergedData.Count} entries from {mergedConfig.FileName}");
 
             // Merge data into entries
+            int mergedCount = 0;
             foreach (var entry in entries)
             {
                 var entryId = entry.GetAttributeValue(matchField);
@@ -216,11 +217,17 @@ public class FileLoaderService
                             if (!string.IsNullOrEmpty(sourceValue))
                             {
                                 entry.SetAttributeValue(targetField, sourceValue);
+                                if (mergedCount < 3)
+                                {
+                                    Console.WriteLine($"[MergeData] Set {targetField}='{sourceValue.Substring(0, Math.Min(50, sourceValue.Length))}...' for {entryId}");
+                                }
                             }
                         }
+                        mergedCount++;
                     }
                 }
             }
+            Console.WriteLine($"[MergeData] Merged {mergedCount} entries with data");
 
             Console.WriteLine($"[MergeData] Merged data complete");
         }

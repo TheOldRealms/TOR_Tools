@@ -1210,6 +1210,29 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     // SaveMergedFiles, CreateDocumentFromEntries, SaveMergedDataFile, GenerateCivilianClones,
     // and SyncChangesToXml are now handled by FileSaverService
 
+    /// <summary>
+    /// Reloads the file from disk, picking up any external changes (e.g., git discards).
+    /// This also reloads all merged data files like tor_heroes.xml.
+    /// </summary>
+    [RelayCommand]
+    public void Reload()
+    {
+        Console.WriteLine($"[Reload] Reloading {FilePath}");
+
+        // Clear undo/redo history since we're starting fresh
+        _undoRedoService.Clear();
+
+        // Clear the context
+        Context.Clear();
+        Context.FilePath = FilePath;
+        Context.Schema = Schema;
+
+        // Reload the file (this also reloads merged data files)
+        LoadFile();
+
+        Console.WriteLine($"[Reload] Reload complete, {Rows.Count} rows loaded");
+    }
+
     private CancellationTokenSource? _validationDebounceToken;
 
     public void MarkAsModified()

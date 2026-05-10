@@ -90,6 +90,11 @@
                           ToolTip.Tip="Show entries deleted during this session"
                           VerticalAlignment="Center"
                           Foreground="#b9bbbe"/>
+                <Separator Width="1" Background="#40444b" Margin="8,0"/>
+                <Button Content="Reload"
+                        Command="{Binding ReloadCommand}"
+                        ToolTip.Tip="Reload file from disk (picks up git changes)"
+                        Padding="8,4"/>
             </StackPanel>
         </Border>
 
