@@ -239,16 +239,15 @@ public class WorkspaceService : IWorkspaceService
     {
         var files = new List<XmlFileInfo>();
 
-        // First scan TORTools/data for tool-specific data files (these take priority)
+        // First scan data folder relative to app location (works regardless of folder name)
         var toolDataFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        if (!string.IsNullOrEmpty(config.BannerlordPath))
+        var appDir = AppDomain.CurrentDomain.BaseDirectory;
+        // App is in release/, data is in ../data/
+        var torToolsDataPath = Path.GetFullPath(Path.Combine(appDir, "..", "data"));
+        foreach (var file in ScanToolDataFolder(torToolsDataPath))
         {
-            var torToolsDataPath = Path.Combine(config.BannerlordPath, "Modules", "TORTools", "data");
-            foreach (var file in ScanToolDataFolder(torToolsDataPath))
-            {
-                files.Add(file);
-                toolDataFiles.Add(file.FileName);
-            }
+            files.Add(file);
+            toolDataFiles.Add(file.FileName);
         }
 
         // Then scan other repositories, skipping files that exist in TORTools/data
