@@ -3,10 +3,55 @@ namespace TORTools.Core.Services;
 /// <summary>
 /// Resolves file paths across the TOR mod directory structure.
 /// Handles locating XML files in various mod directories (TOR_Core, TOR_Armory, etc.)
-/// and the TORTools/data directory.
+/// and the tool's data directory.
 /// </summary>
 public class FilePathResolver
 {
+    private static string? _cachedDataDirectory;
+
+    /// <summary>
+    /// Gets the path to the tool's data directory.
+    /// Uses relative path from app location - works regardless of folder name.
+    /// </summary>
+    public static string? GetDataDirectory()
+    {
+        if (_cachedDataDirectory != null)
+            return _cachedDataDirectory;
+
+        var appDir = AppDomain.CurrentDomain.BaseDirectory;
+
+        // Release: exe is in release/, data is in ../data/
+        var path = Path.GetFullPath(Path.Combine(appDir, "..", "data"));
+        if (Directory.Exists(path))
+        {
+            _cachedDataDirectory = path;
+            return path;
+        }
+
+        // Dev/copied: data might be in same folder as exe
+        path = Path.Combine(appDir, "data");
+        if (Directory.Exists(path))
+        {
+            _cachedDataDirectory = path;
+            return path;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Gets the full path to a file in the tool's data directory.
+    /// Returns null if the file doesn't exist.
+    /// </summary>
+    public static string? GetDataFile(string fileName)
+    {
+        var dataDir = GetDataDirectory();
+        if (dataDir == null) return null;
+
+        var path = Path.Combine(dataDir, fileName);
+        return File.Exists(path) ? path : null;
+    }
+
     /// <summary>
     /// Finds a source file by searching in the base directory and parent directories.
     /// Search order:
@@ -87,16 +132,6 @@ public class FilePathResolver
     /// </summary>
     public string? FindTorToolsDataPath(string baseDir, string fileName)
     {
-        var appDir = AppDomain.CurrentDomain.BaseDirectory;
-
-        // Release: exe is in release/, data is in ../data/
-        var path = Path.GetFullPath(Path.Combine(appDir, "..", "data", fileName));
-        if (File.Exists(path)) return path;
-
-        // Dev/copied: data might be in same folder as exe
-        path = Path.Combine(appDir, "data", fileName);
-        if (File.Exists(path)) return path;
-
-        return null;
+        return GetDataFile(fileName);
     }
 }

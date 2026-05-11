@@ -241,13 +241,14 @@ public class WorkspaceService : IWorkspaceService
 
         // First scan data folder relative to app location (works regardless of folder name)
         var toolDataFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var appDir = AppDomain.CurrentDomain.BaseDirectory;
-        // App is in release/, data is in ../data/
-        var torToolsDataPath = Path.GetFullPath(Path.Combine(appDir, "..", "data"));
-        foreach (var file in ScanToolDataFolder(torToolsDataPath))
+        var torToolsDataPath = Services.FilePathResolver.GetDataDirectory();
+        if (torToolsDataPath != null)
         {
-            files.Add(file);
-            toolDataFiles.Add(file.FileName);
+            foreach (var file in ScanToolDataFolder(torToolsDataPath))
+            {
+                files.Add(file);
+                toolDataFiles.Add(file.FileName);
+            }
         }
 
         // Then scan other repositories, skipping files that exist in TORTools/data

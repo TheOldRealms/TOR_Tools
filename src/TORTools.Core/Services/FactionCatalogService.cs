@@ -60,13 +60,9 @@ public class FactionCatalogService
             LoadCulturesFromFile(culturesPath);
 
             // Load culture colors from JSON config
-            // Path is: TOR_Core/ModuleData -> ../../TORTools/data/culture_colors.json
-            var modulesPath = Path.GetDirectoryName(Path.GetDirectoryName(coreModuleDataPath));
-            if (!string.IsNullOrEmpty(modulesPath))
-            {
-                var cultureColorsPath = Path.Combine(modulesPath, "TORTools", "data", "culture_colors.json");
+            var cultureColorsPath = FilePathResolver.GetDataFile("culture_colors.json");
+            if (cultureColorsPath != null)
                 LoadCultureColorsFromJson(cultureColorsPath);
-            }
 
             Console.WriteLine($"[FactionCatalogService] Loaded {_clanIds.Count} clans, {_kingdomIds.Count} kingdoms, {_cultureIds.Count} cultures");
             _isLoaded = true;
