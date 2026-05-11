@@ -143,6 +143,11 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     private bool _isFiltering;
 
     /// <summary>
+    /// Whether to suppress scroll-into-view behavior (set during undo/redo/row operations).
+    /// </summary>
+    public bool SuppressScrollIntoView { get; set; }
+
+    /// <summary>
     /// Filtered rows based on FilterText. If empty, returns null.
     /// </summary>
     public ObservableCollection<EntryRowViewModel>? FilteredRows { get; private set; }
@@ -1366,26 +1371,89 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         var command = new AddRowCommand(Context.Document, xmlEntryCollection, insertIndex);
         _undoRedoService.Execute(command);
 
+        // Sync and insert the new row
+        InsertNewRowFromCommand(xmlEntryCollection, insertIndex);
+    }
+
+    /// <summary>
+    /// Common logic for inserting a newly created row after add/duplicate commands.
+    /// Syncs the XmlEntries collection and inserts a row directly (preserves scroll position).
+    /// </summary>
+    private void InsertNewRowFromCommand(ObservableCollection<XmlEntry> xmlEntryCollection, int insertIndex)
+    {
         // Sync collections
         XmlEntries.Clear();
         XmlEntries.AddRange(xmlEntryCollection);
 
         // Mark the new entry as new
+        string newEntryId = "";
         if (insertIndex < XmlEntries.Count)
         {
-            var newEntryId = XmlEntries[insertIndex].GetAttribute("id")?.DisplayValue ?? "";
+            newEntryId = XmlEntries[insertIndex].GetAttribute("id")?.DisplayValue ?? "";
             if (!string.IsNullOrEmpty(newEntryId))
             {
                 Context.NewEntries.Add(newEntryId);
             }
         }
 
-        // Recreate dynamic entries
-        RefreshRows();
-        MarkAsModified();
+        // Create and insert the new row directly (preserves scroll position)
+        var newEntry = XmlEntries[insertIndex];
+        var gitValues = GetGitCommittedValues(newEntryId);
+        var newRow = new EntryRowViewModel(newEntry, ColumnNames, gitValues);
+        newRow.IsNew = true;
+        newRow.IsIdLocked = false; // New entries can have their ID edited
+        newRow.RowNumber = insertIndex + 1;
 
-        // Select the new row
-        SelectedIndex = insertIndex;
+        // Populate values from entry
+        foreach (var columnName in ColumnNames)
+        {
+            var fieldDef = GetFieldDefinition(columnName);
+            string? value = null;
+
+            if (fieldDef?.Nested == true && !string.IsNullOrEmpty(fieldDef.NestedPath))
+            {
+                value = newEntry.GetNestedValue(fieldDef.NestedPath);
+            }
+            else if (fieldDef?.CrossReference == null)
+            {
+                var attr = newEntry.GetAttribute(columnName);
+                value = attr?.DisplayValue;
+            }
+
+            if (value != null)
+            {
+                newRow.SetValueWithoutNotify(columnName, value);
+            }
+        }
+
+        // Populate cross-reference values
+        PopulateCrossReferenceValues(newRow, newEntry);
+
+        // Subscribe to change events
+        newRow.CellValueChanged += OnCellValueChanged;
+
+        // Suppress scroll-into-view - the new row is already visible next to the selected row
+        SuppressScrollIntoView = true;
+        try
+        {
+            // Insert the row directly instead of recreating all rows
+            Rows.Insert(insertIndex, newRow);
+
+            // Update row numbers for subsequent rows
+            for (int i = insertIndex + 1; i < Rows.Count; i++)
+            {
+                Rows[i].RowNumber = i + 1;
+            }
+
+            MarkAsModified();
+
+            // Select the new row
+            SelectedIndex = insertIndex;
+        }
+        finally
+        {
+            SuppressScrollIntoView = false;
+        }
     }
 
     /// <summary>
@@ -1461,26 +1529,8 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         var command = new DuplicateRowCommand(Context.Document, xmlEntryCollection, entryToDuplicate);
         _undoRedoService.Execute(command);
 
-        // Sync collections
-        XmlEntries.Clear();
-        XmlEntries.AddRange(xmlEntryCollection);
-
-        // Mark the duplicated entry as new
-        if (insertIndex < XmlEntries.Count)
-        {
-            var newEntryId = XmlEntries[insertIndex].GetAttribute("id")?.DisplayValue ?? "";
-            if (!string.IsNullOrEmpty(newEntryId))
-            {
-                Context.NewEntries.Add(newEntryId);
-            }
-        }
-
-        // Recreate dynamic entries
-        RefreshRows();
-        MarkAsModified();
-
-        // Select the new row
-        SelectedIndex = insertIndex;
+        // Sync and insert the new row
+        InsertNewRowFromCommand(xmlEntryCollection, insertIndex);
     }
 
     /// <summary>
@@ -1565,12 +1615,21 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     public void Undo()
     {
         if (!_undoRedoService.CanUndo) return;
-        _undoRedoService.Undo();
-        MarkAsModified();
-        // Sync entries from document and refresh rows
-        SyncEntriesFromDocument();
-        RecreateRowsFromEntries();
-        SubscribeRowEvents();
+
+        // Suppress scroll-into-view during undo to preserve scroll position
+        SuppressScrollIntoView = true;
+        try
+        {
+            _undoRedoService.Undo();
+            MarkAsModified();
+            // Sync entries from document and refresh rows incrementally (preserves scroll)
+            SyncEntriesFromDocument();
+            SyncRowsWithEntries();
+        }
+        finally
+        {
+            SuppressScrollIntoView = false;
+        }
     }
 
     /// <summary>
@@ -1579,12 +1638,100 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     public void Redo()
     {
         if (!_undoRedoService.CanRedo) return;
-        _undoRedoService.Redo();
-        MarkAsModified();
-        // Sync entries from document and refresh rows
-        SyncEntriesFromDocument();
-        RecreateRowsFromEntries();
-        SubscribeRowEvents();
+
+        // Suppress scroll-into-view during redo to preserve scroll position
+        SuppressScrollIntoView = true;
+        try
+        {
+            _undoRedoService.Redo();
+            MarkAsModified();
+            // Sync entries from document and refresh rows incrementally (preserves scroll)
+            SyncEntriesFromDocument();
+            SyncRowsWithEntries();
+        }
+        finally
+        {
+            SuppressScrollIntoView = false;
+        }
+    }
+
+    /// <summary>
+    /// Syncs the Rows collection with XmlEntries incrementally.
+    /// Only adds/removes rows that changed, preserving scroll position.
+    /// </summary>
+    private void SyncRowsWithEntries()
+    {
+        // Build a set of current entry elements for fast lookup
+        var entryElements = new HashSet<XElement>(XmlEntries.Select(e => e.OriginalElement));
+
+        // Remove rows whose entries no longer exist
+        for (int i = Rows.Count - 1; i >= 0; i--)
+        {
+            var row = Rows[i];
+            if (row.IsRemoved) continue; // Skip removed entries display
+
+            if (!entryElements.Contains(row.XmlEntry.OriginalElement))
+            {
+                Rows.RemoveAt(i);
+            }
+        }
+
+        // Build a set of row elements for fast lookup
+        var rowElements = new HashSet<XElement>(
+            Rows.Where(r => !r.IsRemoved).Select(r => r.XmlEntry.OriginalElement));
+
+        // Add rows for new entries at correct positions
+        for (int i = 0; i < XmlEntries.Count; i++)
+        {
+            var entry = XmlEntries[i];
+            if (!rowElements.Contains(entry.OriginalElement))
+            {
+                // Create a new row for this entry
+                var entryId = entry.GetAttribute("id")?.DisplayValue ?? "";
+                var isNew = Context.NewEntries.Contains(entryId);
+                var gitValues = GetGitCommittedValues(entryId);
+
+                var newRow = new EntryRowViewModel(entry, ColumnNames, gitValues);
+                newRow.IsNew = isNew;
+                newRow.IsIdLocked = !isNew;
+
+                // Populate values
+                foreach (var columnName in ColumnNames)
+                {
+                    var fieldDef = GetFieldDefinition(columnName);
+                    string? value = null;
+
+                    if (fieldDef?.Nested == true && !string.IsNullOrEmpty(fieldDef.NestedPath))
+                    {
+                        value = entry.GetNestedValue(fieldDef.NestedPath);
+                    }
+                    else if (fieldDef?.CrossReference == null)
+                    {
+                        var attr = entry.GetAttribute(columnName);
+                        value = attr?.DisplayValue;
+                    }
+
+                    if (value != null)
+                    {
+                        newRow.SetValueWithoutNotify(columnName, value);
+                    }
+                }
+
+                PopulateCrossReferenceValues(newRow, entry);
+                newRow.CellValueChanged += OnCellValueChanged;
+
+                // Insert at correct position
+                Rows.Insert(i, newRow);
+            }
+        }
+
+        // Update row numbers
+        for (int i = 0; i < Rows.Count; i++)
+        {
+            Rows[i].RowNumber = i + 1;
+        }
+
+        RequestCellRefresh();
     }
 
     /// <summary>
