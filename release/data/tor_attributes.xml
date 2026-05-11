@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitAttributes>
+  <!-- Combat Attributes -->
+  <UnitAttribute id="Expendable"
+    display_description="Placeholder - not implemented."
+    implementation_note="No implementation found in code." />
+  <UnitAttribute id="Unbreakable"
+    display_description="Immune to morale effects. Will never route from battle."
+    implementation_note="Checked in TORBattleMoraleModel.CanPanicDueToMorale." />
+  <UnitAttribute id="Unstoppable"
+    display_description="Cannot be knocked down or staggered by any attack."
+    implementation_note="Checked in TORAgentApplyDamageModel.DecideAgentShrugOffBlow." />
+  <UnitAttribute id="Tough"
+    display_description="Placeholder - not implemented."
+    implementation_note="No specific implementation found in code." />
+  <UnitAttribute id="Piercing"
+    display_description="Attacks ignore 40% of target armor."
+    implementation_note="Applied in TORStrikeMagnitudeModel.CalculateAdjustedArmorForBlow as -0.4f armor factor." />
+  <UnitAttribute id="Knightly"
+    display_description="Knight-class mounted warrior. Eligible for knight career perks."
+    implementation_note="Used for KnightOldWorld, Runelord career perks. Checked via CharacterObjectExtensions.IsKnightUnit." />
+  <UnitAttribute id="MonsterAttack"
+    display_description="Monster-class melee attacks that can only be blocked with shields. Weapon parries are crushed through."
+    implementation_note="Implemented in TORAgentApplyDamageModel.DecideCrushedThrough." />
+  <UnitAttribute id="Undead"
+    display_description="Undead unit immune to morale effects. Cannot panic or route."
+    implementation_note="Used throughout codebase for faction logic, raise dead mechanics, and morale checks." />
+
+  <!-- Artillery Crew -->
+  <UnitAttribute id="ArtilleryCrew"
+    display_description="Can operate artillery pieces. With party leader's Steel Terror perk, becomes immune to panic."
+    implementation_note="Panic immunity checked in TORBattleMoraleModel with SteelTerror perk." />
+  <UnitAttribute id="CanPlaceArtillery"
+    display_description="Hero can deploy artillery pieces on the battlefield."
+    implementation_note="Checked in AbilityManagerMissionLogic to calculate team artillery slots." />
+  <UnitAttribute id="CrewI"
+    display_description="Basic artillery crew certification. Baseline reload speed."
+    implementation_note="No reload bonus. Used in TORSiegeEngineCalculationModel." />
+  <UnitAttribute id="CrewII"
+    display_description="Mid-tier Cannoneer certification. Reduces artillery reload time by 15-20%."
+    implementation_note="15% as operator, 20% as reloader. Applied in TORSiegeEngineCalculationModel.CalculateCannonReloadSpeed." />
+  <UnitAttribute id="CrewIII"
+    display_description="Elite Cannoneer certification. Reduces artillery reload time by 30-35%."
+    implementation_note="30% as operator, 35% as reloader. Applied in TORSiegeEngineCalculationModel.CalculateCannonReloadSpeed." />
+
+  <!-- Movement/Siege -->
+  <UnitAttribute id="CannotClimbLadders"
+    display_description="Unit cannot use siege ladders."
+    implementation_note="Checked in CharacterObjectExtensions.CanClimbLadders - returns false if present." />
+
+  <!-- Monster Types -->
+  <UnitAttribute id="Minotaur"
+    display_description="Minotaur unit. Classified as a large target."
+    implementation_note="Combined with 'medium_humanoid_monster' race. CharacterObjectExtensions.IsLargeTarget returns true." />
+  <UnitAttribute id="TreeSpirit"
+    display_description="Tree spirit unit. Immune to morale effects and attacks always ignore 80% of enemy armor."
+    implementation_note="Morale immunity in TORBattleMoraleModel, armor penetration in TORStrikeMagnitudeModel." />
+  <UnitAttribute id="TrollRegeneration"
+    display_description="Regenerates health over time during battle."
+    implementation_note="Applies 'troll_regeneration' status effect via StatusEffectMissionLogic.CheckUnitForAddingPermanentEffects." />
+
+  <!-- Leadership/Special -->
+  <UnitAttribute id="BigBoss"
+    display_description="Greenskin big boss. Used for Waaagh mechanics and leadership bonuses."
+    implementation_note="Greenskin faction-specific leadership designation." />
+  <UnitAttribute id="Everchosen"
+    display_description="Chosen of the Dark Gods. Chaos faction leader designation."
+    implementation_note="Used for Chaos faction-specific mechanics." />
+  <UnitAttribute id="LegendaryLord"
+    display_description="Legendary lord character. Cannot be looted when defeated."
+    implementation_note="Excluded from loot drops in LootCampaignBehavior." />
+  <UnitAttribute id="SlayerLord"
+    display_description="Dwarven Slayer Lord. Enables recruitment of Slayer units in Dwarf towns."
+    implementation_note="Special recruitment in TORAIRecruitmentCampaignBehavior." />
+  <UnitAttribute id="Ironbreaker"
+    display_description="Dwarven Ironbreaker. Benefits from reduced upgrade costs (-25%), increased physical resistance (+20%), and bonus damage. Additional ammunition per Ironbeard companion."
+    implementation_note="Affects Ironbreaker career perks in various career models." />
+
+  <!-- Faction-specific -->
+  <UnitAttribute id="BrettonianKnight"
+    display_description="Bretonnian knight. Can receive Lady of the Lake blessings and knight-specific mechanics."
+    implementation_note="Combined with Bretonnia culture check in HeroExtensions.IsBretonnianKnight." />
+  <UnitAttribute id="PeasantKnight"
+    display_description="Knight of peasant origin. Special recruitment behavior for Bretonnia faction."
+    implementation_note="Handled in TORAIRecruitmentCampaignBehavior." />
+  <UnitAttribute id="PrestigeNoble"
+    display_description="Empire noble providing prestige exchange services. Available to Empire players at Clan Level 2+."
+    implementation_note="Empire NPC with Special occupation. Services in PrestigeNobleTownBehavior." />
+  <UnitAttribute id="DwarfGuild"
+    display_description="Member of a Dwarven guild."
+    implementation_note="Used for guild membership checks." />
+  <UnitAttribute id="DwarfGun"
+    display_description="Equipped with Dwarven firearm. Increased Oathgold upkeep costs."
+    implementation_note="Cost modifiers in TORPartyWageModel, TORPartyTroopUpgradeModel." />
+  <UnitAttribute id="DwarfMiner"
+    display_description="Dwarven miner. Enables ore and gem production bonuses in owned fiefs with Gemcutters Guild."
+    implementation_note="Production bonuses in OathGoldBehavior." />
+  <UnitAttribute id="Runesmith"
+    display_description="Dwarven Runesmith hero. Can perform runic enchanting at Runesmith Guild. Required companion for Runelord career."
+    implementation_note="Enchanting in EnchanterTownBehavior, Oathgold in OathGoldBehavior." />
+
+  <!-- Caster/Magic -->
+  <UnitAttribute id="SpellCaster"
+    display_description="Can cast spells in battle."
+    implementation_note="Checked via AgentExtensions.IsSpellCaster for spell UI and AI casting." />
+  <UnitAttribute id="AbilityUser"
+    display_description="Has special combat abilities that can be activated in battle."
+    implementation_note="Triggers AbilityComponent in AbilityManagerMissionLogic.OnAgentCreated. AI gets WizardAIComponent." />
+  <UnitAttribute id="Necromancer"
+    display_description="Necromancer. Can raise the dead and interact with cursed sites."
+    implementation_note="Used for raise dead mechanics and undead-related campaign behaviors." />
+  <UnitAttribute id="NecromancerChampion"
+    display_description="Powerful summoned necromancer champion. With Book of W'soran keystone, shrugs off all damage and gains career bonuses."
+    implementation_note="Damage immunity via AgentExtensions.IsDamageShruggedOff with BookofWsoranKeystone." />
+  <UnitAttribute id="Necrarch"
+    display_description="Necrarch vampire bloodline. Special racial appearance and vampire abilities."
+    implementation_note="FaceGen uses 'necrarch' race. Used in vampire checks and Necrarch career mechanics." />
+  <UnitAttribute id="BloodDragon"
+    display_description="Blood Dragon vampire bloodline. Special conversation options and bloodline abilities."
+    implementation_note="Has BloodDragonTag conversation tag. CharacterObjectExtensions.IsBloodDragon check." />
+
+  <!-- Envoys/Companions -->
+  <UnitAttribute id="AICompanion"
+    display_description="AI-controlled companion. Attribute removed on death."
+    implementation_note="Tracked via TORConsoleCommands.whereAreAICompanions." />
+  <UnitAttribute id="EmpireEnvoy"
+    display_description="Empire faction envoy. Provides diplomatic and resource exchange services for Empire players."
+    implementation_note="Empire faction NPC services." />
+  <UnitAttribute id="DruchiiEnvoy"
+    display_description="Dark Elf (Druchii) envoy. Provides services for Dark Elf faction interactions."
+    implementation_note="Druchii faction NPC services." />
+  <UnitAttribute id="AsurEnvoy"
+    display_description="High Elf (Asur) envoy. Provides services for High Elf faction interactions."
+    implementation_note="Asur faction NPC services." />
+  <UnitAttribute id="SpellsingerEnvoy"
+    display_description="Wood Elf Spellsinger envoy. Provides magical services for Wood Elf faction using Eonir favor."
+    implementation_note="Eonir favor mechanics integration." />
+  <UnitAttribute id="GladeCaptain"
+    display_description="Wood Elf Glade Captain. Military leader role for Wood Elf faction."
+    implementation_note="Wood Elf military leadership designation." />
+  <UnitAttribute id="EngineerCompanion"
+    display_description="Engineer companion hero. Can place artillery in battle."
+    implementation_note="Counted toward team artillery limit in AbilityManagerMissionLogic. Works with CanPlaceArtillery." />
+  <UnitAttribute id="EngineerEmpire"
+    display_description="Empire Master Engineer. Trains Engineering skill. Located in Nuln."
+    implementation_note="Training via SkillTrainerBehavior." />
+
+  <!-- Trainers/Priests -->
+  <UnitAttribute id="SkillTrainer"
+    display_description="NPC that can train skills."
+    implementation_note="Base attribute for training NPCs." />
+  <UnitAttribute id="PriestTrainer"
+    display_description="Priest NPC who can train others in religious matters."
+    implementation_note="Generic priest trainer designation." />
+  <UnitAttribute id="PriestSigmar"
+    display_description="Priest of Sigmar. Unlocks Sigmar-specific prayers and abilities."
+    implementation_note="Religion determined via HeroExtensions.IsPriest and GetReligionFromAttribute." />
+  <UnitAttribute id="PriestShallya"
+    display_description="Priest of Shallya, goddess of healing and mercy. Unlocks Shallya-specific prayers and abilities."
+    implementation_note="Religion affiliation for Shallya goddess." />
+  <UnitAttribute id="PriestUlric"
+    display_description="Priest of Ulric, god of winter, wolves, and battle. Unlocks Ulric-specific prayers. Required for Warrior Priest of Ulric career."
+    implementation_note="Religion affiliation. Required for WarriorPriestUlric career." />
+  <UnitAttribute id="PriestLady"
+    display_description="Priestess of the Lady of the Lake (Bretonnian goddess). Grants spell power bonus with Envoy of the Lady career choice."
+    implementation_note="Spell power bonus with EnvoyOfTheLadyPassive3 via TORAbilityModel." />
+  <UnitAttribute id="SigmarTrain"
+    display_description="NPC provides Sigmar faith training. Trains Faith skill for Cult of Sigmar."
+    implementation_note="Training via SkillTrainerBehavior." />
+  <UnitAttribute id="UlricTrain"
+    display_description="NPC provides Ulric faith training. Trains Faith skill for Cult of Ulric."
+    implementation_note="Training via SkillTrainerBehavior." />
+  <UnitAttribute id="ShallyaTrainCO"
+    display_description="Shallya training - provides Medicine skill training."
+    implementation_note="Training via SkillTrainerBehavior (CO variant)." />
+  <UnitAttribute id="ShallyaTrainRE"
+    display_description="Shallya religious training - provides Medicine skill training."
+    implementation_note="Training via SkillTrainerBehavior (RE variant)." />
+
+  <!-- Special Effects -->
+  <UnitAttribute id="HasAnimationTriggeredEffects"
+    display_description="Has special animation-triggered effects. Excluded from joust and archery contest tournaments."
+    implementation_note="Effects via AnimationTriggerMissionLogic." />
+  <UnitAttribute id="IllFated"
+    display_description="Cursed hero. Each ill-fated hero in party adds +10% chance of negative random events."
+    implementation_note="Event chance modifier in TORCareerPerkCampaignBehavior." />
+  <UnitAttribute id="Shadowblood"
+    display_description="Dark Elf shadowblood designation. Placeholder - not implemented."
+    implementation_note="No specific implementation found." />
+</UnitAttributes>
