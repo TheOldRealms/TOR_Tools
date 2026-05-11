@@ -132,7 +132,8 @@ public class XmlDocumentService : IXmlDocumentService
         var hasTextContent = !string.IsNullOrWhiteSpace(element.Value) && !children.Any();
 
         // Calculate alignment padding (align under first attribute)
-        var alignPad = new string(' ', indent.Length + elementName.Length + 2); // +2 for "< "
+        // Preserve original indent (tabs) + add spaces for "<elementName "
+        var alignPad = indent + new string(' ', elementName.Length + 2); // +2 for "< "
 
         sb.Append(indent);
         sb.Append($"<{elementName}");

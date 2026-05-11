@@ -48,6 +48,12 @@ public partial class FileTabView : UserControl
         // Use debouncing to avoid jumps during row refresh (multiple selection changes)
         grid.SelectionChanged += (s, e) =>
         {
+            // Check if scroll is suppressed (during undo/redo operations)
+            if (DataContext is FileTabViewModel vm && vm.SuppressScrollIntoView)
+            {
+                return;
+            }
+
             if (grid.SelectedItem != null)
             {
                 // Store the target and schedule a scroll if not already pending
@@ -60,6 +66,14 @@ public partial class FileTabView : UserControl
                     Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                     {
                         _scrollPending = false;
+
+                        // Check again in case flag was set during the delay
+                        if (DataContext is FileTabViewModel vm2 && vm2.SuppressScrollIntoView)
+                        {
+                            _pendingScrollTarget = null;
+                            return;
+                        }
+
                         // Scroll to the most recent target
                         if (_pendingScrollTarget != null && grid.SelectedItem == _pendingScrollTarget)
                         {
