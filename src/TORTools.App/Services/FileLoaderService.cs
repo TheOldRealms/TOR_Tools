@@ -288,34 +288,11 @@ public class FileLoaderService
     }
 
     /// <summary>
-    /// Finds the TORTools/data directory by walking up from the base directory.
+    /// Gets the tool's data directory using the centralized FilePathResolver.
     /// </summary>
     private string? FindTorToolsDataPath(string baseDir)
     {
-        var current = new DirectoryInfo(baseDir);
-        while (current != null)
-        {
-            // Look for Modules/TORTools/data
-            var modulesPath = Path.Combine(current.FullName, "Modules", "TORTools", "data");
-            if (Directory.Exists(modulesPath))
-            {
-                return modulesPath;
-            }
-
-            // Check if we're already in TORTools
-            if (current.Name.Equals("TORTools", StringComparison.OrdinalIgnoreCase))
-            {
-                var dataPath = Path.Combine(current.FullName, "data");
-                if (Directory.Exists(dataPath))
-                {
-                    return dataPath;
-                }
-            }
-
-            current = current.Parent;
-        }
-
-        return null;
+        return TORTools.Core.Services.FilePathResolver.GetDataDirectory();
     }
 
     /// <summary>
