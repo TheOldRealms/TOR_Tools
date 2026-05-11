@@ -13,14 +13,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Build Commands
 
 ```bash
-# Build the app
+# Build the app (development)
 dotnet build src/TORTools.App/TORTools.App.csproj
 
-# Run the app
+# Run the app (development - requires .NET SDK)
 dotnet run --project src/TORTools.App/TORTools.App.csproj
 
-# Build release
-dotnet build src/TORTools.App/TORTools.App.csproj -c Release
+# Build self-contained release (outputs to release/ folder)
+# Use build-release.bat on Windows, or:
+dotnet publish src/TORTools.App/TORTools.App.csproj -c Release -r win-x64 --self-contained true -o release
+
+# Run the pre-built release (no SDK needed)
+# Double-click TOR_Tools.bat or release/TORTools.App.exe
 
 # Run tests
 dotnet test tests/TORTools.Core.Tests
@@ -33,7 +37,8 @@ When running the app via `dotnet run`, use the **KillShell** tool to terminate t
 ## Solution Structure
 
 ```
-TORTools/
+TOR_Tools/
+├── release/                  # Pre-built exe (tracked, for non-programmers)
 ├── src/
 │   ├── TORTools.Core/        # Shared logic (no UI dependency)
 │   │   ├── Models/           # Data models for XML entities
@@ -46,8 +51,10 @@ TORTools/
 │       ├── Views/            # AXAML Views
 │       └── Converters/       # Value converters
 ├── schemas/                  # JSON schema definitions per XML file type
-└── tests/
-    └── TORTools.Core.Tests/
+├── tests/
+│   └── TORTools.Core.Tests/
+├── TOR_Tools.bat             # Launcher for pre-built exe
+└── build-release.bat         # Builds to release/ folder
 ```
 
 ## Neighboring Repositories

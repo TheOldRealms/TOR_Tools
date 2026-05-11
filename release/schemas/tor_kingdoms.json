@@ -1,0 +1,178 @@
+{
+  "file": "tor_kingdoms.xml",
+  "displayName": "Kingdoms",
+  "description": "Kingdom definitions with relationships, policies, and banner configurations.",
+  "rootElement": "Kingdoms",
+  "entryElement": "Kingdom",
+  "compactFormat": false,
+  "fields": {
+    "id": {
+      "displayName": "ID",
+      "description": "Unique identifier for this kingdom.",
+      "type": "string",
+      "required": true,
+      "order": 1,
+      "width": 140
+    },
+    "name": {
+      "displayName": "Name",
+      "description": "Display name with localization key.",
+      "type": "string",
+      "required": true,
+      "order": 2,
+      "width": 150
+    },
+    "short_name": {
+      "displayName": "Short Name",
+      "description": "Short display name with localization key.",
+      "type": "string",
+      "order": 3,
+      "width": 120
+    },
+    "title": {
+      "displayName": "Title",
+      "description": "Kingdom title with localization key.",
+      "type": "string",
+      "order": 4,
+      "width": 120
+    },
+    "ruler_title": {
+      "displayName": "Ruler Title",
+      "description": "Title for the kingdom's ruler (e.g., Elector Count, Emperor).",
+      "type": "string",
+      "order": 5,
+      "width": 120
+    },
+    "owner": {
+      "displayName": "Owner",
+      "description": "Hero who rules this kingdom (Hero.* reference).",
+      "type": "string",
+      "order": 6,
+      "width": 220
+    },
+    "culture": {
+      "displayName": "Culture",
+      "description": "Culture affiliation. Click to navigate to culture definition.",
+      "type": "crossReference",
+      "renderAs": "dropdown",
+      "order": 7,
+      "width": 130,
+      "crossReference": {
+        "targetFile": "tor_cultures.xml",
+        "targetKeyField": "id",
+        "targetDisplayField": "name",
+        "localKeyField": "culture",
+        "prefixToStrip": "Culture.",
+        "prefixToAdd": "Culture."
+      }
+    },
+    "banner_key": {
+      "displayName": "Banner",
+      "description": "Banner definition with optional :kingdom_* suffix for custom texture. Click to edit banner and colors.",
+      "type": "banner",
+      "order": 3,
+      "width": 120
+    },
+    "primary_banner_color": {
+      "displayName": "Primary Color",
+      "description": "Primary banner color in hex format (0xFFRRGGBB).",
+      "type": "color",
+      "hidden": true
+    },
+    "secondary_banner_color": {
+      "displayName": "Secondary Color",
+      "description": "Secondary banner color in hex format (0xFFRRGGBB).",
+      "type": "color",
+      "hidden": true
+    },
+    "label_color": {
+      "displayName": "Label Color",
+      "description": "Label color in hex format (FFRRGGBB).",
+      "type": "color",
+      "hidden": true
+    },
+    "color": {
+      "displayName": "Color",
+      "description": "Primary color in hex format (FFRRGGBB).",
+      "type": "color",
+      "hidden": true
+    },
+    "color2": {
+      "displayName": "Color 2",
+      "description": "Secondary color in hex format (FFRRGGBB).",
+      "type": "color",
+      "hidden": true
+    },
+    "alternative_color": {
+      "displayName": "Alt Color",
+      "description": "Alternative color in hex format (FFRRGGBB).",
+      "type": "color",
+      "hidden": true
+    },
+    "alternative_color2": {
+      "displayName": "Alt Color 2",
+      "description": "Alternative color 2 in hex format (FFRRGGBB).",
+      "type": "color",
+      "hidden": true
+    },
+    "settlement_banner_mesh": {
+      "displayName": "Banner Mesh",
+      "description": "Settlement banner mesh name.",
+      "type": "string",
+      "order": 16,
+      "width": 140
+    },
+    "flag_mesh": {
+      "displayName": "Flag Mesh",
+      "description": "Flag mesh name for info screens.",
+      "type": "string",
+      "order": 17,
+      "width": 140
+    },
+    "text": {
+      "displayName": "Description",
+      "description": "Kingdom description text with localization key.",
+      "type": "string",
+      "order": 18,
+      "width": 300
+    }
+  },
+  "nestedElements": {
+    "relationships": {
+      "displayName": "Relationships",
+      "description": "Diplomatic relationships with other kingdoms.",
+      "childElement": "relationship",
+      "fields": {
+        "kingdom": {
+          "displayName": "Kingdom",
+          "description": "Related kingdom (Kingdom.* reference).",
+          "type": "string",
+          "required": true
+        },
+        "value": {
+          "displayName": "Value",
+          "description": "Relationship value (-100 to 100).",
+          "type": "string"
+        },
+        "isAtWar": {
+          "displayName": "At War",
+          "description": "Whether currently at war with this kingdom.",
+          "type": "boolean"
+        }
+      }
+    },
+    "policies": {
+      "displayName": "Policies",
+      "description": "Kingdom policies in effect.",
+      "childElement": "policy",
+      "fields": {
+        "id": {
+          "displayName": "Policy ID",
+          "description": "Policy identifier.",
+          "type": "string",
+          "required": true
+        }
+      }
+    }
+  }
+}

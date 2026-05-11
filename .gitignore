@@ -50,6 +50,10 @@ bld/
 publish/
 PublishProfiles/
 
+# Release folder - TRACKED (contains pre-built exe for non-programmers)
+# The pattern above ignores [Rr]elease/, so we un-ignore our root release folder
+!/release/
+
 # OS files
 Thumbs.db
 ehthumbs.db
@@ -68,6 +72,7 @@ Desktop.ini
 # Claude Code
 .claude/
 tmpclaude-*
+tmpclaude-*-cwd
 
 # Distribution builds
 dist/

@@ -1,0 +1,215 @@
+{
+  "file": "tor_charactertemplates.xml",
+  "displayName": "Character Templates",
+  "description": "Character templates for wanderers, companions, and special characters.",
+  "rootElement": "NPCCharacters",
+  "entryElement": "NPCCharacter",
+  "compactFormat": true,
+  "fields": {
+    "id": {
+      "displayName": "ID",
+      "description": "Unique identifier for this character template.",
+      "type": "string",
+      "required": true,
+      "order": 1,
+      "width": 250
+    },
+    "name": {
+      "displayName": "Name",
+      "description": "Character name with localization key. Use {FIRSTNAME} placeholder for random name generation.",
+      "type": "string",
+      "required": true,
+      "order": 2,
+      "width": 300
+    },
+    "occupation": {
+      "displayName": "Occupation",
+      "description": "Character occupation type.",
+      "type": "enum",
+      "order": 3,
+      "width": 100,
+      "enumValues": [
+        { "value": "Wanderer", "displayName": "Wanderer" },
+        { "value": "Lord", "displayName": "Lord" },
+        { "value": "Special", "displayName": "Special" }
+      ]
+    },
+    "culture": {
+      "displayName": "Culture",
+      "description": "Culture affiliation. Click to navigate to culture definition.",
+      "type": "crossReference",
+      "renderAs": "dropdown",
+      "order": 4,
+      "width": 130,
+      "crossReference": {
+        "targetFile": "tor_cultures.xml",
+        "targetKeyField": "id",
+        "targetDisplayField": "name",
+        "localKeyField": "culture",
+        "prefixToStrip": "Culture.",
+        "prefixToAdd": "Culture."
+      }
+    },
+    "default_group": {
+      "displayName": "Formation",
+      "description": "Default formation group for this character.",
+      "type": "enum",
+      "order": 5,
+      "width": 100,
+      "enumValues": [
+        { "value": "infantry", "displayName": "Infantry" },
+        { "value": "ranged", "displayName": "Ranged" },
+        { "value": "cavalry", "displayName": "Cavalry" }
+      ]
+    },
+    "voice": {
+      "displayName": "Voice",
+      "description": "Voice type for dialogue.",
+      "type": "enum",
+      "order": 6,
+      "width": 100,
+      "enumValues": [
+        { "value": "curt", "displayName": "Curt" },
+        { "value": "ironic", "displayName": "Ironic" },
+        { "value": "softspoken", "displayName": "Softspoken" }
+      ]
+    },
+    "age": {
+      "displayName": "Age",
+      "description": "Character age.",
+      "type": "int",
+      "order": 7,
+      "width": 60,
+      "min": 18,
+      "max": 100
+    },
+    "is_female": {
+      "displayName": "Female",
+      "description": "Whether this is a female character.",
+      "type": "enum",
+      "order": 8,
+      "width": 70,
+      "enumValues": [
+        { "value": "", "displayName": "Male" },
+        { "value": "true", "displayName": "Female" }
+      ]
+    },
+    "is_template": {
+      "displayName": "Is Template",
+      "description": "Whether this is a template (usually true for character templates).",
+      "type": "enum",
+      "order": 9,
+      "width": 90,
+      "enumValues": [
+        { "value": "true", "displayName": "Yes" },
+        { "value": "false", "displayName": "No" }
+      ]
+    },
+    "is_hero": {
+      "displayName": "Is Hero",
+      "description": "Whether this character is a hero (companion/lord).",
+      "type": "enum",
+      "order": 10,
+      "width": 70,
+      "enumValues": [
+        { "value": "true", "displayName": "Yes" },
+        { "value": "false", "displayName": "No" }
+      ]
+    },
+    "skill_template": {
+      "displayName": "Skill Template",
+      "description": "Skill set template for this character. Click to navigate or edit.",
+      "type": "crossReference",
+      "order": 11,
+      "width": 280,
+      "crossReference": {
+        "targetFile": "tor_skillsets.xml",
+        "targetKeyField": "id",
+        "localKeyField": "skill_template",
+        "prefixToStrip": "SkillSet.",
+        "prefixToAdd": "SkillSet."
+      }
+    },
+    "face_key_template": {
+      "displayName": "Body Property",
+      "description": "Body property/face template (nested in face element).",
+      "type": "string",
+      "order": 12,
+      "width": 250,
+      "nested": true,
+      "nestedPath": "face/face_key_template/@value",
+      "prefixToStrip": "BodyProperty.",
+      "prefixToAdd": "BodyProperty."
+    },
+    "hair_tags": {
+      "displayName": "Hair Tags",
+      "description": "Hair style tags (nested list).",
+      "type": "string",
+      "order": 13,
+      "width": 200,
+      "nested": true,
+      "nestedPath": "face/hair_tags/hair_tag/@name",
+      "delimiter": ", "
+    },
+    "beard_tags": {
+      "displayName": "Beard Tags",
+      "description": "Beard style tags (nested list).",
+      "type": "string",
+      "order": 14,
+      "width": 200,
+      "nested": true,
+      "nestedPath": "face/beard_tags/beard_tag/@name",
+      "delimiter": ", "
+    },
+    "Traits": {
+      "displayName": "Traits",
+      "description": "Character traits (Mercy, Valor, Honor, etc.) - nested list.",
+      "type": "string",
+      "order": 15,
+      "width": 250,
+      "nested": true,
+      "nestedPath": "Traits/Trait",
+      "delimiter": ", "
+    },
+    "Equipments": {
+      "displayName": "Equipment Sets",
+      "description": "Equipment set IDs used by this character (combat and civilian).",
+      "type": "string",
+      "order": 16,
+      "width": 300,
+      "nested": true,
+      "nestedPath": "Equipments/EquipmentSet/@id",
+      "delimiter": ", "
+    },
+    "ext_Attributes": {
+      "displayName": "Attributes",
+      "description": "Character attributes. Click to edit or navigate to attribute definition.",
+      "type": "crossReference",
+      "order": 50,
+      "width": 280,
+      "crossReference": {
+        "sourceFile": "tor_extendedunitproperties.xml",
+        "sourceKeyField": "id",
+        "sourceValuePath": "Attributes/string",
+        "targetFile": "tor_attributes.xml",
+        "targetKeyField": "id",
+        "localKeyField": "id"
+      }
+    },
+    "ext_Abilities": {
+      "displayName": "Abilities",
+      "description": "Character abilities. Click to navigate to ability definition.",
+      "type": "crossReference",
+      "order": 51,
+      "width": 280,
+      "crossReference": {
+        "sourceFile": "tor_extendedunitproperties.xml",
+        "sourceKeyField": "id",
+        "sourceValuePath": "Abilities/string",
+        "targetFile": "tor_abilitytemplates.xml",
+        "targetKeyField": "StringID",
+        "localKeyField": "id"
+      }
+    }
+  }
+}
