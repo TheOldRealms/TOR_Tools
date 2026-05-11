@@ -82,30 +82,21 @@ public class FilePathResolver
     }
 
     /// <summary>
-    /// Helper to find TORTools/data path for tool-specific data files.
-    /// Walks up from baseDir to find Modules directory, then checks TORTools/data.
+    /// Helper to find data files relative to the app's location.
+    /// Works regardless of folder name - just uses ../data/ from the exe.
     /// </summary>
     public string? FindTorToolsDataPath(string baseDir, string fileName)
     {
-        var current = baseDir;
-        for (int i = 0; i < 5; i++) // Safety limit
-        {
-            var parent = Path.GetDirectoryName(current);
-            if (string.IsNullOrEmpty(parent)) break;
+        var appDir = AppDomain.CurrentDomain.BaseDirectory;
 
-            var parentName = Path.GetFileName(parent);
-            if (parentName?.Equals("Modules", StringComparison.OrdinalIgnoreCase) == true)
-            {
-                // Found Modules directory - check TORTools/data
-                var torToolsPath = Path.Combine(parent, "TORTools", "data", fileName);
-                if (File.Exists(torToolsPath))
-                {
-                    return torToolsPath;
-                }
-                break;
-            }
-            current = parent;
-        }
+        // Release: exe is in release/, data is in ../data/
+        var path = Path.GetFullPath(Path.Combine(appDir, "..", "data", fileName));
+        if (File.Exists(path)) return path;
+
+        // Dev/copied: data might be in same folder as exe
+        path = Path.Combine(appDir, "data", fileName);
+        if (File.Exists(path)) return path;
+
         return null;
     }
 }
