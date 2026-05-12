@@ -179,15 +179,15 @@
                             <Grid ColumnDefinitions="60,*" RowDefinitions="Auto,Auto,Auto" Margin="0,5,0,0">
                                 <TextBlock Text="Offset:" FontSize="10" Foreground="#888888" VerticalAlignment="Center"/>
                                 <NumericUpDown Grid.Column="1" Value="{Binding BladePieceOffset}"
-                                               Minimum="-100" Maximum="100" Increment="0.1" FormatString="F2"
+                                               Minimum="-100" Maximum="100" Increment="1.0" FormatString="F1"
                                                FontSize="11" Height="26" MinWidth="120"/>
                                 <TextBlock Grid.Row="1" Text="Prev:" FontSize="10" Foreground="#888888" VerticalAlignment="Center" Margin="0,3,0,0"/>
                                 <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding BladePrevOffset}"
-                                               Minimum="-100" Maximum="100" Increment="0.1" FormatString="F2"
+                                               Minimum="-100" Maximum="100" Increment="1.0" FormatString="F1"
                                                FontSize="11" Height="26" MinWidth="120" Margin="0,3,0,0"/>
                                 <TextBlock Grid.Row="2" Text="Next:" FontSize="10" Foreground="#888888" VerticalAlignment="Center" Margin="0,3,0,0"/>
                                 <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding BladeNextOffset}"
-                                               Minimum="-100" Maximum="100" Increment="0.1" FormatString="F2"
+                                               Minimum="-100" Maximum="100" Increment="1.0" FormatString="F1"
                                                FontSize="11" Height="26" MinWidth="120" Margin="0,3,0,0"/>
                             </Grid>
                             <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,5,0,0">
@@ -213,15 +213,15 @@
                             <Grid ColumnDefinitions="60,*" RowDefinitions="Auto,Auto,Auto" Margin="0,5,0,0">
                                 <TextBlock Text="Offset:" FontSize="10" Foreground="#888888" VerticalAlignment="Center"/>
                                 <NumericUpDown Grid.Column="1" Value="{Binding HandlePieceOffset}"
-                                               Minimum="-100" Maximum="100" Increment="0.1" FormatString="F2"
+                                               Minimum="-100" Maximum="100" Increment="1.0" FormatString="F1"
                                                FontSize="11" Height="26" MinWidth="120"/>
                                 <TextBlock Grid.Row="1" Text="Prev:" FontSize="10" Foreground="#888888" VerticalAlignment="Center" Margin="0,3,0,0"/>
                                 <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding HandlePrevOffset}"
-                                               Minimum="-100" Maximum="100" Increment="0.1" FormatString="F2"
+                                               Minimum="-100" Maximum="100" Increment="1.0" FormatString="F1"
                                                FontSize="11" Height="26" MinWidth="120" Margin="0,3,0,0"/>
                                 <TextBlock Grid.Row="2" Text="Next:" FontSize="10" Foreground="#888888" VerticalAlignment="Center" Margin="0,3,0,0"/>
                                 <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding HandleNextOffset}"
-                                               Minimum="-100" Maximum="100" Increment="0.1" FormatString="F2"
+                                               Minimum="-100" Maximum="100" Increment="1.0" FormatString="F1"
                                                FontSize="11" Height="26" MinWidth="120" Margin="0,3,0,0"/>
                             </Grid>
                             <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,5,0,0">
@@ -247,15 +247,15 @@
                             <Grid ColumnDefinitions="60,*" RowDefinitions="Auto,Auto,Auto" Margin="0,5,0,0">
                                 <TextBlock Text="Offset:" FontSize="10" Foreground="#888888" VerticalAlignment="Center"/>
                                 <NumericUpDown Grid.Column="1" Value="{Binding GuardPieceOffset}"
-                                               Minimum="-100" Maximum="100" Increment="0.1" FormatString="F2"
+                                               Minimum="-100" Maximum="100" Increment="1.0" FormatString="F1"
                                                FontSize="11" Height="26" MinWidth="120"/>
                                 <TextBlock Grid.Row="1" Text="Prev:" FontSize="10" Foreground="#888888" VerticalAlignment="Center" Margin="0,3,0,0"/>
                                 <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding GuardPrevOffset}"
-                                               Minimum="-100" Maximum="100" Increment="0.1" FormatString="F2"
+                                               Minimum="-100" Maximum="100" Increment="1.0" FormatString="F1"
                                                FontSize="11" Height="26" MinWidth="120" Margin="0,3,0,0"/>
                                 <TextBlock Grid.Row="2" Text="Next:" FontSize="10" Foreground="#888888" VerticalAlignment="Center" Margin="0,3,0,0"/>
                                 <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding GuardNextOffset}"
-                                               Minimum="-100" Maximum="100" Increment="0.1" FormatString="F2"
+                                               Minimum="-100" Maximum="100" Increment="1.0" FormatString="F1"
                                                FontSize="11" Height="26" MinWidth="120" Margin="0,3,0,0"/>
                             </Grid>
                             <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,5,0,0">
@@ -281,15 +281,15 @@
                             <Grid ColumnDefinitions="60,*" RowDefinitions="Auto,Auto,Auto" Margin="0,5,0,0">
                                 <TextBlock Text="Offset:" FontSize="10" Foreground="#888888" VerticalAlignment="Center"/>
                                 <NumericUpDown Grid.Column="1" Value="{Binding PommelPieceOffset}"
-                                               Minimum="-100" Maximum="100" Increment="0.1" FormatString="F2"
+                                               Minimum="-100" Maximum="100" Increment="1.0" FormatString="F1"
                                                FontSize="11" Height="26" MinWidth="120"/>
                                 <TextBlock Grid.Row="1" Text="Prev:" FontSize="10" Foreground="#888888" VerticalAlignment="Center" Margin="0,3,0,0"/>
                                 <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding PommelPrevOffset}"
-                                               Minimum="-100" Maximum="100" Increment="0.1" FormatString="F2"
+                                               Minimum="-100" Maximum="100" Increment="1.0" FormatString="F1"
                                                FontSize="11" Height="26" MinWidth="120" Margin="0,3,0,0"/>
                                 <TextBlock Grid.Row="2" Text="Next:" FontSize="10" Foreground="#888888" VerticalAlignment="Center" Margin="0,3,0,0"/>
                                 <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding PommelNextOffset}"
-                                               Minimum="-100" Maximum="100" Increment="0.1" FormatString="F2"
+                                               Minimum="-100" Maximum="100" Increment="1.0" FormatString="F1"
                                                FontSize="11" Height="26" MinWidth="120" Margin="0,3,0,0"/>
                             </Grid>
                             <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,5,0,0">

@@ -111,7 +111,7 @@ public partial class WeaponPartsEditorView : Window
         }
     }
 
-    private void OnMeshesChanged()
+    private void OnMeshesChanged(bool fitCamera)
     {
         if (_viewport == null || _viewModel == null) return;
 
@@ -122,11 +122,14 @@ public partial class WeaponPartsEditorView : Window
             _viewport.AddMesh(mesh, offset, scale);
         }
 
-        // Fit camera to content after meshes are loaded
-        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        // Only fit camera when pieces change, not for offset/scale tweaks
+        if (fitCamera)
         {
-            _viewport.FitToContent();
-        }, Avalonia.Threading.DispatcherPriority.Background);
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                _viewport.FitToContent();
+            }, Avalonia.Threading.DispatcherPriority.Background);
+        }
     }
 
     private void OnPieceHighlighted(CraftingPieceInfo? piece)

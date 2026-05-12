@@ -135,7 +135,11 @@ public partial class WeaponPartsEditorViewModel : ObservableObject
     public ObservableCollection<(MeshData mesh, Vector3 offset, float scale)> LoadedMeshes { get; } = new();
 
     // Events for view to subscribe to
-    public event Action? MeshesChanged;
+    /// <summary>
+    /// Event raised when meshes change. Boolean parameter indicates if camera should fit to content.
+    /// True = piece selection changed (fit camera), False = offset/scale changed (keep camera position).
+    /// </summary>
+    public event Action<bool>? MeshesChanged;
     public event Action<CraftingPieceInfo?>? PieceHighlighted;
 
     public WeaponPartsEditorViewModel(CraftingPieceCatalogService catalogService, FbxLoaderService fbxLoaderService)
@@ -442,26 +446,31 @@ public partial class WeaponPartsEditorViewModel : ObservableObject
         UpdateAssembly();
     }
 
-    partial void OnBladeScaleChanged(int value) => UpdateAssembly();
-    partial void OnHandleScaleChanged(int value) => UpdateAssembly();
-    partial void OnGuardScaleChanged(int value) => UpdateAssembly();
-    partial void OnPommelScaleChanged(int value) => UpdateAssembly();
+    // Scale change handlers - don't refit camera for scale tweaks
+    partial void OnBladeScaleChanged(int value) => UpdateAssembly(fitCamera: false);
+    partial void OnHandleScaleChanged(int value) => UpdateAssembly(fitCamera: false);
+    partial void OnGuardScaleChanged(int value) => UpdateAssembly(fitCamera: false);
+    partial void OnPommelScaleChanged(int value) => UpdateAssembly(fitCamera: false);
 
-    // Offset change handlers - trigger assembly update when user edits offsets
-    partial void OnBladePieceOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(); }
-    partial void OnBladePrevOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(); }
-    partial void OnBladeNextOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(); }
-    partial void OnHandlePieceOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(); }
-    partial void OnHandlePrevOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(); }
-    partial void OnHandleNextOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(); }
-    partial void OnGuardPieceOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(); }
-    partial void OnGuardPrevOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(); }
-    partial void OnGuardNextOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(); }
-    partial void OnPommelPieceOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(); }
-    partial void OnPommelPrevOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(); }
-    partial void OnPommelNextOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(); }
+    // Offset change handlers - don't refit camera for offset tweaks
+    partial void OnBladePieceOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(fitCamera: false); }
+    partial void OnBladePrevOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(fitCamera: false); }
+    partial void OnBladeNextOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(fitCamera: false); }
+    partial void OnHandlePieceOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(fitCamera: false); }
+    partial void OnHandlePrevOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(fitCamera: false); }
+    partial void OnHandleNextOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(fitCamera: false); }
+    partial void OnGuardPieceOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(fitCamera: false); }
+    partial void OnGuardPrevOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(fitCamera: false); }
+    partial void OnGuardNextOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(fitCamera: false); }
+    partial void OnPommelPieceOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(fitCamera: false); }
+    partial void OnPommelPrevOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(fitCamera: false); }
+    partial void OnPommelNextOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(fitCamera: false); }
 
-    private void UpdateAssembly()
+    /// <summary>
+    /// Updates the assembly with current piece selections and offset values.
+    /// </summary>
+    /// <param name="fitCamera">If true, camera will fit to content. Use true for piece changes, false for offset/scale tweaks.</param>
+    private void UpdateAssembly(bool fitCamera = true)
     {
         if (SelectedTemplate == null) return;
 
@@ -476,7 +485,7 @@ public partial class WeaponPartsEditorViewModel : ObservableObject
 
         if (selectedPieces.Count == 0)
         {
-            MeshesChanged?.Invoke();
+            MeshesChanged?.Invoke(fitCamera);
             UpdateStats();
             return;
         }
@@ -501,13 +510,25 @@ public partial class WeaponPartsEditorViewModel : ObservableObject
             }
         }
 
-        MeshesChanged?.Invoke();
+        MeshesChanged?.Invoke(fitCamera);
         UpdateStats();
     }
 
     /// <summary>
     /// Calculates positions for all pieces accounting for individual scale factors.
     /// Uses the editable offset values from the UI instead of original piece values.
+    ///
+    /// Assembly model based on Bannerlord documentation:
+    /// - Each mesh is centered at its local origin, extending along Z axis (becomes Y after rotation)
+    /// - Handle (build_order=0) is the anchor point at Y=0
+    /// - Guard (build_order=1) stacks above handle
+    /// - Blade (build_order=2) stacks above guard
+    /// - Pommel (build_order=-1) attaches below handle
+    ///
+    /// Offset meanings (in centimeters):
+    /// - piece_offset: Adjustment from calculated position
+    /// - next_piece_offset: Positive = pull next piece closer
+    /// - previous_piece_offset: Positive = pull toward previous piece
     /// </summary>
     private List<(string pieceType, Vector3 position, float scale)> CalculateAssemblyPositionsWithScale(
         CraftingTemplateInfo template,
@@ -526,13 +547,12 @@ public partial class WeaponPartsEditorViewModel : ObservableObject
             .OrderByDescending(pd => pd.BuildOrder)
             .ToList();
 
-        // Track current position along the weapon axis
-        float currentY = 0;
+        // Track the connection point (top edge of previous piece)
+        // Each mesh is centered at origin, so top edge = length/2, bottom edge = -length/2
+        float connectionPoint = 0;
 
         // Process positive build order pieces (Handle -> Guard -> Blade)
         string? previousPieceType = null;
-        float previousScale = 1f;
-        float previousLength = 0f;
 
         foreach (var pieceTypeData in orderedTypes)
         {
@@ -542,38 +562,52 @@ public partial class WeaponPartsEditorViewModel : ObservableObject
 
             var piece = pieceData.piece;
             var scale = pieceData.scale;
+            var scaledHalfLength = (piece.Length * scale) / 2f;
 
             // Get editable offset values for this piece type
             var (pieceOffset, prevOffset, nextOffset) = GetEditableOffsets(pieceType);
 
+            float positionY;
             if (previousPieceType == null)
             {
-                // First piece starts at origin + its piece_offset
-                currentY = pieceOffset;
+                // Handle (first piece): Center at origin, apply piece_offset
+                positionY = pieceOffset;
+                // Connection point for next piece is top edge of handle
+                connectionPoint = positionY + scaledHalfLength;
             }
             else
             {
-                // Get previous piece's next offset from editable values
+                // Get previous piece's next_offset
                 var (_, _, prevNextOffset) = GetEditableOffsets(previousPieceType);
-                // Calculate gap: previous piece's next_offset + current piece's previous_offset
-                var gap = prevNextOffset + prevOffset;
-                // Add previous piece's scaled length + gap
-                currentY += (previousLength * previousScale) + gap;
+
+                // Gap adjustment: positive offsets bring pieces closer together
+                var gapAdjustment = prevNextOffset + prevOffset;
+
+                // Position this piece so its bottom edge (-halfLength) meets the connection point
+                // Then adjust by the gap (positive = closer = subtract from position)
+                positionY = connectionPoint + scaledHalfLength - gapAdjustment + pieceOffset;
+
+                // Update connection point to top edge of this piece
+                connectionPoint = positionY + scaledHalfLength;
             }
 
-            result.Add((pieceType, new Vector3(0, currentY, 0), scale));
+            Console.WriteLine($"[Assembly] {pieceType}: length={piece.Length}, scale={scale}, halfLen={scaledHalfLength}, Y={positionY}");
+            result.Add((pieceType, new Vector3(0, positionY, 0), scale));
 
             previousPieceType = pieceType;
-            previousScale = scale;
-            previousLength = piece.Length;
         }
 
         // Process negative build order pieces (Pommel attaches to back of Handle)
         if (selectedPieces.TryGetValue("Handle", out var handleData))
         {
             var handlePiece = handleData.piece;
+            var handleScale = handleData.scale;
+            var handleHalfLength = (handlePiece.Length * handleScale) / 2f;
             var handlePosition = result.FirstOrDefault(r => r.pieceType == "Handle").position;
-            var (_, handlePrevOffset, _) = GetEditableOffsets("Handle");
+            var (handlePieceOffset, handlePrevOffset, _) = GetEditableOffsets("Handle");
+
+            // Bottom edge of handle
+            var handleBottomEdge = handlePosition.Y - handleHalfLength;
 
             foreach (var pieceTypeData in negativeTypes)
             {
@@ -583,12 +617,18 @@ public partial class WeaponPartsEditorViewModel : ObservableObject
 
                 var piece = pieceData.piece;
                 var scale = pieceData.scale;
-                var (_, _, pommelNextOffset) = GetEditableOffsets(pieceType);
+                var scaledHalfLength = (piece.Length * scale) / 2f;
+                var (pommelPieceOffset, _, pommelNextOffset) = GetEditableOffsets(pieceType);
 
-                // Pommel attaches to back of handle
-                // Position = handle position - handle's previous_offset - pommel's next_offset - pommel's scaled length
-                var pommelY = handlePosition.Y - handlePrevOffset - pommelNextOffset - (piece.Length * scale);
-                result.Add((pieceType, new Vector3(0, pommelY, 0), scale));
+                // Gap adjustment for pommel connecting to handle
+                var gapAdjustment = handlePrevOffset + pommelNextOffset;
+
+                // Position pommel so its top edge (+halfLength) meets handle's bottom edge
+                // Positive offsets = closer together = add to position (moving up toward handle)
+                var positionY = handleBottomEdge - scaledHalfLength + gapAdjustment + pommelPieceOffset;
+
+                Console.WriteLine($"[Assembly] {pieceType}: length={piece.Length}, scale={scale}, halfLen={scaledHalfLength}, Y={positionY}");
+                result.Add((pieceType, new Vector3(0, positionY, 0), scale));
             }
         }
 

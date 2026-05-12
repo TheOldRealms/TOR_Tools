@@ -247,6 +247,8 @@ public class FbxLoaderService : IDisposable
 
     /// <summary>
     /// Loads a specific mesh from an FBX file by name.
+    /// Searches both mesh names and scene node names since FBX files often have
+    /// meaningful names on nodes rather than on the mesh data itself.
     /// </summary>
     private unsafe MeshData? LoadMeshFromFbx(string fbxPath, string meshName)
     {
@@ -260,29 +262,84 @@ public class FbxLoaderService : IDisposable
 
         try
         {
-            // Find the mesh with matching name
+            // Build a mapping of node names to mesh indices by traversing the scene hierarchy
+            var nodeToMeshMap = new Dictionary<string, uint>(StringComparer.OrdinalIgnoreCase);
+            CollectNodeMeshMappings(scene->MRootNode, scene, nodeToMeshMap);
+
+            Console.WriteLine($"[FbxLoader] FBX '{Path.GetFileName(fbxPath)}' node->mesh mappings:");
+            foreach (var kvp in nodeToMeshMap.Take(10))
+            {
+                Console.WriteLine($"[FbxLoader]   Node '{kvp.Key}' -> Mesh[{kvp.Value}]");
+            }
+            if (nodeToMeshMap.Count > 10)
+                Console.WriteLine($"[FbxLoader]   ... and {nodeToMeshMap.Count - 10} more");
+
+            // Try exact node name match
+            if (nodeToMeshMap.TryGetValue(meshName, out var meshIndex))
+            {
+                Console.WriteLine($"[FbxLoader] Found exact node match for '{meshName}' -> Mesh[{meshIndex}]");
+                return ExtractMeshData(scene->MMeshes[meshIndex]);
+            }
+
+            // Try partial match on node names
+            foreach (var kvp in nodeToMeshMap)
+            {
+                if (kvp.Key.Contains(meshName, StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine($"[FbxLoader] Found partial node match: '{kvp.Key}' contains '{meshName}'");
+                    return ExtractMeshData(scene->MMeshes[kvp.Value]);
+                }
+            }
+
+            // Try reverse partial match - mesh name contains node name
+            foreach (var kvp in nodeToMeshMap)
+            {
+                if (meshName.Contains(kvp.Key, StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine($"[FbxLoader] Found reverse node match: '{meshName}' contains '{kvp.Key}'");
+                    return ExtractMeshData(scene->MMeshes[kvp.Value]);
+                }
+            }
+
+            // Try matching by piece type (blade, handle, guard, pommel)
+            var pieceTypes = new[] { "blade", "handle", "guard", "pommel" };
+            string? targetPieceType = null;
+            foreach (var pt in pieceTypes)
+            {
+                if (meshName.Contains(pt, StringComparison.OrdinalIgnoreCase))
+                {
+                    targetPieceType = pt;
+                    break;
+                }
+            }
+
+            if (targetPieceType != null)
+            {
+                foreach (var kvp in nodeToMeshMap)
+                {
+                    if (kvp.Key.Contains(targetPieceType, StringComparison.OrdinalIgnoreCase))
+                    {
+                        Console.WriteLine($"[FbxLoader] Found piece type node match: '{kvp.Key}' for type '{targetPieceType}'");
+                        return ExtractMeshData(scene->MMeshes[kvp.Value]);
+                    }
+                }
+            }
+
+            // Fallback: try direct mesh name matching
             for (uint i = 0; i < scene->MNumMeshes; i++)
             {
                 var mesh = scene->MMeshes[i];
                 if (mesh != null && mesh->MName.AsString == meshName)
                 {
+                    Console.WriteLine($"[FbxLoader] Found exact mesh name match for '{meshName}'");
                     return ExtractMeshData(mesh);
                 }
             }
 
-            // If exact name not found, try partial match
-            for (uint i = 0; i < scene->MNumMeshes; i++)
-            {
-                var mesh = scene->MMeshes[i];
-                if (mesh != null && mesh->MName.AsString.Contains(meshName, StringComparison.OrdinalIgnoreCase))
-                {
-                    return ExtractMeshData(mesh);
-                }
-            }
-
-            // Return first mesh if no match found (fallback for simple files)
+            // Return first mesh if no match found (fallback for simple single-mesh files)
             if (scene->MNumMeshes > 0)
             {
+                Console.WriteLine($"[FbxLoader] No match found for '{meshName}', using first mesh as fallback");
                 return ExtractMeshData(scene->MMeshes[0]);
             }
         }
@@ -292,6 +349,32 @@ public class FbxLoaderService : IDisposable
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Recursively collects node names and their associated mesh indices.
+    /// </summary>
+    private unsafe void CollectNodeMeshMappings(Node* node, Scene* scene, Dictionary<string, uint> map)
+    {
+        if (node == null) return;
+
+        var nodeName = node->MName.AsString;
+
+        // If this node has meshes, map the node name to the first mesh
+        if (node->MNumMeshes > 0 && !string.IsNullOrEmpty(nodeName))
+        {
+            var meshIdx = node->MMeshes[0];
+            if (!map.ContainsKey(nodeName))
+            {
+                map[nodeName] = meshIdx;
+            }
+        }
+
+        // Recurse into children
+        for (uint i = 0; i < node->MNumChildren; i++)
+        {
+            CollectNodeMeshMappings(node->MChildren[i], scene, map);
+        }
     }
 
     /// <summary>

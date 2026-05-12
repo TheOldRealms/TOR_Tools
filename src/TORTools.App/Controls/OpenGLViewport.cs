@@ -283,20 +283,27 @@ public class OpenGLViewport : OpenGlControlBase
         }
     }
 
-    // Scale factor - FBX meshes are in meters, offsets are in centimeters
-    // Scale meshes by 100x to convert meters to centimeters
+    // Scale factor - FBX meshes are in meters, offsets/lengths in XML are in centimeters
+    // Scale by 100 to convert meters to centimeters for consistent units
     private const float MeshScaleFactor = 100.0f;
+
+    // Rotation to orient weapon meshes correctly
+    // FBX meshes have their long axis along Z, but we want them along Y (pointing up)
+    // Rotate -90 degrees around X axis: Z -> Y, Y -> -Z
+    private static readonly Matrix4x4 MeshRotation = Matrix4x4.CreateRotationX(-MathF.PI / 2f);
 
     private void RenderMeshData(MeshRenderData data)
     {
         if (_gl == null) return;
 
-        // Set model matrix with scale and mesh offset
+        // Set model matrix with scale, rotation and mesh offset
         // Mesh geometry is in meters, offsets are in centimeters
-        // Scale mesh by 100 to convert to cm, then apply per-piece scale
-        // Offset is already in cm
+        // 1. Scale mesh by 100 to convert to cm, then apply per-piece scale
+        // 2. Rotate to orient correctly (Z-up to Y-up)
+        // 3. Apply offset (already in cm)
         var totalScale = MeshScaleFactor * data.Scale;
         var model = Matrix4x4.CreateScale(totalScale) *
+                    MeshRotation *
                     Matrix4x4.CreateTranslation(data.Offset);
         SetUniformMatrix4("uModel", model);
 
@@ -520,12 +527,32 @@ public class OpenGLViewport : OpenGlControlBase
             var mesh = data.Mesh;
             var offset = data.Offset;
             var totalScale = MeshScaleFactor * data.Scale;
-            // Mesh bounds scaled to cm with per-piece scale, + offset (already in cm)
-            var scaledMeshMin = mesh.BoundsMin * totalScale + offset;
-            var scaledMeshMax = mesh.BoundsMax * totalScale + offset;
-            boundsMin = Vector3.Min(boundsMin, scaledMeshMin);
-            boundsMax = Vector3.Max(boundsMax, scaledMeshMax);
-            Console.WriteLine($"[OpenGLViewport] Mesh {mesh.MeshName}: scaled bounds ({scaledMeshMin}) to ({scaledMeshMax}), scale={data.Scale}");
+
+            // Apply the same transformation as rendering: scale, rotate, translate
+            // Get all 8 corners of the bounding box
+            var corners = new Vector3[]
+            {
+                new(mesh.BoundsMin.X, mesh.BoundsMin.Y, mesh.BoundsMin.Z),
+                new(mesh.BoundsMax.X, mesh.BoundsMin.Y, mesh.BoundsMin.Z),
+                new(mesh.BoundsMin.X, mesh.BoundsMax.Y, mesh.BoundsMin.Z),
+                new(mesh.BoundsMax.X, mesh.BoundsMax.Y, mesh.BoundsMin.Z),
+                new(mesh.BoundsMin.X, mesh.BoundsMin.Y, mesh.BoundsMax.Z),
+                new(mesh.BoundsMax.X, mesh.BoundsMin.Y, mesh.BoundsMax.Z),
+                new(mesh.BoundsMin.X, mesh.BoundsMax.Y, mesh.BoundsMax.Z),
+                new(mesh.BoundsMax.X, mesh.BoundsMax.Y, mesh.BoundsMax.Z),
+            };
+
+            // Transform each corner
+            foreach (var corner in corners)
+            {
+                // Apply scale, rotation, then offset
+                var scaled = corner * totalScale;
+                var rotated = Vector3.Transform(scaled, MeshRotation);
+                var transformed = rotated + offset;
+                boundsMin = Vector3.Min(boundsMin, transformed);
+                boundsMax = Vector3.Max(boundsMax, transformed);
+            }
+            Console.WriteLine($"[OpenGLViewport] Mesh {mesh.MeshName}: bounds after transform, scale={data.Scale}");
         }
 
         var center = (boundsMin + boundsMax) / 2;
