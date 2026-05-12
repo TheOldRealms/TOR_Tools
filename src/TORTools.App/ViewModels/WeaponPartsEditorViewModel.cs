@@ -526,7 +526,7 @@ public partial class WeaponPartsEditorViewModel : ObservableObject
     /// - Pommel (build_order=-1) attaches below handle
     ///
     /// Offset meanings (in centimeters):
-    /// - piece_offset: Adjustment from calculated position
+    /// - piece_offset: Visual offset for THIS piece only (doesn't affect next piece's position)
     /// - next_piece_offset: Positive = pull next piece closer
     /// - previous_piece_offset: Positive = pull toward previous piece
     /// </summary>
@@ -547,8 +547,8 @@ public partial class WeaponPartsEditorViewModel : ObservableObject
             .OrderByDescending(pd => pd.BuildOrder)
             .ToList();
 
-        // Track the connection point (top edge of previous piece)
-        // Each mesh is centered at origin, so top edge = length/2, bottom edge = -length/2
+        // Track the connection point (top edge of previous piece's LOGICAL position)
+        // piece_offset is visual only - doesn't affect connection points
         float connectionPoint = 0;
 
         // Process positive build order pieces (Handle -> Guard -> Blade)
@@ -567,13 +567,16 @@ public partial class WeaponPartsEditorViewModel : ObservableObject
             // Get editable offset values for this piece type
             var (pieceOffset, prevOffset, nextOffset) = GetEditableOffsets(pieceType);
 
-            float positionY;
+            float logicalPositionY; // Position without piece_offset (used for connection point)
+            float visualPositionY;  // Actual rendered position (includes piece_offset)
+
             if (previousPieceType == null)
             {
-                // Handle (first piece): Center at origin, apply piece_offset
-                positionY = pieceOffset;
-                // Connection point for next piece is top edge of handle
-                connectionPoint = positionY + scaledHalfLength;
+                // Handle (first piece): Center at origin
+                logicalPositionY = 0;
+                visualPositionY = pieceOffset; // piece_offset is visual only
+                // Connection point for next piece is top edge of handle's LOGICAL position
+                connectionPoint = logicalPositionY + scaledHalfLength;
             }
             else
             {
@@ -583,16 +586,17 @@ public partial class WeaponPartsEditorViewModel : ObservableObject
                 // Gap adjustment: positive offsets bring pieces closer together
                 var gapAdjustment = prevNextOffset + prevOffset;
 
-                // Position this piece so its bottom edge (-halfLength) meets the connection point
-                // Then adjust by the gap (positive = closer = subtract from position)
-                positionY = connectionPoint + scaledHalfLength - gapAdjustment + pieceOffset;
+                // Logical position: where piece would be without piece_offset
+                logicalPositionY = connectionPoint + scaledHalfLength - gapAdjustment;
+                // Visual position: add piece_offset for rendering
+                visualPositionY = logicalPositionY + pieceOffset;
 
-                // Update connection point to top edge of this piece
-                connectionPoint = positionY + scaledHalfLength;
+                // Update connection point to top edge of this piece's LOGICAL position
+                connectionPoint = logicalPositionY + scaledHalfLength;
             }
 
-            Console.WriteLine($"[Assembly] {pieceType}: length={piece.Length}, scale={scale}, halfLen={scaledHalfLength}, Y={positionY}");
-            result.Add((pieceType, new Vector3(0, positionY, 0), scale));
+            Console.WriteLine($"[Assembly] {pieceType}: length={piece.Length}, scale={scale}, logical={logicalPositionY:F2}, visual={visualPositionY:F2}, offset={pieceOffset}");
+            result.Add((pieceType, new Vector3(0, visualPositionY, 0), scale));
 
             previousPieceType = pieceType;
         }
@@ -603,11 +607,12 @@ public partial class WeaponPartsEditorViewModel : ObservableObject
             var handlePiece = handleData.piece;
             var handleScale = handleData.scale;
             var handleHalfLength = (handlePiece.Length * handleScale) / 2f;
-            var handlePosition = result.FirstOrDefault(r => r.pieceType == "Handle").position;
-            var (handlePieceOffset, handlePrevOffset, _) = GetEditableOffsets("Handle");
+            // Use logical position (Y=0) for handle, not the visual position
+            var handleLogicalY = 0f;
+            var (_, handlePrevOffset, _) = GetEditableOffsets("Handle");
 
-            // Bottom edge of handle
-            var handleBottomEdge = handlePosition.Y - handleHalfLength;
+            // Bottom edge of handle's LOGICAL position
+            var handleBottomEdge = handleLogicalY - handleHalfLength;
 
             foreach (var pieceTypeData in negativeTypes)
             {
@@ -623,12 +628,13 @@ public partial class WeaponPartsEditorViewModel : ObservableObject
                 // Gap adjustment for pommel connecting to handle
                 var gapAdjustment = handlePrevOffset + pommelNextOffset;
 
-                // Position pommel so its top edge (+halfLength) meets handle's bottom edge
-                // Positive offsets = closer together = add to position (moving up toward handle)
-                var positionY = handleBottomEdge - scaledHalfLength + gapAdjustment + pommelPieceOffset;
+                // Logical position: where pommel would be without piece_offset
+                var logicalPositionY = handleBottomEdge - scaledHalfLength + gapAdjustment;
+                // Visual position: add piece_offset for rendering
+                var visualPositionY = logicalPositionY + pommelPieceOffset;
 
-                Console.WriteLine($"[Assembly] {pieceType}: length={piece.Length}, scale={scale}, halfLen={scaledHalfLength}, Y={positionY}");
-                result.Add((pieceType, new Vector3(0, positionY, 0), scale));
+                Console.WriteLine($"[Assembly] {pieceType}: length={piece.Length}, scale={scale}, logical={logicalPositionY:F2}, visual={visualPositionY:F2}, offset={pommelPieceOffset}");
+                result.Add((pieceType, new Vector3(0, visualPositionY, 0), scale));
             }
         }
 
