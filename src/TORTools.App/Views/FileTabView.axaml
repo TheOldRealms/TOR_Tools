@@ -157,6 +157,8 @@
                       SelectionMode="Extended"
                       HeadersVisibility="Column"
                       FrozenColumnCount="2"
+                      ScrollViewer.HorizontalScrollBarVisibility="Visible"
+                      ScrollViewer.VerticalScrollBarVisibility="Visible"
                       LoadingRow="OnDataGridLoadingRow">
             <DataGrid.ContextMenu>
                 <ContextMenu>
