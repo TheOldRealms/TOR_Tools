@@ -220,13 +220,58 @@
       ]
     },
     "OnWeaponHitScript_WeaponScriptName": {
-      "displayName": "Script Name",
+      "displayName": "Hit Script",
       "description": "Full class name of the weapon hit script.",
       "type": "string",
       "order": 70,
       "width": 300,
       "nested": true,
       "nestedPath": "OnWeaponHitScript/@WeaponScriptName"
+    },
+    "OnWeaponHitScript_Argument1": {
+      "displayName": "Hit Arg 1",
+      "description": "First argument for the weapon hit script.",
+      "type": "string",
+      "order": 71,
+      "width": 100,
+      "nested": true,
+      "nestedPath": "OnWeaponHitScript/Argument[1]"
+    },
+    "OnWeaponHitScript_Argument2": {
+      "displayName": "Hit Arg 2",
+      "description": "Second argument for the weapon hit script.",
+      "type": "string",
+      "order": 72,
+      "width": 100,
+      "nested": true,
+      "nestedPath": "OnWeaponHitScript/Argument[2]"
+    },
+    "OnInventoryUseScript_ScriptName": {
+      "displayName": "Use Script",
+      "description": "Full class name of the inventory use script (for consumables).",
+      "type": "string",
+      "order": 73,
+      "width": 300,
+      "nested": true,
+      "nestedPath": "OnInventoryUseScript/@InventoryScriptName"
+    },
+    "OnInventoryUseScript_Argument1": {
+      "displayName": "Use Arg 1",
+      "description": "First argument for the inventory use script.",
+      "type": "string",
+      "order": 74,
+      "width": 100,
+      "nested": true,
+      "nestedPath": "OnInventoryUseScript/Argument[1]"
+    },
+    "OnInventoryUseScript_Argument2": {
+      "displayName": "Use Arg 2",
+      "description": "Second argument for the inventory use script.",
+      "type": "string",
+      "order": 75,
+      "width": 100,
+      "nested": true,
+      "nestedPath": "OnInventoryUseScript/Argument[2]"
     },
     "IngredientItem": {
       "displayName": "Ingredient",

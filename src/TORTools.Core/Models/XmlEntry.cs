@@ -264,8 +264,11 @@ public class XmlEntry
 
     /// <summary>
     /// Navigates to or creates elements along a path.
-    /// Only simple paths and multi-level paths support creation.
-    /// Indexed and filtered paths require elements to exist.
+    /// Supports creation for:
+    /// - Simple element names (e.g., "Child")
+    /// - Multi-level paths (e.g., "Parent/Child")
+    /// - Attribute filter paths (e.g., "Piece[@Type='Blade']") - creates element with filter attribute set
+    /// Indexed paths (e.g., "Child[1]") require elements to exist.
     /// </summary>
     private static XElement? NavigateOrCreateElement(XElement root, string path)
     {
@@ -285,14 +288,29 @@ public class XmlEntry
 
                 if (bracketContent.StartsWith("@"))
                 {
-                    // Attribute filter - must exist, can't create
+                    // Attribute filter - find existing or create new element with filter attribute
                     var filterParts = bracketContent.Substring(1).Split('=');
                     if (filterParts.Length == 2)
                     {
                         var filterAttr = filterParts[0];
                         var filterValue = filterParts[1].Trim('\'', '"');
-                        current = current.Elements(elementName)
+
+                        // Try to find existing element with matching attribute
+                        var existing = current.Elements(elementName)
                             .FirstOrDefault(e => e.Attribute(filterAttr)?.Value == filterValue);
+
+                        if (existing != null)
+                        {
+                            current = existing;
+                        }
+                        else
+                        {
+                            // Create new element with the filter attribute set
+                            var newElement = new XElement(elementName);
+                            newElement.SetAttributeValue(filterAttr, filterValue);
+                            current.Add(newElement);
+                            current = newElement;
+                        }
                     }
                     else
                     {

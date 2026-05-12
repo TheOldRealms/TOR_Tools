@@ -16,7 +16,8 @@
       "Bash(powershell:*)",
       "Bash(grep:*)",
       "Bash(taskkill:*)",
-      "Bash(tail:*)"
+      "Bash(tail:*)",
+      "Bash(dir \"C:\\\\Program Files \\(x86\\)\\\\Steam\\\\steamapps\\\\common\\\\Mount & Blade II Bannerlord\\\\Modules\")"
     ]
   }
 }

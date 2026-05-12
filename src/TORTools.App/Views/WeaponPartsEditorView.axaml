@@ -1,0 +1,336 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:TORTools.App.ViewModels"
+        xmlns:controls="using:TORTools.App.Controls"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="700"
+        x:Class="TORTools.App.Views.WeaponPartsEditorView"
+        x:DataType="vm:WeaponPartsEditorViewModel"
+        Title="Weapon Parts Editor"
+        Width="1200" Height="850"
+        WindowStartupLocation="CenterOwner">
+
+    <Window.Styles>
+        <Style Selector="TextBlock.header">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
+        </Style>
+        <Style Selector="ListBox">
+            <Setter Property="Background" Value="#1E1E1E"/>
+            <Setter Property="BorderBrush" Value="#3F3F46"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style Selector="ListBoxItem">
+            <Setter Property="Padding" Value="8,4"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- Header: Template Selection -->
+        <Border Grid.Row="0" Background="#252526" Padding="10">
+            <StackPanel Orientation="Horizontal" Spacing="15">
+                <TextBlock Text="Template:" VerticalAlignment="Center"/>
+                <ComboBox Width="300"
+                          ItemsSource="{Binding AvailableTemplates}"
+                          SelectedItem="{Binding SelectedTemplate}"
+                          DisplayMemberBinding="{Binding Id}"/>
+                <TextBlock Text="{Binding StatusMessage}"
+                           VerticalAlignment="Center"
+                           Foreground="#888888"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1" ColumnDefinitions="250,*,340">
+            <!-- Left Panel: Available Pieces -->
+            <Border Grid.Column="0" Background="#1E1E1E" Padding="10">
+                <ScrollViewer>
+                    <StackPanel Spacing="15">
+                        <!-- Blades -->
+                        <StackPanel>
+                            <TextBlock Text="Blades" Classes="header"/>
+                            <TextBox Text="{Binding BladeFilter}"
+                                     PlaceholderText="Filter..."
+                                     FontSize="10"
+                                     Margin="0,0,0,3"/>
+                            <ListBox ItemsSource="{Binding AvailableBlades}"
+                                     SelectedItem="{Binding SelectedBlade}"
+                                     Height="100">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Id}"
+                                                   ToolTip.Tip="{Binding Name}"
+                                                   FontSize="11"/>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </StackPanel>
+
+                        <!-- Handles -->
+                        <StackPanel>
+                            <TextBlock Text="Handles" Classes="header"/>
+                            <TextBox Text="{Binding HandleFilter}"
+                                     PlaceholderText="Filter..."
+                                     FontSize="10"
+                                     Margin="0,0,0,3"/>
+                            <ListBox ItemsSource="{Binding AvailableHandles}"
+                                     SelectedItem="{Binding SelectedHandle}"
+                                     Height="100">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Id}"
+                                                   ToolTip.Tip="{Binding Name}"
+                                                   FontSize="11"/>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </StackPanel>
+
+                        <!-- Guards -->
+                        <StackPanel>
+                            <TextBlock Text="Guards" Classes="header"/>
+                            <TextBox Text="{Binding GuardFilter}"
+                                     PlaceholderText="Filter..."
+                                     FontSize="10"
+                                     Margin="0,0,0,3"/>
+                            <ListBox ItemsSource="{Binding AvailableGuards}"
+                                     SelectedItem="{Binding SelectedGuard}"
+                                     Height="100">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Id}"
+                                                   ToolTip.Tip="{Binding Name}"
+                                                   FontSize="11"/>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </StackPanel>
+
+                        <!-- Pommels -->
+                        <StackPanel>
+                            <TextBlock Text="Pommels" Classes="header"/>
+                            <TextBox Text="{Binding PommelFilter}"
+                                     PlaceholderText="Filter..."
+                                     FontSize="10"
+                                     Margin="0,0,0,3"/>
+                            <ListBox ItemsSource="{Binding AvailablePommels}"
+                                     SelectedItem="{Binding SelectedPommel}"
+                                     Height="100">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Id}"
+                                                   ToolTip.Tip="{Binding Name}"
+                                                   FontSize="11"/>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- Center: 3D Viewport -->
+            <Border Grid.Column="1" Background="#0D0D0D" Margin="5,0">
+                <Grid RowDefinitions="*,Auto">
+                    <!-- OpenGL viewport and event overlay stacked -->
+                    <Grid Grid.Row="0">
+                        <controls:OpenGLViewport x:Name="Viewport"/>
+                        <!-- Transparent overlay to capture mouse events -->
+                        <Border x:Name="ViewportEventOverlay"
+                                Background="Transparent"
+                                PointerPressed="OnViewportPointerPressed"
+                                PointerReleased="OnViewportPointerReleased"
+                                PointerMoved="OnViewportPointerMoved"
+                                PointerWheelChanged="OnViewportPointerWheelChanged"/>
+                    </Grid>
+
+                    <!-- Viewport Controls -->
+                    <StackPanel Grid.Row="1" Orientation="Horizontal"
+                                HorizontalAlignment="Center"
+                                Margin="0,5"
+                                Spacing="10">
+                        <Button Content="Reset Camera" Click="OnResetCamera"/>
+                        <Button Content="Fit to View" Click="OnFitToView"/>
+                        <TextBlock Text="LMB: Rotate | RMB: Pan | Scroll: Zoom"
+                                   Foreground="#666666"
+                                   VerticalAlignment="Center"
+                                   Margin="20,0,0,0"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Right Panel: Selected Pieces & Scales -->
+            <Border Grid.Column="2" Background="#252526" Padding="10">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Selected Pieces" Classes="header" FontSize="14"/>
+
+                    <!-- Blade Selection -->
+                    <Border Background="#1E1E1E" Padding="8" CornerRadius="4">
+                        <StackPanel Spacing="5">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Text="Blade" FontWeight="SemiBold"/>
+                                <TextBlock Grid.Column="1" Text="{Binding SelectedBlade.Length, StringFormat=L:{0:F1}cm}"
+                                           Foreground="#888888" FontSize="10"/>
+                            </Grid>
+                            <TextBlock Text="{Binding SelectedBlade.Id, FallbackValue='-'}"
+                                       Foreground="#AAAAAA" FontSize="10" TextTrimming="CharacterEllipsis"/>
+                            <Grid ColumnDefinitions="60,*" RowDefinitions="Auto,Auto,Auto" Margin="0,5,0,0">
+                                <TextBlock Text="Offset:" FontSize="10" Foreground="#888888" VerticalAlignment="Center"/>
+                                <NumericUpDown Grid.Column="1" Value="{Binding BladePieceOffset}"
+                                               Minimum="-100" Maximum="100" Increment="0.1" FormatString="F2"
+                                               FontSize="11" Height="26" MinWidth="120"/>
+                                <TextBlock Grid.Row="1" Text="Prev:" FontSize="10" Foreground="#888888" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                                <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding BladePrevOffset}"
+                                               Minimum="-100" Maximum="100" Increment="0.1" FormatString="F2"
+                                               FontSize="11" Height="26" MinWidth="120" Margin="0,3,0,0"/>
+                                <TextBlock Grid.Row="2" Text="Next:" FontSize="10" Foreground="#888888" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                                <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding BladeNextOffset}"
+                                               Minimum="-100" Maximum="100" Increment="0.1" FormatString="F2"
+                                               FontSize="11" Height="26" MinWidth="120" Margin="0,3,0,0"/>
+                            </Grid>
+                            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,5,0,0">
+                                <TextBlock Text="Scale:" VerticalAlignment="Center" FontSize="10"/>
+                                <Slider Grid.Column="1" Minimum="50" Maximum="150"
+                                        Value="{Binding BladeScale}" Margin="5,0"/>
+                                <TextBlock Grid.Column="2" Text="{Binding BladeScale, StringFormat={}{0}%}"
+                                           Width="35" FontSize="10"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Handle Selection -->
+                    <Border Background="#1E1E1E" Padding="8" CornerRadius="4">
+                        <StackPanel Spacing="5">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Text="Handle" FontWeight="SemiBold"/>
+                                <TextBlock Grid.Column="1" Text="{Binding SelectedHandle.Length, StringFormat=L:{0:F1}cm}"
+                                           Foreground="#888888" FontSize="10"/>
+                            </Grid>
+                            <TextBlock Text="{Binding SelectedHandle.Id, FallbackValue='-'}"
+                                       Foreground="#AAAAAA" FontSize="10" TextTrimming="CharacterEllipsis"/>
+                            <Grid ColumnDefinitions="60,*" RowDefinitions="Auto,Auto,Auto" Margin="0,5,0,0">
+                                <TextBlock Text="Offset:" FontSize="10" Foreground="#888888" VerticalAlignment="Center"/>
+                                <NumericUpDown Grid.Column="1" Value="{Binding HandlePieceOffset}"
+                                               Minimum="-100" Maximum="100" Increment="0.1" FormatString="F2"
+                                               FontSize="11" Height="26" MinWidth="120"/>
+                                <TextBlock Grid.Row="1" Text="Prev:" FontSize="10" Foreground="#888888" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                                <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding HandlePrevOffset}"
+                                               Minimum="-100" Maximum="100" Increment="0.1" FormatString="F2"
+                                               FontSize="11" Height="26" MinWidth="120" Margin="0,3,0,0"/>
+                                <TextBlock Grid.Row="2" Text="Next:" FontSize="10" Foreground="#888888" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                                <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding HandleNextOffset}"
+                                               Minimum="-100" Maximum="100" Increment="0.1" FormatString="F2"
+                                               FontSize="11" Height="26" MinWidth="120" Margin="0,3,0,0"/>
+                            </Grid>
+                            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,5,0,0">
+                                <TextBlock Text="Scale:" VerticalAlignment="Center" FontSize="10"/>
+                                <Slider Grid.Column="1" Minimum="50" Maximum="150"
+                                        Value="{Binding HandleScale}" Margin="5,0"/>
+                                <TextBlock Grid.Column="2" Text="{Binding HandleScale, StringFormat={}{0}%}"
+                                           Width="35" FontSize="10"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Guard Selection -->
+                    <Border Background="#1E1E1E" Padding="8" CornerRadius="4">
+                        <StackPanel Spacing="5">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Text="Guard" FontWeight="SemiBold"/>
+                                <TextBlock Grid.Column="1" Text="{Binding SelectedGuard.Length, StringFormat=L:{0:F1}cm}"
+                                           Foreground="#888888" FontSize="10"/>
+                            </Grid>
+                            <TextBlock Text="{Binding SelectedGuard.Id, FallbackValue='-'}"
+                                       Foreground="#AAAAAA" FontSize="10" TextTrimming="CharacterEllipsis"/>
+                            <Grid ColumnDefinitions="60,*" RowDefinitions="Auto,Auto,Auto" Margin="0,5,0,0">
+                                <TextBlock Text="Offset:" FontSize="10" Foreground="#888888" VerticalAlignment="Center"/>
+                                <NumericUpDown Grid.Column="1" Value="{Binding GuardPieceOffset}"
+                                               Minimum="-100" Maximum="100" Increment="0.1" FormatString="F2"
+                                               FontSize="11" Height="26" MinWidth="120"/>
+                                <TextBlock Grid.Row="1" Text="Prev:" FontSize="10" Foreground="#888888" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                                <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding GuardPrevOffset}"
+                                               Minimum="-100" Maximum="100" Increment="0.1" FormatString="F2"
+                                               FontSize="11" Height="26" MinWidth="120" Margin="0,3,0,0"/>
+                                <TextBlock Grid.Row="2" Text="Next:" FontSize="10" Foreground="#888888" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                                <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding GuardNextOffset}"
+                                               Minimum="-100" Maximum="100" Increment="0.1" FormatString="F2"
+                                               FontSize="11" Height="26" MinWidth="120" Margin="0,3,0,0"/>
+                            </Grid>
+                            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,5,0,0">
+                                <TextBlock Text="Scale:" VerticalAlignment="Center" FontSize="10"/>
+                                <Slider Grid.Column="1" Minimum="50" Maximum="150"
+                                        Value="{Binding GuardScale}" Margin="5,0"/>
+                                <TextBlock Grid.Column="2" Text="{Binding GuardScale, StringFormat={}{0}%}"
+                                           Width="35" FontSize="10"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Pommel Selection -->
+                    <Border Background="#1E1E1E" Padding="8" CornerRadius="4">
+                        <StackPanel Spacing="5">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Text="Pommel" FontWeight="SemiBold"/>
+                                <TextBlock Grid.Column="1" Text="{Binding SelectedPommel.Length, StringFormat=L:{0:F1}cm}"
+                                           Foreground="#888888" FontSize="10"/>
+                            </Grid>
+                            <TextBlock Text="{Binding SelectedPommel.Id, FallbackValue='-'}"
+                                       Foreground="#AAAAAA" FontSize="10" TextTrimming="CharacterEllipsis"/>
+                            <Grid ColumnDefinitions="60,*" RowDefinitions="Auto,Auto,Auto" Margin="0,5,0,0">
+                                <TextBlock Text="Offset:" FontSize="10" Foreground="#888888" VerticalAlignment="Center"/>
+                                <NumericUpDown Grid.Column="1" Value="{Binding PommelPieceOffset}"
+                                               Minimum="-100" Maximum="100" Increment="0.1" FormatString="F2"
+                                               FontSize="11" Height="26" MinWidth="120"/>
+                                <TextBlock Grid.Row="1" Text="Prev:" FontSize="10" Foreground="#888888" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                                <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding PommelPrevOffset}"
+                                               Minimum="-100" Maximum="100" Increment="0.1" FormatString="F2"
+                                               FontSize="11" Height="26" MinWidth="120" Margin="0,3,0,0"/>
+                                <TextBlock Grid.Row="2" Text="Next:" FontSize="10" Foreground="#888888" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                                <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding PommelNextOffset}"
+                                               Minimum="-100" Maximum="100" Increment="0.1" FormatString="F2"
+                                               FontSize="11" Height="26" MinWidth="120" Margin="0,3,0,0"/>
+                            </Grid>
+                            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,5,0,0">
+                                <TextBlock Text="Scale:" VerticalAlignment="Center" FontSize="10"/>
+                                <Slider Grid.Column="1" Minimum="50" Maximum="150"
+                                        Value="{Binding PommelScale}" Margin="5,0"/>
+                                <TextBlock Grid.Column="2" Text="{Binding PommelScale, StringFormat={}{0}%}"
+                                           Width="35" FontSize="10"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Button Content="Reset Scales" Command="{Binding ResetScalesCommand}"
+                            HorizontalAlignment="Stretch"/>
+                </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <!-- Footer: Stats and Actions -->
+        <Border Grid.Row="2" Background="#252526" Padding="10">
+            <Grid ColumnDefinitions="*,Auto">
+                <!-- Stats -->
+                <StackPanel Orientation="Horizontal" Spacing="30">
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <TextBlock Text="Total Length:" Foreground="#888888"/>
+                        <TextBlock Text="{Binding TotalLength}" FontWeight="SemiBold"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <TextBlock Text="Total Weight:" Foreground="#888888"/>
+                        <TextBlock Text="{Binding TotalWeight}" FontWeight="SemiBold"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Action Buttons -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                    <Button Content="Cancel" Width="100" Click="OnCancel"/>
+                    <Button Content="Apply" Width="100" Click="OnApply"
+                            Classes="accent"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
