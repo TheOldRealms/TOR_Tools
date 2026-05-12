@@ -64,16 +64,48 @@
                 Padding="4"
                 IsVisible="{Binding !HasError}">
             <StackPanel Orientation="Horizontal" Spacing="4">
+                <!-- Standard add row (for non-equipment-set files) -->
                 <Button Content="+ Add Row"
                         Command="{Binding AddRowCommand}"
                         ToolTip.Tip="Add new row after selection (Ctrl+Shift+A)"
                         Padding="8,4"
                         Background="#3ba55d"
-                        Foreground="#ffffff"/>
+                        Foreground="#ffffff"
+                        IsVisible="{Binding !HasNestedVariations}"/>
+                <!-- Equipment set buttons -->
+                <Button Content="+ New Roster"
+                        Command="{Binding AddRosterCommand}"
+                        ToolTip.Tip="Add a new empty roster with one variation"
+                        Padding="8,4"
+                        Background="#3ba55d"
+                        Foreground="#ffffff"
+                        IsVisible="{Binding HasNestedVariations}"/>
+                <Button Content="+ Variation"
+                        Command="{Binding AddVariationCommand}"
+                        ToolTip.Tip="Add new variation to the selected roster"
+                        Padding="8,4"
+                        Background="#43b581"
+                        Foreground="#ffffff"
+                        IsVisible="{Binding HasNestedVariations}"/>
+                <!-- Standard duplicate (for non-equipment-set files) -->
                 <Button Content="Duplicate"
                         Command="{Binding DuplicateRowCommand}"
                         ToolTip.Tip="Duplicate selected row (Ctrl+D)"
-                        Padding="8,4"/>
+                        Padding="8,4"
+                        IsVisible="{Binding !HasNestedVariations}"/>
+                <!-- Equipment set duplicate buttons -->
+                <Button Content="Dup. Variation"
+                        Command="{Binding DuplicateVariationCommand}"
+                        ToolTip.Tip="Duplicate the selected variation"
+                        Padding="8,4"
+                        IsVisible="{Binding HasNestedVariations}"/>
+                <Button Content="Dup. Roster"
+                        Command="{Binding DuplicateRosterCommand}"
+                        ToolTip.Tip="Duplicate the entire roster with all variations"
+                        Padding="8,4"
+                        Background="#2196F3"
+                        Foreground="#ffffff"
+                        IsVisible="{Binding HasNestedVariations}"/>
                 <Button Content="Delete"
                         Command="{Binding DeleteRowCommand}"
                         ToolTip.Tip="Delete selected row (Ctrl+Del)"
@@ -128,17 +160,50 @@
                       LoadingRow="OnDataGridLoadingRow">
             <DataGrid.ContextMenu>
                 <ContextMenu>
-                    <MenuItem Header="Insert Row Above" Command="{Binding InsertRowAboveCommand}">
+                    <!-- Standard row operations (for non-equipment-set files) -->
+                    <MenuItem Header="Insert Row Above" Command="{Binding InsertRowAboveCommand}"
+                              IsVisible="{Binding !HasNestedVariations}">
                         <MenuItem.Icon>
                             <TextBlock Text="+" FontWeight="Bold" Foreground="#4CAF50"/>
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="Insert Row Below" Command="{Binding AddRowCommand}">
+                    <MenuItem Header="Insert Row Below" Command="{Binding AddRowCommand}"
+                              IsVisible="{Binding !HasNestedVariations}">
                         <MenuItem.Icon>
                             <TextBlock Text="+" FontWeight="Bold" Foreground="#4CAF50"/>
                         </MenuItem.Icon>
                     </MenuItem>
-                    <Separator/>
+                    <Separator IsVisible="{Binding !HasNestedVariations}"/>
+
+                    <!-- Equipment set operations -->
+                    <MenuItem Header="Add New Roster" Command="{Binding AddRosterCommand}"
+                              IsVisible="{Binding HasNestedVariations}">
+                        <MenuItem.Icon>
+                            <TextBlock Text="+" FontWeight="Bold" Foreground="#4CAF50"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Add Variation" Command="{Binding AddVariationCommand}"
+                              IsVisible="{Binding HasNestedVariations}">
+                        <MenuItem.Icon>
+                            <TextBlock Text="+" FontWeight="Bold" Foreground="#43b581"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <Separator IsVisible="{Binding HasNestedVariations}"/>
+                    <MenuItem Header="Duplicate Variation" Command="{Binding DuplicateVariationCommand}"
+                              IsVisible="{Binding HasNestedVariations}">
+                        <MenuItem.Icon>
+                            <TextBlock Text="⧉" FontSize="14"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Duplicate Roster" Command="{Binding DuplicateRosterCommand}"
+                              IsVisible="{Binding HasNestedVariations}">
+                        <MenuItem.Icon>
+                            <TextBlock Text="⧉" FontSize="14" Foreground="#2196F3"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <Separator IsVisible="{Binding HasNestedVariations}"/>
+
+                    <!-- Copy/Paste (available for all files) -->
                     <MenuItem Header="Copy Row" InputGesture="Ctrl+C" Command="{Binding CopyRowCommand}">
                         <MenuItem.Icon>
                             <TextBlock Text="📋" FontSize="12"/>
@@ -150,12 +215,17 @@
                         </MenuItem.Icon>
                     </MenuItem>
                     <Separator/>
-                    <MenuItem Header="Duplicate Row" Command="{Binding DuplicateRowCommand}">
+
+                    <!-- Duplicate Row (only for non-equipment-set files) -->
+                    <MenuItem Header="Duplicate Row" Command="{Binding DuplicateRowCommand}"
+                              IsVisible="{Binding !HasNestedVariations}">
                         <MenuItem.Icon>
                             <TextBlock Text="⧉" FontSize="14"/>
                         </MenuItem.Icon>
                     </MenuItem>
-                    <Separator/>
+                    <Separator IsVisible="{Binding !HasNestedVariations}"/>
+
+                    <!-- Delete (available for all files) -->
                     <MenuItem Header="Delete Row" Command="{Binding DeleteRowCommand}" Foreground="#C62828">
                         <MenuItem.Icon>
                             <TextBlock Text="✕" FontWeight="Bold" Foreground="#C62828"/>

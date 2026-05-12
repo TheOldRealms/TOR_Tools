@@ -36,6 +36,29 @@ public class FilePathResolver
             return path;
         }
 
+        // Dev mode: Walk up from bin/Debug/net10.0 to find repo root's data folder
+        // Similar logic to SchemaService.FindSchemasPath()
+        var dir = new DirectoryInfo(appDir);
+        while (dir != null)
+        {
+            var dataDir = Path.Combine(dir.FullName, "data");
+            if (Directory.Exists(dataDir))
+            {
+                _cachedDataDirectory = dataDir;
+                return dataDir;
+            }
+
+            // Also check if we're in bin/Debug/net10.0 etc (go up 4+ levels to repo root)
+            var parentData = Path.Combine(dir.FullName, "..", "..", "..", "..", "data");
+            if (Directory.Exists(parentData))
+            {
+                _cachedDataDirectory = Path.GetFullPath(parentData);
+                return _cachedDataDirectory;
+            }
+
+            dir = dir.Parent;
+        }
+
         return null;
     }
 
