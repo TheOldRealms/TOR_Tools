@@ -4,6 +4,7 @@
   "description": "Skill templates defining combat and non-combat skill values for troops.",
   "rootElement": "SkillSets",
   "entryElement": "SkillSet",
+  "compactFormat": false,
   "fields": {
     "id": {
       "displayName": "ID",
