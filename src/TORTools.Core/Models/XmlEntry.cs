@@ -68,6 +68,16 @@ public class XmlEntry
     }
 
     /// <summary>
+    /// Refreshes the Children collection from the underlying XElement.
+    /// Call this after programmatically adding/removing child elements.
+    /// </summary>
+    public void RefreshChildren()
+    {
+        Children.Clear();
+        LoadChildren();
+    }
+
+    /// <summary>
     /// Gets an attribute by name.
     /// </summary>
     public XmlAttributeValue? GetAttribute(string name)
