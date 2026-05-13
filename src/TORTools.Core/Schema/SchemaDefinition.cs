@@ -51,6 +51,13 @@ public class SchemaDefinition
     public bool CompactFormat { get; set; } = true;
 
     /// <summary>
+    /// Field to group entries by when saving, with comments between groups.
+    /// For example, "category" to group strings by category with comments like &lt;!-- Skills --&gt;.
+    /// </summary>
+    [JsonPropertyName("groupByField")]
+    public string? GroupByField { get; set; }
+
+    /// <summary>
     /// Whether this file type has nested variation elements (e.g., equipment sets).
     /// </summary>
     [JsonPropertyName("hasNestedVariations")]

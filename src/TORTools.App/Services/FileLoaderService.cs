@@ -64,6 +64,16 @@ public class FileLoaderService
                 }
                 else
                 {
+                    // Check if we need to merge data from a separate metadata file
+                    if (context.Schema.MergedDataFile != null)
+                    {
+                        var baseDir = Path.GetDirectoryName(context.FilePath);
+                        if (!string.IsNullOrEmpty(baseDir))
+                        {
+                            MergeDataFromFile(context, entries.ToList(), baseDir);
+                        }
+                    }
+
                     // Normal loading
                     DiscoverColumns(context, entries);
                     CreateRows(context, entries);
@@ -163,9 +173,13 @@ public class FileLoaderService
     /// </summary>
     private void MergeDataFromFile(FileEditContext context, List<XmlEntry> entries, string baseDir)
     {
+        Console.WriteLine($"[MergeData] Called for {context.FilePath}, MergedDataFile is {(context.Schema?.MergedDataFile != null ? "SET" : "NULL")}");
+
         if (context.Schema?.MergedDataFile == null) return;
 
         var mergedConfig = context.Schema.MergedDataFile;
+        Console.WriteLine($"[MergeData] Looking for: {mergedConfig.FileName}, baseDir: {baseDir}");
+
         var mergedFilePath = FindSourceFile(baseDir, mergedConfig.FileName);
         if (mergedFilePath == null)
         {
@@ -228,6 +242,30 @@ public class FileLoaderService
                 }
             }
             Console.WriteLine($"[MergeData] Merged {mergedCount} entries with data");
+
+            // Auto-infer categories for strings that don't have one in metadata
+            if (mergedConfig.FieldMappings?.ContainsKey("category") == true)
+            {
+                int inferredCount = 0;
+                foreach (var entry in entries)
+                {
+                    var existingCategory = entry.GetAttributeValue("category");
+                    if (string.IsNullOrEmpty(existingCategory))
+                    {
+                        var entryId = entry.GetAttributeValue("id");
+                        var inferredCategory = StringCategoryService.InferCategory(entryId);
+                        if (!string.IsNullOrEmpty(inferredCategory))
+                        {
+                            entry.SetAttributeValue("category", inferredCategory);
+                            inferredCount++;
+                        }
+                    }
+                }
+                if (inferredCount > 0)
+                {
+                    Console.WriteLine($"[MergeData] Auto-inferred {inferredCount} categories from string IDs");
+                }
+            }
 
             Console.WriteLine($"[MergeData] Merged data complete");
         }

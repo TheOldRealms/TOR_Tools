@@ -93,6 +93,10 @@ public class SchemaService : ISchemaService
                 {
                     _schemas[schema.FileName] = schema;
                     Console.WriteLine($"[SchemaService] Loaded schema for {schema.FileName}");
+                    if (schema.MergedDataFile != null)
+                    {
+                        Console.WriteLine($"[SchemaService]   -> Has MergedDataFile: {schema.MergedDataFile.FileName}");
+                    }
                 }
             }
             catch (Exception ex)

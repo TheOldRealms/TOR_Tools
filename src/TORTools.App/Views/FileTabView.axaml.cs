@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -25,6 +26,15 @@ public partial class FileTabView : UserControl
     private bool _columnsGenerated;
     private object? _pendingScrollTarget;
     private bool _scrollPending;
+
+    // Fill handle (drag-to-fill) tracking
+    private bool _isFillDragging;
+    private int _fillStartRowIndex = -1;
+    private int _fillEndRowIndex = -1;
+    private double _fillStartY = 0;
+    private string? _fillColumnName;
+    private string? _fillValue;
+    private Border? _activeFillHandle;
 
     public FileTabView()
     {
@@ -2045,7 +2055,7 @@ public partial class FileTabView : UserControl
     /// Creates a text cell template that handles validation and dynamic styling.
     /// Uses AXAML styles via pseudo-classes (defined in CellStyles.axaml).
     /// </summary>
-    private static IDataTemplate CreateTextCellTemplate(string attributeName, FieldDefinition? fieldDef, FileTabViewModel vm)
+    private IDataTemplate CreateTextCellTemplate(string attributeName, FieldDefinition? fieldDef, FileTabViewModel vm)
     {
         // Get prefix to strip for display
         var prefixToStrip = fieldDef?.PrefixToStrip;
@@ -2065,7 +2075,10 @@ public partial class FileTabView : UserControl
             var border = new Border();
             border.Classes.Add("dataCell");
 
-            var grid = new Grid
+            // Main container grid for content + fill handle
+            var outerGrid = new Grid();
+
+            var contentGrid = new Grid
             {
                 ColumnDefinitions = new ColumnDefinitions("*,Auto")
             };
@@ -2073,13 +2086,29 @@ public partial class FileTabView : UserControl
             var text = new TextBlock();
             text.Classes.Add("cellText");
             Grid.SetColumn(text, 0);
-            grid.Children.Add(text);
+            contentGrid.Children.Add(text);
 
             // Warning/error icon (styled via pseudo-classes)
             var icon = new TextBlock();
             icon.Classes.Add("cellIcon");
             Grid.SetColumn(icon, 1);
-            grid.Children.Add(icon);
+            contentGrid.Children.Add(icon);
+
+            outerGrid.Children.Add(contentGrid);
+
+            // Fill handle - small square at bottom-right corner
+            var fillHandle = new Border
+            {
+                Width = 8,
+                Height = 8,
+                Background = new SolidColorBrush(Color.FromRgb(88, 101, 242)), // Discord blurple
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Bottom,
+                Margin = new Thickness(0, 0, 1, 1),
+                IsVisible = false, // Hidden by default
+                Cursor = new Avalonia.Input.Cursor(StandardCursorType.Cross)
+            };
+            outerGrid.Children.Add(fillHandle);
 
             if (rowVm != null)
             {
@@ -2127,6 +2156,80 @@ public partial class FileTabView : UserControl
                 // Initial styling
                 CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
 
+                // Show fill handle on hover (like Excel)
+                border.PointerEntered += (s, e) =>
+                {
+                    if (!rowVm.IsRemoved)
+                    {
+                        fillHandle.IsVisible = true;
+                    }
+                };
+
+                border.PointerExited += (s, e) =>
+                {
+                    // Don't hide if we're dragging from this handle
+                    if (!_isFillDragging)
+                    {
+                        fillHandle.IsVisible = false;
+                    }
+                };
+
+                // Fill handle pointer events
+                fillHandle.PointerPressed += (s, e) =>
+                {
+                    _isFillDragging = true;
+                    _fillStartRowIndex = rowVm.RowNumber - 1;
+                    _fillEndRowIndex = _fillStartRowIndex;
+                    _fillColumnName = attributeName;
+                    _fillValue = rowVm[attributeName];
+                    _activeFillHandle = fillHandle;
+                    // Store Y position relative to the fill handle for accurate tracking
+                    _fillStartY = e.GetPosition(fillHandle).Y;
+                    e.Pointer.Capture(fillHandle);
+                    e.Handled = true;
+                };
+
+                fillHandle.PointerMoved += (s, e) =>
+                {
+                    if (_isFillDragging)
+                    {
+                        // Calculate row offset based on Y distance moved
+                        // Use position relative to the captured fill handle for consistency
+                        var currentY = e.GetPosition(fillHandle).Y;
+                        var deltaY = currentY - _fillStartY;
+
+                        // Row height is approximately 28px (standard DataGrid row)
+                        const double rowHeight = 28.0;
+                        var rowOffset = (int)Math.Round(deltaY / rowHeight);
+
+                        // Calculate target row index (allow dragging both up and down)
+                        var targetRow = _fillStartRowIndex + rowOffset;
+
+                        // Clamp to valid range
+                        if (targetRow >= 0 && targetRow < vm.DisplayRows.Count)
+                        {
+                            _fillEndRowIndex = targetRow;
+                        }
+                        e.Handled = true;
+                    }
+                };
+
+                fillHandle.PointerReleased += (s, e) =>
+                {
+                    if (_isFillDragging && _fillColumnName == attributeName)
+                    {
+                        e.Pointer.Capture(null);
+                        ApplyFillDown(vm);
+                        _isFillDragging = false;
+                        _fillStartRowIndex = -1;
+                        _fillEndRowIndex = -1;
+                        _fillColumnName = null;
+                        _fillValue = null;
+                        _activeFillHandle = null;
+                    }
+                    e.Handled = true;
+                };
+
                 // Subscribe to centralized refresh event for all updates
                 vm.CellRefreshRequested += (s, args) =>
                 {
@@ -2142,12 +2245,79 @@ public partial class FileTabView : UserControl
                     }
                     // Update styling
                     CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
+                    // Hide fill handle if row is removed
+                    if (rowVm.IsRemoved)
+                    {
+                        fillHandle.IsVisible = false;
+                    }
                 };
             }
 
-            border.Child = grid;
+            border.Child = outerGrid;
             return border;
         });
+    }
+
+    /// <summary>
+    /// Gets the row index at the given position within the DataGrid using hit testing.
+    /// </summary>
+    private int GetRowIndexFromPosition(DataGrid grid, double y, FileTabViewModel vm)
+    {
+        // Use hit testing to find the row under the pointer
+        var point = new Point(50, y); // Use middle X, actual Y
+
+        // Find the visual at this point
+        var visual = grid.InputHitTest(point) as Visual;
+
+        if (visual != null)
+        {
+            // Walk up the visual tree to find the DataGridRow
+            var current = visual;
+            while (current != null)
+            {
+                if (current is DataGridRow row && row.DataContext is EntryRowViewModel rowVm)
+                {
+                    return rowVm.RowNumber - 1; // RowNumber is 1-based
+                }
+                current = current.GetVisualParent();
+            }
+        }
+
+        // Fallback: keep current position if we can't find a row
+        return _fillEndRowIndex >= 0 ? _fillEndRowIndex : _fillStartRowIndex;
+    }
+
+    /// <summary>
+    /// Applies fill-down from the start row to the end row.
+    /// </summary>
+    private void ApplyFillDown(FileTabViewModel vm)
+    {
+        if (_fillStartRowIndex < 0 || _fillEndRowIndex < 0 || string.IsNullOrEmpty(_fillColumnName))
+            return;
+
+        var rows = vm.DisplayRows;
+        int startRow = Math.Min(_fillStartRowIndex, _fillEndRowIndex);
+        int endRow = Math.Max(_fillStartRowIndex, _fillEndRowIndex);
+
+        // Don't fill if it's the same row
+        if (startRow == endRow)
+            return;
+
+        Console.WriteLine($"[FillDown] Filling {_fillColumnName} from row {startRow} to {endRow} with value '{_fillValue}'");
+
+        for (int i = startRow; i <= endRow; i++)
+        {
+            if (i >= 0 && i < rows.Count)
+            {
+                var row = rows[i];
+                if (!row.IsRemoved)
+                {
+                    row[_fillColumnName] = _fillValue;
+                }
+            }
+        }
+
+        vm.RequestCellRefresh();
     }
 
     /// <summary>
