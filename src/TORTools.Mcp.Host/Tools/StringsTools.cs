@@ -176,16 +176,20 @@ public class StringsTools(IDocumentStore documentStore)
         };
     }
 
-    [McpServerTool, Description("Add a new localization string. The string ID should follow TOR naming conventions (e.g., 'tor_myfeature_label').")]
+    [McpServerTool, Description("Add a new localization string. Use strings_list_categories to see available categories. The string will be grouped with others in the same category when saved.")]
     public StringAddResult strings_add(
         [Description("Unique string ID (e.g., 'tor_myfeature_label')")]
         string id,
         [Description("Display text (without localization key - it will be auto-generated)")]
         string text,
+        [Description("Category for grouping (e.g., 'Skill perks', 'Career Choice', 'UI'). Use strings_list_categories to see existing categories.")]
+        string? category = null,
+        [Description("Subcategory for finer grouping (e.g., 'Faith', 'Grail Knight')")]
+        string? subcategory = null,
         [Description("Optional: Comma-separated tags for conditional selection (e.g., 'IsOrcTag, EmpireTag')")]
         string? tags = null)
     {
-        Log("Tool", $"strings_add(id={id}, text={text}, tags={tags ?? "null"})");
+        Log("Tool", $"strings_add(id={id}, text={text}, category={category ?? "null"}, subcategory={subcategory ?? "null"}, tags={tags ?? "null"})");
 
         // Check if ID already exists
         var existing = documentStore.GetEntry(StringsFile, id);
@@ -198,9 +202,33 @@ public class StringsTools(IDocumentStore documentStore)
             };
         }
 
-        // Create new entry using an existing entry as template
+        // If category specified, find a template from that category for better placement
         var entries = documentStore.GetEntries(StringsFile);
-        var templateId = entries.FirstOrDefault()?.Id;
+        string? templateId = null;
+
+        if (!string.IsNullOrWhiteSpace(category))
+        {
+            // Find an existing entry in the same category (and subcategory if specified)
+            var categoryMatch = entries.FirstOrDefault(e =>
+            {
+                var cat = e.GetAttributeValue("category");
+                if (!string.Equals(cat, category, StringComparison.OrdinalIgnoreCase))
+                    return false;
+
+                if (!string.IsNullOrWhiteSpace(subcategory))
+                {
+                    var subcat = e.GetAttributeValue("subcategory");
+                    return string.Equals(subcat, subcategory, StringComparison.OrdinalIgnoreCase);
+                }
+                return true;
+            });
+
+            templateId = categoryMatch?.Id ?? entries.FirstOrDefault()?.Id;
+        }
+        else
+        {
+            templateId = entries.FirstOrDefault()?.Id;
+        }
 
         var newEntry = documentStore.CreateEntry(StringsFile, templateId);
         if (newEntry == null)
@@ -216,12 +244,22 @@ public class StringsTools(IDocumentStore documentStore)
         var locKey = id.StartsWith("str_") ? id : $"str_{id}";
         var wrappedText = $"{{={locKey}}}{text}";
 
-        // Update the entry
+        // Update the entry with all attributes including category/subcategory
         var attrs = new Dictionary<string, string?>
         {
             ["id"] = id,
             ["text"] = wrappedText
         };
+
+        // Set category and subcategory if provided (these go to metadata file)
+        if (!string.IsNullOrWhiteSpace(category))
+        {
+            attrs["category"] = category;
+        }
+        if (!string.IsNullOrWhiteSpace(subcategory))
+        {
+            attrs["subcategory"] = subcategory;
+        }
 
         documentStore.UpdateEntry(StringsFile, newEntry.Id!, attrs);
 
