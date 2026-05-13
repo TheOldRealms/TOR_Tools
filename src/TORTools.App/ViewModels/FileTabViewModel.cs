@@ -1123,16 +1123,35 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
             return;
         }
 
+        // Check if this is a linked field (stored in metadata, not main XML)
+        var fieldDef = GetFieldDefinition(columnName);
+        var isLinkedField = fieldDef?.LinkedField == true;
+
         var attr = rowVm.XmlEntry.GetAttribute(columnName);
         if (attr != null)
         {
             var rawValue = LocalizationHelper.Wrap(attr.LocalizationKey, value);
             rowVm.XmlEntry.SetAttributeValue(columnName, rawValue);
+            if (isLinkedField)
+            {
+                Console.WriteLine($"[SyncXmlEntry] Updated linked field {rowVm.XmlEntry.Id}.{columnName} = '{value}' (had attr)");
+            }
         }
         else
         {
             // New attribute - add it directly without localization wrapping
             rowVm.XmlEntry.SetAttributeValue(columnName, value);
+            if (isLinkedField)
+            {
+                Console.WriteLine($"[SyncXmlEntry] Created linked field {rowVm.XmlEntry.Id}.{columnName} = '{value}' (new attr)");
+            }
+        }
+
+        // Verify the value was set
+        if (isLinkedField)
+        {
+            var verify = rowVm.XmlEntry.GetAttributeValue(columnName);
+            Console.WriteLine($"[SyncXmlEntry] Verify: {rowVm.XmlEntry.Id}.{columnName} = '{verify}'");
         }
     }
 

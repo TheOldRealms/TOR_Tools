@@ -40,20 +40,26 @@ public class StringsTools(IDocumentStore documentStore)
         };
     }
 
-    [McpServerTool, Description("Query localization strings with optional filters. Supports searching by ID pattern, text content, or tags.")]
+    [McpServerTool, Description("Query localization strings with optional filters. Supports searching by ID pattern, text content, category, subcategory, or tags. Use this to find contextually related strings.")]
     public StringQueryResult strings_query(
         [Description("Filter by ID pattern (supports * wildcards, e.g., 'tor_skill_*' or '*_description')")]
         string? id_pattern = null,
         [Description("Filter by text content (case-insensitive contains)")]
         string? text_contains = null,
+        [Description("Filter by category (exact match, e.g., 'Skill perks', 'Career Choice', 'UI')")]
+        string? category = null,
+        [Description("Filter by subcategory (exact match, e.g., 'Faith', 'Grail Knight', 'Vampire')")]
+        string? subcategory = null,
         [Description("Filter by tag name (e.g., 'IsOrcTag', 'EmpireTag')")]
         string? has_tag = null,
+        [Description("Include full text content in results (default false for browsing, set true when you need the actual text)")]
+        bool include_text = false,
         [Description("Maximum number of strings to return (default 50)")]
         int limit = 50,
         [Description("Number of strings to skip (for pagination)")]
         int offset = 0)
     {
-        Log("Tool", $"strings_query(id_pattern={id_pattern ?? "null"}, text_contains={text_contains ?? "null"}, has_tag={has_tag ?? "null"}, limit={limit}, offset={offset})");
+        Log("Tool", $"strings_query(id_pattern={id_pattern ?? "null"}, text_contains={text_contains ?? "null"}, category={category ?? "null"}, subcategory={subcategory ?? "null"}, has_tag={has_tag ?? "null"}, include_text={include_text}, limit={limit}, offset={offset})");
 
         var entries = documentStore.GetEntries(StringsFile);
         if (entries.Count == 0)
@@ -85,6 +91,24 @@ public class StringsTools(IDocumentStore documentStore)
             });
         }
 
+        if (!string.IsNullOrWhiteSpace(category))
+        {
+            filtered = filtered.Where(e =>
+            {
+                var cat = e.GetAttributeValue("category");
+                return string.Equals(cat, category, StringComparison.OrdinalIgnoreCase);
+            });
+        }
+
+        if (!string.IsNullOrWhiteSpace(subcategory))
+        {
+            filtered = filtered.Where(e =>
+            {
+                var subcat = e.GetAttributeValue("subcategory");
+                return string.Equals(subcat, subcategory, StringComparison.OrdinalIgnoreCase);
+            });
+        }
+
         if (!string.IsNullOrWhiteSpace(has_tag))
         {
             var tagSearch = has_tag.ToLowerInvariant();
@@ -99,7 +123,7 @@ public class StringsTools(IDocumentStore documentStore)
         var pagedEntries = filteredList
             .Skip(offset)
             .Take(limit)
-            .Select(MapStringEntry)
+            .Select(e => MapStringEntry(e, include_text))
             .ToList();
 
         return new StringQueryResult
@@ -140,7 +164,7 @@ public class StringsTools(IDocumentStore documentStore)
                 return id.Contains(queryLower) || text.Contains(queryLower);
             })
             .Take(limit)
-            .Select(MapStringEntry)
+            .Select(e => MapStringEntry(e, true))
             .ToList();
 
         return new StringSearchResult
@@ -337,6 +361,93 @@ public class StringsTools(IDocumentStore documentStore)
         };
     }
 
+    [McpServerTool, Description("Get all strings in a specific category and optionally subcategory. Use strings_list_categories first to see available categories.")]
+    public StringsByCategoryResult strings_by_category(
+        [Description("Category name (e.g., 'Skill perks', 'Career Choice', 'UI', 'Dialogue')")]
+        string category,
+        [Description("Optional subcategory to further filter (e.g., 'Faith', 'Grail Knight')")]
+        string? subcategory = null,
+        [Description("Include full text content in results (default false for browsing, set true when you need the actual text)")]
+        bool include_text = false,
+        [Description("Maximum number of results to return (default 100)")]
+        int limit = 100)
+    {
+        Log("Tool", $"strings_by_category(category={category}, subcategory={subcategory ?? "null"}, include_text={include_text}, limit={limit})");
+
+        var entries = documentStore.GetEntries(StringsFile);
+
+        var matches = entries
+            .Where(e =>
+            {
+                var cat = e.GetAttributeValue("category");
+                if (!string.Equals(cat, category, StringComparison.OrdinalIgnoreCase))
+                    return false;
+
+                if (!string.IsNullOrWhiteSpace(subcategory))
+                {
+                    var subcat = e.GetAttributeValue("subcategory");
+                    return string.Equals(subcat, subcategory, StringComparison.OrdinalIgnoreCase);
+                }
+
+                return true;
+            })
+            .Take(limit)
+            .Select(e => MapStringEntry(e, include_text))
+            .ToList();
+
+        return new StringsByCategoryResult
+        {
+            Success = true,
+            Category = category,
+            Subcategory = subcategory,
+            MatchCount = matches.Count,
+            Strings = matches
+        };
+    }
+
+    [McpServerTool, Description("List all categories and subcategories used across localization strings. Useful for discovering what string groups exist.")]
+    public CategoryListResult strings_list_categories()
+    {
+        Log("Tool", "strings_list_categories()");
+
+        var entries = documentStore.GetEntries(StringsFile);
+        var categories = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var entry in entries)
+        {
+            var category = entry.GetAttributeValue("category");
+            if (!string.IsNullOrWhiteSpace(category))
+            {
+                if (!categories.ContainsKey(category))
+                {
+                    categories[category] = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                }
+
+                var subcategory = entry.GetAttributeValue("subcategory");
+                if (!string.IsNullOrWhiteSpace(subcategory))
+                {
+                    categories[category].Add(subcategory);
+                }
+            }
+        }
+
+        var result = categories
+            .OrderBy(kvp => kvp.Key)
+            .Select(kvp => new CategoryInfo
+            {
+                Category = kvp.Key,
+                Subcategories = kvp.Value.OrderBy(s => s).ToList()
+            })
+            .ToList();
+
+        return new CategoryListResult
+        {
+            Success = true,
+            CategoryCount = result.Count,
+            Categories = result
+        };
+    }
+
     [McpServerTool, Description("Get all strings that have a specific tag. Useful for finding conditional dialogue strings.")]
     public StringsByTagResult strings_by_tag(
         [Description("Tag name to filter by (e.g., 'IsOrcTag', 'EmpireTag', 'VampireMaleTag')")]
@@ -356,7 +467,7 @@ public class StringsTools(IDocumentStore documentStore)
                 return tags?.ToLowerInvariant().Contains(tagLower) == true;
             })
             .Take(limit)
-            .Select(MapStringEntry)
+            .Select(e => MapStringEntry(e, true))
             .ToList();
 
         return new StringsByTagResult
@@ -368,16 +479,20 @@ public class StringsTools(IDocumentStore documentStore)
         };
     }
 
-    private static StringDto MapStringEntry(XmlEntry entry)
+    private static StringDto MapStringEntry(XmlEntry entry, bool includeText = true)
     {
         var textAttr = entry.GetAttribute("text");
         var tags = entry.GetTagList("tags", "tag", "tag_name", "weight");
+        var category = entry.GetAttributeValue("category");
+        var subcategory = entry.GetAttributeValue("subcategory");
 
         return new StringDto
         {
             Id = entry.Id ?? "",
-            Text = textAttr?.DisplayValue ?? "",
-            LocalizationKey = textAttr?.LocalizationKey,
+            Text = includeText ? (textAttr?.DisplayValue ?? "") : null,
+            LocalizationKey = includeText ? textAttr?.LocalizationKey : null,
+            Category = string.IsNullOrWhiteSpace(category) ? null : category,
+            Subcategory = string.IsNullOrWhiteSpace(subcategory) ? null : subcategory,
             Tags = string.IsNullOrWhiteSpace(tags) ? null : tags
         };
     }
@@ -391,12 +506,23 @@ public class StringDto
     public string Id { get; set; } = "";
 
     [JsonPropertyName("text")]
-    public string Text { get; set; } = "";
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Text { get; set; }
 
     [JsonPropertyName("localization_key")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? LocalizationKey { get; set; }
 
+    [JsonPropertyName("category")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Category { get; set; }
+
+    [JsonPropertyName("subcategory")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Subcategory { get; set; }
+
     [JsonPropertyName("tags")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Tags { get; set; }
 }
 
@@ -515,4 +641,43 @@ public class StringsByTagResult
 
     [JsonPropertyName("strings")]
     public List<StringDto>? Strings { get; set; }
+}
+
+public class CategoryInfo
+{
+    [JsonPropertyName("category")]
+    public string Category { get; set; } = "";
+
+    [JsonPropertyName("subcategories")]
+    public List<string> Subcategories { get; set; } = new();
+}
+
+public class StringsByCategoryResult
+{
+    [JsonPropertyName("success")]
+    public bool Success { get; set; }
+
+    [JsonPropertyName("category")]
+    public string Category { get; set; } = "";
+
+    [JsonPropertyName("subcategory")]
+    public string? Subcategory { get; set; }
+
+    [JsonPropertyName("match_count")]
+    public int MatchCount { get; set; }
+
+    [JsonPropertyName("strings")]
+    public List<StringDto>? Strings { get; set; }
+}
+
+public class CategoryListResult
+{
+    [JsonPropertyName("success")]
+    public bool Success { get; set; }
+
+    [JsonPropertyName("category_count")]
+    public int CategoryCount { get; set; }
+
+    [JsonPropertyName("categories")]
+    public List<CategoryInfo> Categories { get; set; } = new();
 }

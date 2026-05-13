@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <StringMetadata>
   <String id="tor_ability_caster_dead_routed_text" category="Ability System" />
-  <String id="tor_ability_casting" category="Ability System" />
-  <String id="tor_ability_enabled" category="Ability System" />
+  <String id="tor_ability_casting" category="Ability System" subcategory="Faith" />
+  <String id="tor_ability_enabled" category="Ability System" subcategory="Faith" />
   <String id="tor_ability_frontal_cone_only_text" category="Ability System" />
   <String id="tor_ability_in_mistform" category="Ability System" />
-  <String id="tor_ability_missing_anvil" category="Ability System" />
+  <String id="tor_ability_missing_anvil" category="Ability System" subcategory="Faith" />
   <String id="tor_ability_mission_agent_limit" category="Ability System" />
-  <String id="tor_ability_mission_over" category="Ability System" />
+  <String id="tor_ability_mission_over" category="Ability System" subcategory="Faith" />
   <String id="tor_ability_no_target_locked_text" category="Ability System" />
   <String id="tor_ability_not_enough_usages_text" category="Ability System" />
   <String id="tor_ability_not_player_controlled_text" category="Ability System" />
-  <String id="tor_ability_on_cooldown" category="Ability System" />
+  <String id="tor_ability_on_cooldown" category="Ability System" subcategory="Faith" />
   <String id="tor_career_ability_not_charged" category="Ability System" />
   <String id="tor_career_ability_not_usable_mounted" category="Ability System" />
   <String id="tor_career_ability_not_usable_without_weapon" category="Ability System" />

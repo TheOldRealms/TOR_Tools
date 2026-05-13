@@ -2325,6 +2325,13 @@ public partial class FileTabView : UserControl
                     // Also directly sync to XmlEntry to ensure it's updated
                     // This handles cases where UI value was already equal but XmlEntry wasn't updated
                     row.XmlEntry.SetAttributeValue(_fillColumnName, _fillValue);
+
+                    // Verify the value was set
+                    if (fillCount < 3)
+                    {
+                        var verifyValue = row.XmlEntry.GetAttributeValue(_fillColumnName);
+                        Console.WriteLine($"[FillDown] Set {row.XmlEntry.Id}.{_fillColumnName} = '{_fillValue}', verify: '{verifyValue}'");
+                    }
                     fillCount++;
                 }
             }
