@@ -39,6 +39,7 @@ x86/
 bld/
 [Ll]og/
 [Ll]ogs/
+.logs/
 
 # Test results
 [Tt]est[Rr]esult*/
