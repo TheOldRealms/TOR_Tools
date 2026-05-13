@@ -49,7 +49,7 @@ public class TextEditorDialog : BaseEditorDialog
 
     protected override string? GetResultValue()
     {
-        var text = _textBox.Text?.Trim() ?? "";
+        var text = _textBox.Text ?? "";
         return string.IsNullOrEmpty(text) ? null : text;
     }
 }

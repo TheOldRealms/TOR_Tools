@@ -123,7 +123,7 @@ public class FileSaverService
                 if (fieldDef?.CrossReference != null)
                     continue;
 
-                var currentValue = rowVm[columnName]?.Trim();
+                var currentValue = rowVm[columnName];
 
                 // Handle tagList fields
                 if (fieldDef?.TagList != null)

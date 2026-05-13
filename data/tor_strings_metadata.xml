@@ -399,14 +399,14 @@
   <String id="tor_became_blood_knight_vampire_text" category="Career Transformation Notifications" />
   <String id="tor_became_necrarch_text" category="Career Transformation Notifications" />
   <String id="tor_became_vampire_text" category="Career Transformation Notifications" />
-  <String id="tor_cc_growth.aserai" category="CC Options" />
-  <String id="tor_cc_growth.battania" category="CC Options" />
-  <String id="tor_cc_growth.sturgia" category="CC Options" />
-  <String id="tor_cc_origin.aserai" category="CC Options" />
-  <String id="tor_cc_origin.sturgia" category="CC Options" />
-  <String id="tor_cc_profession.aserai" category="CC Options" />
-  <String id="tor_cc_profession.battania" category="CC Options" />
-  <String id="tor_cc_profession.sturgia" category="CC Options" />
+  <String id="tor_cc_growth.aserai" category="Character Creation" />
+  <String id="tor_cc_growth.battania" category="Character Creation" />
+  <String id="tor_cc_growth.sturgia" category="Character Creation" />
+  <String id="tor_cc_origin.aserai" category="Character Creation" />
+  <String id="tor_cc_origin.sturgia" category="Character Creation" />
+  <String id="tor_cc_profession.aserai" category="Character Creation" />
+  <String id="tor_cc_profession.battania" category="Character Creation" />
+  <String id="tor_cc_profession.sturgia" category="Character Creation" />
   <String id="tor_backstory_a.tor_wanderer_chaos_0" category="Chaos 0 - Chosen" />
   <String id="tor_backstory_b.tor_wanderer_chaos_0" category="Chaos 0 - Chosen" />
   <String id="tor_backstory_c.tor_wanderer_chaos_0" category="Chaos 0 - Chosen" />
@@ -427,22 +427,22 @@
   <String id="tor_chaos_raiders" category="Chaos Portal Menus" />
   <String id="tor_custom_settlement_chaos_portal_lose" category="Chaos Portal Menus" />
   <String id="tor_custom_settlement_chaos_portal_victory" category="Chaos Portal Menus" />
-  <String id="tor_cc_growth_fallback_text" category="Character Creation Texts" />
-  <String id="tor_cc_growth_summary" category="Character Creation Texts" />
-  <String id="tor_cc_origin_fallback_text" category="Character Creation Texts" />
-  <String id="tor_cc_origin_summary" category="Character Creation Texts" />
-  <String id="tor_cc_profession_fallback_text" category="Character Creation Texts" />
-  <String id="tor_cc_profession_summary" category="Character Creation Texts" />
-  <String id="tor_cc_specialization_desc_bloodline" category="Character Creation Texts" />
-  <String id="tor_cc_specialization_desc_generic" category="Character Creation Texts" />
-  <String id="tor_cc_specialization_desc_god" category="Character Creation Texts" />
-  <String id="tor_cc_specialization_desc_lore" category="Character Creation Texts" />
-  <String id="tor_cc_specialization_desc_order" category="Character Creation Texts" />
-  <String id="tor_cc_specialization_title_bloodline" category="Character Creation Texts" />
-  <String id="tor_cc_specialization_title_generic" category="Character Creation Texts" />
-  <String id="tor_cc_specialization_title_god" category="Character Creation Texts" />
-  <String id="tor_cc_specialization_title_lore" category="Character Creation Texts" />
-  <String id="tor_cc_specialization_title_order" category="Character Creation Texts" />
+  <String id="tor_cc_growth_fallback_text" category="Character Creation" />
+  <String id="tor_cc_growth_summary" category="Character Creation" />
+  <String id="tor_cc_origin_fallback_text" category="Character Creation" subcategory="specialization" />
+  <String id="tor_cc_origin_summary" category="Character Creation" subcategory="specialization" />
+  <String id="tor_cc_profession_fallback_text" category="Character Creation" />
+  <String id="tor_cc_profession_summary" category="Character Creation" />
+  <String id="tor_cc_specialization_desc_bloodline" category="Character Creation" subcategory="specialization" />
+  <String id="tor_cc_specialization_desc_generic" category="Character Creation" subcategory="specialization" />
+  <String id="tor_cc_specialization_desc_god" category="Character Creation" subcategory="specialization" />
+  <String id="tor_cc_specialization_desc_lore" category="Character Creation" subcategory="specialization" />
+  <String id="tor_cc_specialization_desc_order" category="Character Creation" subcategory="specialization" />
+  <String id="tor_cc_specialization_title_bloodline" category="Character Creation" subcategory="specialization" />
+  <String id="tor_cc_specialization_title_generic" category="Character Creation" />
+  <String id="tor_cc_specialization_title_god" category="Character Creation" subcategory="specialization" />
+  <String id="tor_cc_specialization_title_lore" category="Character Creation" subcategory="specialization" />
+  <String id="tor_cc_specialization_title_order" category="Character Creation" subcategory="specialization" />
   <String id="tor_stats_dryad_bonus_text" category="Character Stats Bonuses" />
   <String id="tor_stats_large_monster_text" category="Character Stats Bonuses" />
   <String id="tor_stats_minotaur_bonus_text" category="Character Stats Bonuses" />
@@ -1053,26 +1053,26 @@
   <String id="tor_custom_resource_we_athelLorenHarmony" category="Custom resource bonus strings" />
   <String id="tor_custom_resource_we_oakSettlementIncomeBonus" category="Custom resource bonus strings" />
   <String id="tor_custom_resource_we_symbolPenalty" category="Custom resource bonus strings" />
-  <String id="tor_custom_resource_description.Chivalry" category="Custom resource names and descriptions - these are built around the resource ID in code which starts with a capital, hence the capitalization in the variant." />
-  <String id="tor_custom_resource_description.CouncilFavor" category="Custom resource names and descriptions - these are built around the resource ID in code which starts with a capital, hence the capitalization in the variant." />
-  <String id="tor_custom_resource_description.DarkEnergy" category="Custom resource names and descriptions - these are built around the resource ID in code which starts with a capital, hence the capitalization in the variant." />
-  <String id="tor_custom_resource_description.ForestHarmony" category="Custom resource names and descriptions - these are built around the resource ID in code which starts with a capital, hence the capitalization in the variant." />
-  <String id="tor_custom_resource_description.Meat" category="Custom resource names and descriptions - these are built around the resource ID in code which starts with a capital, hence the capitalization in the variant." />
-  <String id="tor_custom_resource_description.OathGold" category="Custom resource names and descriptions - these are built around the resource ID in code which starts with a capital, hence the capitalization in the variant." />
-  <String id="tor_custom_resource_description.Prestige" category="Custom resource names and descriptions - these are built around the resource ID in code which starts with a capital, hence the capitalization in the variant." />
-  <String id="tor_custom_resource_description.Teef" category="Custom resource names and descriptions - these are built around the resource ID in code which starts with a capital, hence the capitalization in the variant." />
-  <String id="tor_custom_resource_description.Waaagh" category="Custom resource names and descriptions - these are built around the resource ID in code which starts with a capital, hence the capitalization in the variant." />
-  <String id="tor_custom_resource_description.WindsOfMagic" category="Custom resource names and descriptions - these are built around the resource ID in code which starts with a capital, hence the capitalization in the variant." />
-  <String id="tor_custom_resource_name.Chivalry" category="Custom resource names and descriptions - these are built around the resource ID in code which starts with a capital, hence the capitalization in the variant." />
-  <String id="tor_custom_resource_name.CouncilFavor" category="Custom resource names and descriptions - these are built around the resource ID in code which starts with a capital, hence the capitalization in the variant." />
-  <String id="tor_custom_resource_name.DarkEnergy" category="Custom resource names and descriptions - these are built around the resource ID in code which starts with a capital, hence the capitalization in the variant." />
-  <String id="tor_custom_resource_name.ForestHarmony" category="Custom resource names and descriptions - these are built around the resource ID in code which starts with a capital, hence the capitalization in the variant." />
-  <String id="tor_custom_resource_name.Meat" category="Custom resource names and descriptions - these are built around the resource ID in code which starts with a capital, hence the capitalization in the variant." />
-  <String id="tor_custom_resource_name.OathGold" category="Custom resource names and descriptions - these are built around the resource ID in code which starts with a capital, hence the capitalization in the variant." />
-  <String id="tor_custom_resource_name.Prestige" category="Custom resource names and descriptions - these are built around the resource ID in code which starts with a capital, hence the capitalization in the variant." />
-  <String id="tor_custom_resource_name.Teef" category="Custom resource names and descriptions - these are built around the resource ID in code which starts with a capital, hence the capitalization in the variant." />
-  <String id="tor_custom_resource_name.Waaagh" category="Custom resource names and descriptions - these are built around the resource ID in code which starts with a capital, hence the capitalization in the variant." />
-  <String id="tor_custom_resource_name.WindsOfMagic" category="Custom resource names and descriptions - these are built around the resource ID in code which starts with a capital, hence the capitalization in the variant." />
+  <String id="tor_custom_resource_description.Chivalry" category="Custom Resource" />
+  <String id="tor_custom_resource_description.CouncilFavor" category="Custom Resource" />
+  <String id="tor_custom_resource_description.DarkEnergy" category="Custom Resource" />
+  <String id="tor_custom_resource_description.ForestHarmony" category="Custom Resource" />
+  <String id="tor_custom_resource_description.Meat" category="Custom Resource" />
+  <String id="tor_custom_resource_description.OathGold" category="Custom Resource" />
+  <String id="tor_custom_resource_description.Prestige" category="Custom Resource" />
+  <String id="tor_custom_resource_description.Teef" category="Custom Resource" />
+  <String id="tor_custom_resource_description.Waaagh" category="Custom Resource" />
+  <String id="tor_custom_resource_description.WindsOfMagic" category="Custom Resource" />
+  <String id="tor_custom_resource_name.Chivalry" category="Custom Resource" />
+  <String id="tor_custom_resource_name.CouncilFavor" category="Custom Resource" />
+  <String id="tor_custom_resource_name.DarkEnergy" category="Custom Resource" />
+  <String id="tor_custom_resource_name.ForestHarmony" category="Custom Resource" />
+  <String id="tor_custom_resource_name.Meat" category="Custom Resource" />
+  <String id="tor_custom_resource_name.OathGold" category="Custom Resource" />
+  <String id="tor_custom_resource_name.Prestige" category="Custom Resource" />
+  <String id="tor_custom_resource_name.Teef" category="Custom Resource" />
+  <String id="tor_custom_resource_name.Waaagh" category="Custom Resource" />
+  <String id="tor_custom_resource_name.WindsOfMagic" category="Custom Resource" />
   <String id="tor_customsettlement_battle.chaos_portal_01" category="custom settlement display information" />
   <String id="tor_customsettlement_battle.darkelf_camp_01" category="custom settlement display information" />
   <String id="tor_customsettlement_battle.herdstone_01" category="custom settlement display information" />
@@ -1775,17 +1775,17 @@
   <String id="tor_enchanting_success_text" category="Enchanting UI Messages" />
   <String id="tor_enchanting_title_text" category="Enchanting UI Messages" />
   <String id="tor_learned_enchantment_text" category="Enchanting UI Messages" />
-  <String id="tor_encyclopedia_filter_armies" category="Encyclopedia Texts" />
-  <String id="tor_encyclopedia_filter_campaign_issues" category="Encyclopedia Texts" />
-  <String id="tor_encyclopedia_filter_characters" category="Encyclopedia Texts" />
-  <String id="tor_encyclopedia_filter_clans" category="Encyclopedia Texts" />
-  <String id="tor_encyclopedia_filter_items" category="Encyclopedia Texts" />
-  <String id="tor_encyclopedia_filter_kingdoms" category="Encyclopedia Texts" />
-  <String id="tor_encyclopedia_filter_old_realms" category="Encyclopedia Texts" />
-  <String id="tor_encyclopedia_filter_parties" category="Encyclopedia Texts" />
-  <String id="tor_encyclopedia_filter_troops" category="Encyclopedia Texts" />
-  <String id="tor_encyclopedia_filter_types" category="Encyclopedia Texts" />
-  <String id="tor_encyclopedia_sort_none" category="Encyclopedia Texts" />
+  <String id="tor_encyclopedia_filter_armies" category="Encyclopedia" />
+  <String id="tor_encyclopedia_filter_campaign_issues" category="Encyclopedia" />
+  <String id="tor_encyclopedia_filter_characters" category="Encyclopedia" />
+  <String id="tor_encyclopedia_filter_clans" category="Encyclopedia" />
+  <String id="tor_encyclopedia_filter_items" category="Encyclopedia" />
+  <String id="tor_encyclopedia_filter_kingdoms" category="Encyclopedia" />
+  <String id="tor_encyclopedia_filter_old_realms" category="Encyclopedia" />
+  <String id="tor_encyclopedia_filter_parties" category="Encyclopedia" />
+  <String id="tor_encyclopedia_filter_troops" category="Encyclopedia" />
+  <String id="tor_encyclopedia_filter_types" category="Encyclopedia" />
+  <String id="tor_encyclopedia_sort_none" category="Encyclopedia" />
   <String id="tor_dw_brewers_benefit.description" category="Engineer Guild" />
   <String id="tor_dw_brewers_benefit.foodbonus" category="Engineer Guild" />
   <String id="tor_dw_brewers_benefit.loyalty" category="Engineer Guild" />
