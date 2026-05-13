@@ -4,6 +4,8 @@ using ModelContextProtocol.Server;
 using TORTools.Core.DocumentStore;
 using TORTools.Core.Schema;
 
+using static TORTools.Core.DocumentStore.StandaloneDocumentStore;
+
 namespace TORTools.Mcp.Host.Tools;
 
 /// <summary>
@@ -17,6 +19,7 @@ public class FileTools(IDocumentStore documentStore)
         [Description("Optional category filter (e.g., 'Item Catalog', 'Unit Catalog', 'Abilities & Effects')")]
         string? category = null)
     {
+        Log("Tool", $"list_files(category={category ?? "null"})");
         var files = documentStore.GetAvailableFiles();
 
         if (!string.IsNullOrWhiteSpace(category))
@@ -53,6 +56,7 @@ public class FileTools(IDocumentStore documentStore)
         [Description("File name (e.g., 'tor_armors.xml', 'tor_meleeweapons.xml')")]
         string file)
     {
+        Log("Tool", $"get_schema(file={file})");
         var schema = documentStore.GetSchema(file);
         if (schema == null)
         {

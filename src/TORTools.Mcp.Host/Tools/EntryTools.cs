@@ -5,6 +5,8 @@ using ModelContextProtocol.Server;
 using TORTools.Core.DocumentStore;
 using TORTools.Core.Models;
 
+using static TORTools.Core.DocumentStore.StandaloneDocumentStore;
+
 namespace TORTools.Mcp.Host.Tools;
 
 /// <summary>
@@ -20,6 +22,7 @@ public class EntryTools(IDocumentStore documentStore)
         [Description("Entry ID to retrieve")]
         string id)
     {
+        Log("Tool", $"get_entry(file={file}, id={id})");
         var entry = documentStore.GetEntry(file, id);
         if (entry == null)
         {
@@ -59,6 +62,7 @@ public class EntryTools(IDocumentStore documentStore)
         [Description("Optional: Initial attribute values as JSON object (e.g., {\"name\": \"New Item\", \"culture\": \"empire\"})")]
         string? attributes = null)
     {
+        Log("Tool", $"create_entry(file={file}, templateId={templateId ?? "null"}, attributes={attributes ?? "null"})");
         var newEntry = documentStore.CreateEntry(file, templateId);
         if (newEntry == null)
         {
@@ -108,6 +112,7 @@ public class EntryTools(IDocumentStore documentStore)
         [Description("Attributes to update as JSON object (e.g., {\"armor_weight\": \"15\", \"culture\": \"khuzait\"})")]
         string attributes)
     {
+        Log("Tool", $"update_entry(file={file}, id={id}, attributes={attributes})");
         Dictionary<string, string?>? attrDict;
         try
         {
@@ -159,6 +164,7 @@ public class EntryTools(IDocumentStore documentStore)
         [Description("Entry ID to delete")]
         string id)
     {
+        Log("Tool", $"delete_entry(file={file}, id={id})");
         var entry = documentStore.GetEntry(file, id);
         if (entry == null)
         {
@@ -186,6 +192,7 @@ public class EntryTools(IDocumentStore documentStore)
         [Description("Entry ID to duplicate")]
         string id)
     {
+        Log("Tool", $"duplicate_entry(file={file}, id={id})");
         var newEntry = documentStore.DuplicateEntry(file, id);
         if (newEntry == null)
         {

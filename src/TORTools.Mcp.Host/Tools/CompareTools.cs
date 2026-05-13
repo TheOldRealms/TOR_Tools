@@ -4,6 +4,8 @@ using ModelContextProtocol.Server;
 using TORTools.Core.DocumentStore;
 using TORTools.Core.Models;
 
+using static TORTools.Core.DocumentStore.StandaloneDocumentStore;
+
 namespace TORTools.Mcp.Host.Tools;
 
 /// <summary>
@@ -21,6 +23,7 @@ public class CompareTools(IDocumentStore documentStore)
         [Description("Optional: Comma-separated list of fields to compare (compares all if omitted)")]
         string? fields = null)
     {
+        Log("Tool", $"compare_entries(file={file}, ids={ids}, fields={fields ?? "null"})");
         var idList = ids.Split(',').Select(id => id.Trim()).Where(id => !string.IsNullOrEmpty(id)).ToList();
 
         if (idList.Count < 2)
@@ -87,6 +90,7 @@ public class CompareTools(IDocumentStore documentStore)
         [Description("Optional: specific entry ID to validate (validates all entries if omitted)")]
         string? id = null)
     {
+        Log("Tool", $"validate(file={file}, id={id ?? "null"})");
         var schema = documentStore.GetSchema(file);
         if (schema == null)
         {

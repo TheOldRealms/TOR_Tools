@@ -6,6 +6,8 @@ using TORTools.Core.DocumentStore;
 using TORTools.Core.Models;
 using TORTools.Mcp.Host.Services;
 
+using static TORTools.Core.DocumentStore.StandaloneDocumentStore;
+
 namespace TORTools.Mcp.Host.Tools;
 
 /// <summary>
@@ -29,6 +31,7 @@ public class QueryTools(IDocumentStore documentStore, QueryService queryService)
         [Description("Comma-separated list of fields to include in results (default: id, name). Use '*' for all fields.")]
         string? fields = null)
     {
+        Log("Tool", $"query_entries(file={file}, filters={filters ?? "null"}, order_by={order_by ?? "null"}, limit={limit}, offset={offset}, fields={fields ?? "null"})");
         var allEntries = documentStore.GetEntries(file);
         if (allEntries.Count == 0)
         {
@@ -74,6 +77,7 @@ public class QueryTools(IDocumentStore documentStore, QueryService queryService)
         [Description("File name (e.g., 'tor_armors.xml')")]
         string file)
     {
+        Log("Tool", $"describe_file(file={file})");
         var entries = documentStore.GetEntries(file);
         if (entries.Count == 0)
         {
@@ -154,6 +158,7 @@ public class QueryTools(IDocumentStore documentStore, QueryService queryService)
         [Description("Field name to get distinct values for (e.g., 'culture', 'Type')")]
         string field)
     {
+        Log("Tool", $"distinct_values(file={file}, field={field})");
         var entries = documentStore.GetEntries(file);
         if (entries.Count == 0)
         {
@@ -191,6 +196,7 @@ public class QueryTools(IDocumentStore documentStore, QueryService queryService)
         [Description("Optional filters as JSON array to filter before aggregating")]
         string? filters = null)
     {
+        Log("Tool", $"aggregate(file={file}, field={field}, op={op}, filters={filters ?? "null"})");
         var entries = documentStore.GetEntries(file);
         if (entries.Count == 0)
         {
@@ -282,6 +288,7 @@ public class QueryTools(IDocumentStore documentStore, QueryService queryService)
         [Description("Maximum number of results to return (default 100)")]
         int limit = 100)
     {
+        Log("Tool", $"search(query={query}, files={files}, filters={filters ?? "null"}, limit={limit})");
         var filesToSearch = new List<string>();
 
         if (files == "*")
@@ -368,6 +375,7 @@ public class QueryTools(IDocumentStore documentStore, QueryService queryService)
         [Description("Optional: specific file to search in (searches all files if omitted)")]
         string? file = null)
     {
+        Log("Tool", $"find_references(id={id}, file={file ?? "null"})");
         var references = documentStore.FindReferences(id, file);
 
         return new FindReferencesResult

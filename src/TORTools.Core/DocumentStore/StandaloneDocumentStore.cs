@@ -74,10 +74,18 @@ public class StandaloneDocumentStore : IDocumentStore
 
     private static void Log(string message)
     {
+        Log("DocumentStore", message);
+    }
+
+    /// <summary>
+    /// Public logging method for tools to use.
+    /// </summary>
+    public static void Log(string source, string message)
+    {
         if (!VerboseLogging)
             return;
 
-        var logLine = $"[DocumentStore] {DateTime.Now:HH:mm:ss.fff} {message}";
+        var logLine = $"[{source}] {DateTime.Now:HH:mm:ss.fff} {message}";
 
         lock (_logLock)
         {
