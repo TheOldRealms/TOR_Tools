@@ -31,6 +31,19 @@ public class FileSaverService
 
         try
         {
+            // Debug: Log state of all rosters before save (for equipment sets)
+            if (context.Schema.HasNestedVariations)
+            {
+                var variationElementName = context.Schema.VariationElement ?? "EquipmentSet";
+                Console.WriteLine($"[Save] Starting save with {context.XmlEntries.Count} rosters:");
+                foreach (var roster in context.XmlEntries)
+                {
+                    var rosterId = roster.Id ?? "(no id)";
+                    var variationCount = roster.OriginalElement.Elements(variationElementName).Count();
+                    Console.WriteLine($"[Save]   Roster '{rosterId}': {variationCount} variations in XElement");
+                }
+            }
+
             // Sync changes from row view models back to XML entries
             SyncChangesToXml(context);
 
@@ -333,37 +346,47 @@ public class FileSaverService
 
         foreach (var roster in context.XmlEntries)
         {
-            // Remove existing civilian clones first
-            var civilianSets = roster.Children
-                .Where(c => c.ElementName == variationElementName &&
-                            c.GetAttributeValue("civilian")?.Equals("true", StringComparison.OrdinalIgnoreCase) == true)
+            var rosterId = roster.Id ?? "(no id)";
+
+            // IMPORTANT: Query the actual XElement children directly, not the cached Children collection
+            // This ensures we see the current state of the XML tree
+            var rosterElement = roster.OriginalElement;
+
+            // Remove existing civilian clones first (query XElement directly)
+            var civilianElements = rosterElement.Elements(variationElementName)
+                .Where(e => e.Attribute("civilian")?.Value?.Equals("true", StringComparison.OrdinalIgnoreCase) == true)
                 .ToList();
 
-            foreach (var civilianSet in civilianSets)
+            Console.WriteLine($"[EquipmentSets] Roster {rosterId}: removing {civilianElements.Count} existing civilian clones");
+
+            foreach (var civilianElement in civilianElements)
             {
-                civilianSet.OriginalElement.Remove();
-                roster.Children.Remove(civilianSet);
+                civilianElement.Remove();
             }
 
-            // Get all combat sets (no civilian attribute)
-            var combatSets = roster.Children
-                .Where(c => c.ElementName == variationElementName &&
-                            c.GetAttributeValue("civilian")?.Equals("true", StringComparison.OrdinalIgnoreCase) != true)
+            // Get all combat sets directly from XElement (no civilian attribute)
+            var combatElements = rosterElement.Elements(variationElementName)
+                .Where(e => e.Attribute("civilian")?.Value?.Equals("true", StringComparison.OrdinalIgnoreCase) != true)
                 .ToList();
 
+            Console.WriteLine($"[EquipmentSets] Roster {rosterId}: found {combatElements.Count} combat variations to clone");
+
             // Clone each combat set as civilian
-            foreach (var combatSet in combatSets)
+            foreach (var combatElement in combatElements)
             {
-                var civilianClone = new XElement(combatSet.OriginalElement);
+                var civilianClone = new XElement(combatElement);
                 civilianClone.SetAttributeValue("civilian", "true");
 
                 // Add after the combat set
-                combatSet.OriginalElement.AddAfterSelf(civilianClone);
+                combatElement.AddAfterSelf(civilianClone);
                 cloneCount++;
             }
+
+            // Refresh the Children collection to match the modified XElement tree
+            roster.RefreshChildren();
         }
 
-        Console.WriteLine($"[EquipmentSets] Generated {cloneCount} civilian clones");
+        Console.WriteLine($"[EquipmentSets] Generated {cloneCount} civilian clones total");
     }
 
     /// <summary>
