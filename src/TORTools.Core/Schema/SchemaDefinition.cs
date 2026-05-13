@@ -249,6 +249,12 @@ public class FieldDefinition
     public TupleListConfig? TupleList { get; set; }
 
     /// <summary>
+    /// Tag list configuration for fields that edit nested tag elements (e.g., conversation tags).
+    /// </summary>
+    [JsonPropertyName("tagList")]
+    public TagListConfig? TagList { get; set; }
+
+    /// <summary>
     /// Regex pattern for validation. Non-matching values generate warnings.
     /// </summary>
     [JsonPropertyName("pattern")]
@@ -617,6 +623,43 @@ public class TupleColumnConfig
     /// </summary>
     [JsonPropertyName("width")]
     public int Width { get; set; } = 100;
+}
+
+/// <summary>
+/// Configuration for a tag list field that displays/edits nested tag elements.
+/// Used for fields like conversation tags in strings.
+/// </summary>
+public class TagListConfig
+{
+    /// <summary>
+    /// The container element name (e.g., "tags").
+    /// </summary>
+    [JsonPropertyName("containerElement")]
+    public string ContainerElement { get; set; } = "tags";
+
+    /// <summary>
+    /// The item element name (e.g., "tag").
+    /// </summary>
+    [JsonPropertyName("itemElement")]
+    public string ItemElement { get; set; } = "tag";
+
+    /// <summary>
+    /// The attribute containing the tag name (e.g., "tag_name").
+    /// </summary>
+    [JsonPropertyName("nameAttribute")]
+    public string NameAttribute { get; set; } = "tag_name";
+
+    /// <summary>
+    /// Optional attribute for tag weight (e.g., "weight" for trait tags).
+    /// </summary>
+    [JsonPropertyName("weightAttribute")]
+    public string? WeightAttribute { get; set; }
+
+    /// <summary>
+    /// Known tag values for autocomplete/dropdown.
+    /// </summary>
+    [JsonPropertyName("knownTags")]
+    public List<string>? KnownTags { get; set; }
 }
 
 /// <summary>

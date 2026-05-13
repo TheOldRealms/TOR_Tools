@@ -83,7 +83,8 @@ builder.Services.AddMcpServer(options =>
 .WithTools<FileTools>()
 .WithTools<EntryTools>()
 .WithTools<QueryTools>()
-.WithTools<CompareTools>();
+.WithTools<CompareTools>()
+.WithTools<StringsTools>();
 
 var app = builder.Build();
 

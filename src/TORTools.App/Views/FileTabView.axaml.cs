@@ -351,7 +351,9 @@ public partial class FileTabView : UserControl
             var isColorField = fieldDef?.Type == "color";
             var isTupleListField = fieldDef?.Type == "tupleList" && fieldDef?.TupleList != null;
 
-            Console.WriteLine($"[FileTabView] Adding column: {displayInfo.DisplayName} ({displayInfo.AttributeName}) - Enum: {isEnumField}, CrossRef: {isCrossRefField}, Icon: {isIconField}, Banner: {isBannerField}, Color: {isColorField}, TupleList: {isTupleListField}");
+            // Use schema width if defined (non-default), otherwise fall back to display mappings
+            var columnWidth = (fieldDef?.Width > 0 && fieldDef.Width != 120) ? fieldDef.Width : displayInfo.Width;
+            Console.WriteLine($"[FileTabView] Adding column: {displayInfo.DisplayName} ({displayInfo.AttributeName}) - Width: {columnWidth}, Enum: {isEnumField}, CrossRef: {isCrossRefField}, Icon: {isIconField}, Banner: {isBannerField}, Color: {isColorField}, TupleList: {isTupleListField}");
 
             // Check if this is the ID column - if so, add lock toggle to header
             var isIdColumn = displayInfo.AttributeName.Equals("id", StringComparison.OrdinalIgnoreCase);
@@ -363,7 +365,7 @@ public partial class FileTabView : UserControl
                 column = new DataGridTemplateColumn
                 {
                     Header = CreateColumnHeader(displayInfo, fieldDef),
-                    Width = new DataGridLength(displayInfo.Width),
+                    Width = new DataGridLength(columnWidth),
                     IsReadOnly = false,
                     CellTemplate = CreateColorCellTemplate(displayInfo.AttributeName, fieldDef!, vm)
                 };
@@ -374,7 +376,7 @@ public partial class FileTabView : UserControl
                 column = new DataGridTemplateColumn
                 {
                     Header = CreateColumnHeader(displayInfo, fieldDef),
-                    Width = new DataGridLength(displayInfo.Width),
+                    Width = new DataGridLength(columnWidth),
                     IsReadOnly = false,
                     CellTemplate = CreateBannerCellTemplate(displayInfo.AttributeName, fieldDef!, vm)
                 };
@@ -385,7 +387,7 @@ public partial class FileTabView : UserControl
                 column = new DataGridTemplateColumn
                 {
                     Header = CreateColumnHeader(displayInfo, fieldDef),
-                    Width = new DataGridLength(displayInfo.Width),
+                    Width = new DataGridLength(columnWidth),
                     IsReadOnly = false,
                     CellTemplate = CreateIconCellTemplate(displayInfo.AttributeName, fieldDef!, vm)
                 };
@@ -402,7 +404,7 @@ public partial class FileTabView : UserControl
                     column = new DataGridTemplateColumn
                     {
                         Header = CreateColumnHeader(displayInfo, fieldDef),
-                        Width = new DataGridLength(displayInfo.Width),
+                        Width = new DataGridLength(columnWidth),
                         IsReadOnly = false,
                         CellTemplate = CreateCrossRefDropdownTemplate(displayInfo.AttributeName, fieldDef, vm),
                         CellEditingTemplate = CreateCrossRefDropdownEditingTemplate(displayInfo.AttributeName, fieldDef, vm)
@@ -414,7 +416,7 @@ public partial class FileTabView : UserControl
                     column = new DataGridTemplateColumn
                     {
                         Header = CreateColumnHeader(displayInfo, fieldDef),
-                        Width = new DataGridLength(displayInfo.Width),
+                        Width = new DataGridLength(columnWidth),
                         IsReadOnly = false,
                         CellTemplate = CreateExternalEnumCellTemplate(displayInfo.AttributeName, fieldDef, vm),
                         CellEditingTemplate = CreateEnumEditingTemplate(displayInfo.AttributeName, fieldDef)
@@ -426,7 +428,7 @@ public partial class FileTabView : UserControl
                     column = new DataGridTemplateColumn
                     {
                         Header = CreateColumnHeader(displayInfo, fieldDef),
-                        Width = new DataGridLength(displayInfo.Width),
+                        Width = new DataGridLength(columnWidth),
                         IsReadOnly = false,
                         CellTemplate = CreateExternalValueCellTemplate(displayInfo.AttributeName, fieldDef, vm),
                         CellEditingTemplate = CreateTextEditingTemplate(displayInfo.AttributeName, fieldDef)
@@ -438,7 +440,7 @@ public partial class FileTabView : UserControl
                     column = new DataGridTemplateColumn
                     {
                         Header = CreateColumnHeader(displayInfo, fieldDef),
-                        Width = new DataGridLength(displayInfo.Width),
+                        Width = new DataGridLength(columnWidth),
                         IsReadOnly = true,
                         CellTemplate = CreateReadOnlyCrossRefTemplate(displayInfo.AttributeName, fieldDef, vm)
                     };
@@ -449,7 +451,7 @@ public partial class FileTabView : UserControl
                     column = new DataGridTemplateColumn
                     {
                         Header = CreateColumnHeader(displayInfo, fieldDef),
-                        Width = new DataGridLength(displayInfo.Width),
+                        Width = new DataGridLength(columnWidth),
                         IsReadOnly = false,
                         CellTemplate = CreateEditableCrossRefTemplate(displayInfo.AttributeName, fieldDef, vm)
                     };
@@ -461,7 +463,7 @@ public partial class FileTabView : UserControl
                 column = new DataGridTemplateColumn
                 {
                     Header = CreateColumnHeader(displayInfo, fieldDef),
-                    Width = new DataGridLength(displayInfo.Width),
+                    Width = new DataGridLength(columnWidth),
                     IsReadOnly = true, // Editing happens via popup
                     CellTemplate = CreateTupleListCellTemplate(displayInfo.AttributeName, fieldDef!, vm)
                 };
@@ -472,7 +474,7 @@ public partial class FileTabView : UserControl
                 column = new DataGridTemplateColumn
                 {
                     Header = CreateColumnHeader(displayInfo, fieldDef),
-                    Width = new DataGridLength(displayInfo.Width),
+                    Width = new DataGridLength(columnWidth),
                     IsReadOnly = displayInfo.IsReadOnly,
                     CellTemplate = CreateEnumCellTemplate(displayInfo.AttributeName, fieldDef!, vm),
                     CellEditingTemplate = CreateEnumEditingTemplate(displayInfo.AttributeName, fieldDef!)
@@ -484,7 +486,7 @@ public partial class FileTabView : UserControl
                 column = new DataGridTemplateColumn
                 {
                     Header = CreateColumnHeader(displayInfo, fieldDef),
-                    Width = new DataGridLength(displayInfo.Width),
+                    Width = new DataGridLength(columnWidth),
                     IsReadOnly = false,
                     CellTemplate = CreateMultilineTextCellTemplate(displayInfo.AttributeName, fieldDef, vm),
                     CellEditingTemplate = CreateTextEditingTemplate(displayInfo.AttributeName, fieldDef)
@@ -496,7 +498,7 @@ public partial class FileTabView : UserControl
                 column = new DataGridTemplateColumn
                 {
                     Header = isIdColumn ? CreateIdColumnHeader(displayInfo, vm) : CreateColumnHeader(displayInfo, fieldDef),
-                    Width = new DataGridLength(displayInfo.Width),
+                    Width = new DataGridLength(columnWidth),
                     IsReadOnly = displayInfo.IsReadOnly,
                     CellTemplate = CreateTextCellTemplate(displayInfo.AttributeName, fieldDef, vm),
                     CellEditingTemplate = CreateTextEditingTemplate(displayInfo.AttributeName, fieldDef)
@@ -2160,8 +2162,23 @@ public partial class FileTabView : UserControl
 
             var grid = new Grid
             {
-                ColumnDefinitions = new ColumnDefinitions("*,Auto")
+                ColumnDefinitions = new ColumnDefinitions("Auto,*")
             };
+
+            // Edit button (on the left)
+            var editButton = new Button
+            {
+                Content = "...",
+                Width = 24,
+                Height = 24,
+                Padding = new Avalonia.Thickness(2),
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Margin = new Avalonia.Thickness(2)
+            };
+            ToolTip.SetTip(editButton, "Edit text");
+            Grid.SetColumn(editButton, 0);
+            grid.Children.Add(editButton);
 
             // Text display (truncated)
             var text = new TextBlock
@@ -2172,23 +2189,8 @@ public partial class FileTabView : UserControl
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Avalonia.Thickness(4, 0, 4, 0)
             };
-            Grid.SetColumn(text, 0);
+            Grid.SetColumn(text, 1);
             grid.Children.Add(text);
-
-            // Edit button
-            var editButton = new Button
-            {
-                Content = "...",
-                Width = 24,
-                Height = 24,
-                Padding = new Avalonia.Thickness(2),
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Right,
-                Margin = new Avalonia.Thickness(2)
-            };
-            ToolTip.SetTip(editButton, "Edit text");
-            Grid.SetColumn(editButton, 1);
-            grid.Children.Add(editButton);
 
             // Handle click
             editButton.Click += async (sender, e) =>

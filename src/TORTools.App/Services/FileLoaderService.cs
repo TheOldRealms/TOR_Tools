@@ -484,8 +484,18 @@ public class FileLoaderService
             var fieldDef = context.Schema?.GetField(columnName);
             string? value = null;
 
+            // Check if this is a tagList field
+            if (fieldDef?.TagList != null)
+            {
+                var tagConfig = fieldDef.TagList;
+                value = entry.GetTagList(
+                    tagConfig.ContainerElement,
+                    tagConfig.ItemElement,
+                    tagConfig.NameAttribute,
+                    tagConfig.WeightAttribute);
+            }
             // Check if this is a nested field
-            if (fieldDef?.Nested == true && !string.IsNullOrEmpty(fieldDef.NestedPath))
+            else if (fieldDef?.Nested == true && !string.IsNullOrEmpty(fieldDef.NestedPath))
             {
                 value = entry.GetNestedValue(fieldDef.NestedPath);
             }
@@ -511,7 +521,17 @@ public class FileLoaderService
                 var fieldDef = context.Schema.GetField(fieldName);
                 string? value = null;
 
-                if (fieldDef?.Nested == true && !string.IsNullOrEmpty(fieldDef.NestedPath))
+                // Check if this is a tagList field
+                if (fieldDef?.TagList != null)
+                {
+                    var tagConfig = fieldDef.TagList;
+                    value = entry.GetTagList(
+                        tagConfig.ContainerElement,
+                        tagConfig.ItemElement,
+                        tagConfig.NameAttribute,
+                        tagConfig.WeightAttribute);
+                }
+                else if (fieldDef?.Nested == true && !string.IsNullOrEmpty(fieldDef.NestedPath))
                 {
                     value = entry.GetNestedValue(fieldDef.NestedPath);
                 }

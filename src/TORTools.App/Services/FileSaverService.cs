@@ -86,6 +86,29 @@ public class FileSaverService
 
                 var currentValue = rowVm[columnName]?.Trim();
 
+                // Handle tagList fields
+                if (fieldDef?.TagList != null)
+                {
+                    var tagConfig = fieldDef.TagList;
+                    var existingValue = xmlEntry.GetTagList(
+                        tagConfig.ContainerElement,
+                        tagConfig.ItemElement,
+                        tagConfig.NameAttribute,
+                        tagConfig.WeightAttribute) ?? "";
+                    var normalizedCurrent = currentValue ?? "";
+                    if (existingValue != normalizedCurrent)
+                    {
+                        xmlEntry.SetTagList(
+                            currentValue,
+                            tagConfig.ContainerElement,
+                            tagConfig.ItemElement,
+                            tagConfig.NameAttribute,
+                            tagConfig.WeightAttribute);
+                        context.Document!.HasUnsavedChanges = true;
+                    }
+                    continue;
+                }
+
                 // Handle nested fields
                 if (fieldDef?.Nested == true && !string.IsNullOrEmpty(fieldDef.NestedPath))
                 {

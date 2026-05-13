@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<StringMetadata>
+  <!--
+    TORTools metadata file for tor_strings.xml
+    Stores categories and comments for localization strings.
+    This file is maintained by TORTools and is NOT part of the mod.
+  -->
+
+  <!-- Example entries - add category and comments for strings you want to document -->
+  <String id="tor_skill_faith"
+    category="Skills"
+    comment="Core skill for priest and religious classes. Governs prayers and blessings." />
+  <String id="tor_skill_gunpowder"
+    category="Skills"
+    comment="Governs firearm handling. Empire and Dwarf units benefit most." />
+  <String id="tor_skill_spellcraft"
+    category="Skills"
+    comment="Magic skill. Required for spellcasting classes." />
+  <String id="str_career_screen.title"
+    category="UI"
+    comment="Career screen main title." />
+  <String id="tor_cc_review_description"
+    category="Character Creation"
+    comment="Final review screen description text." />
+</StringMetadata>

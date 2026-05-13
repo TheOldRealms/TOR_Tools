@@ -71,6 +71,9 @@ public class WorkspaceService : IWorkspaceService
         ["tor_action_sets.xml"] = ("Animation", "Action Sets"),
         ["tor_voice_definitions.xml"] = ("Animation", "Voice Definitions"),
         ["tor_weapon_descriptions.xml"] = ("Item Catalog", "Weapon Descriptions"),
+
+        // Text Catalog - Localization
+        ["tor_strings.xml"] = ("Text Catalog", "Strings / Localization"),
     };
 
     /// <summary>
@@ -81,6 +84,7 @@ public class WorkspaceService : IWorkspaceService
         "Item Catalog",
         "Unit Catalog",
         "Abilities & Effects",
+        "Text Catalog",
         "Factions",
         "Crafting",
         "Settlements",
@@ -322,11 +326,9 @@ public class WorkspaceService : IWorkspaceService
 
         foreach (var file in Directory.EnumerateFiles(moduleDataPath, "*.xml", SearchOption.AllDirectories))
         {
-            // Skip tor_strings.xml (too large, MCP-only)
-            // Skip tor_skins.xml (excluded per requirements)
+            // Skip tor_skins.xml (excluded per requirements - 6.6MB, needs rework)
             var fileName = Path.GetFileName(file);
-            if (fileName.Equals("tor_strings.xml", StringComparison.OrdinalIgnoreCase) ||
-                fileName.Equals("tor_skins.xml", StringComparison.OrdinalIgnoreCase))
+            if (fileName.Equals("tor_skins.xml", StringComparison.OrdinalIgnoreCase))
                 continue;
 
             // Skip Language folders for now
