@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <StringMetadata>
-  <String id="tor_ability_caster_dead_routed_text" category="Ability System" />
+  <String id="tor_ability_caster_dead_routed_text" category="Ability System" subcategory="UI Info" />
   <String id="tor_ability_casting" category="Ability System" subcategory="Faith" />
   <String id="tor_ability_enabled" category="Ability System" subcategory="Faith" />
-  <String id="tor_ability_frontal_cone_only_text" category="Ability System" />
-  <String id="tor_ability_in_mistform" category="Ability System" />
+  <String id="tor_ability_frontal_cone_only_text" category="Ability System" subcategory="UI Info" />
+  <String id="tor_ability_in_mistform" category="Ability System" subcategory="UI Info" />
   <String id="tor_ability_missing_anvil" category="Ability System" subcategory="Faith" />
-  <String id="tor_ability_mission_agent_limit" category="Ability System" />
+  <String id="tor_ability_mission_agent_limit" category="Ability System" subcategory="UI Info" />
   <String id="tor_ability_mission_over" category="Ability System" subcategory="Faith" />
-  <String id="tor_ability_no_target_locked_text" category="Ability System" />
-  <String id="tor_ability_not_enough_usages_text" category="Ability System" />
-  <String id="tor_ability_not_player_controlled_text" category="Ability System" />
+  <String id="tor_ability_no_target_locked_text" category="Ability System" subcategory="UI Info" />
+  <String id="tor_ability_not_enough_usages_text" category="Ability System" subcategory="UI Info" />
+  <String id="tor_ability_not_player_controlled_text" category="Ability System" subcategory="UI Info" />
   <String id="tor_ability_on_cooldown" category="Ability System" subcategory="Faith" />
-  <String id="tor_career_ability_not_charged" category="Ability System" />
-  <String id="tor_career_ability_not_usable_mounted" category="Ability System" />
-  <String id="tor_career_ability_not_usable_without_weapon" category="Ability System" />
-  <String id="tor_magister_scrolls_scribed" category="Ability System" />
-  <String id="tor_spell_not_enough_wom" category="Ability System" />
+  <String id="tor_career_ability_not_charged" category="Ability System" subcategory="UI Info" />
+  <String id="tor_career_ability_not_usable_mounted" category="Ability System" subcategory="UI Info" />
+  <String id="tor_career_ability_not_usable_without_weapon" category="Ability System" subcategory="UI Info" />
+  <String id="tor_magister_scrolls_scribed" category="Ability System" subcategory="UI Info" />
+  <String id="tor_spell_not_enough_wom" category="Ability System" subcategory="UI Info" />
   <String id="tor_ability_effect_type.ArtilleryPlacement" category="AbilityEffectType" />
   <String id="tor_ability_effect_type.Augment" category="AbilityEffectType" />
   <String id="tor_ability_effect_type.Blast" category="AbilityEffectType" />
@@ -453,20 +453,20 @@
   <String id="tor_stats_vampire_body_text" category="Character Stats Bonuses" />
   <String id="tor_vampire_bonus" category="Character Stats Bonuses" />
   <String id="tor_vampire_nighttime_bonus" category="Character Stats Bonuses" />
-  <String id="tor_gunner_trait_description" category="Character Traits" />
-  <String id="tor_gunner_trait_name" category="Character Traits" />
-  <String id="tor_ladydevoted_trait_description" category="Character Traits" />
-  <String id="tor_ladydevoted_trait_name" category="Character Traits" />
-  <String id="tor_nagashcorrupted_trait_description" category="Character Traits" />
-  <String id="tor_nagashcorrupted_trait_name" category="Character Traits" />
-  <String id="tor_shallyadevoted_trait_description" category="Character Traits" />
-  <String id="tor_shallyadevoted_trait_name" category="Character Traits" />
-  <String id="tor_sigmardevoted_trait_description" category="Character Traits" />
-  <String id="tor_sigmardevoted_trait_name" category="Character Traits" />
-  <String id="tor_spellcaster_trait_description" category="Character Traits" />
-  <String id="tor_spellcaster_trait_name" category="Character Traits" />
-  <String id="tor_ulricdevoted_trait_description" category="Character Traits" />
-  <String id="tor_ulricdevoted_trait_name" category="Character Traits" />
+  <String id="tor_gunner_trait_description" category="Character Traits" subcategory="Skill labels" />
+  <String id="tor_gunner_trait_name" category="Character Traits" subcategory="Skill labels" />
+  <String id="tor_ladydevoted_trait_description" category="Character Traits" subcategory="Skill labels" />
+  <String id="tor_ladydevoted_trait_name" category="Character Traits" subcategory="Skill labels" />
+  <String id="tor_nagashcorrupted_trait_description" category="Character Traits" subcategory="Skill labels" />
+  <String id="tor_nagashcorrupted_trait_name" category="Character Traits" subcategory="Skill labels" />
+  <String id="tor_shallyadevoted_trait_description" category="Character Traits" subcategory="Skill labels" />
+  <String id="tor_shallyadevoted_trait_name" category="Character Traits" subcategory="Skill labels" />
+  <String id="tor_sigmardevoted_trait_description" category="Character Traits" subcategory="Skill labels" />
+  <String id="tor_sigmardevoted_trait_name" category="Character Traits" subcategory="Skill labels" />
+  <String id="tor_spellcaster_trait_description" category="Character Traits" subcategory="Skill labels" />
+  <String id="tor_spellcaster_trait_name" category="Character Traits" subcategory="Skill labels" />
+  <String id="tor_ulricdevoted_trait_description" category="Character Traits" subcategory="Skill labels" />
+  <String id="tor_ulricdevoted_trait_name" category="Character Traits" subcategory="Skill labels" />
   <String id="tor_custom_resource_bre_chivalry_rankText" category="Chivalry" />
   <String id="tor_stealth_attack_text" category="Combat Messages" />
   <String id="tor_empire_prestigenoble_buildingask_p" category="Construction projects paid for with gold that are 1 time only" />
@@ -535,14 +535,14 @@
   <String id="str_weapon_usage.TorTwoHandedSword" category="crafting" />
   <String id="tor_crafting.refine_all" category="crafting" />
   <String id="tor_refine_all_hint" category="crafting" />
-  <String id="str_adjective_for_culture.battania" category="culture related" />
-  <String id="str_adjective_for_culture.chaos_culture" category="culture related" />
-  <String id="str_adjective_for_culture.druchii" category="culture related" />
-  <String id="str_adjective_for_culture.empire" category="culture related" />
-  <String id="str_adjective_for_culture.eonir" category="culture related" />
-  <String id="str_adjective_for_culture.khuzait" category="culture related" />
-  <String id="str_adjective_for_culture.mousillon" category="culture related" />
-  <String id="str_adjective_for_culture.vlandia" category="culture related" />
+  <String id="str_adjective_for_culture.battania" category="culture related" subcategory="neutral name" />
+  <String id="str_adjective_for_culture.chaos_culture" category="culture related" subcategory="neutral name" />
+  <String id="str_adjective_for_culture.druchii" category="culture related" subcategory="neutral name" />
+  <String id="str_adjective_for_culture.empire" category="culture related" subcategory="neutral name" />
+  <String id="str_adjective_for_culture.eonir" category="culture related" subcategory="neutral name" />
+  <String id="str_adjective_for_culture.khuzait" category="culture related" subcategory="neutral name" />
+  <String id="str_adjective_for_culture.mousillon" category="culture related" subcategory="neutral name" />
+  <String id="str_adjective_for_culture.vlandia" category="culture related" subcategory="neutral name" />
   <String id="str_adjective_for_faction.anguille" category="culture related" />
   <String id="str_adjective_for_faction.aquitaine" category="culture related" />
   <String id="str_adjective_for_faction.artois" category="culture related" />
@@ -573,45 +573,45 @@
   <String id="str_adjective_for_faction.talabecland" category="culture related" />
   <String id="str_adjective_for_faction.wasteland" category="culture related" />
   <String id="str_adjective_for_faction.wissenland" category="culture related" />
-  <String id="str_comment_intro.cruel_khuzait" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.aserai" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.aserai_boasting" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.battania" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.battania_boasting" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.battania_boasting_cruel" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.battania_honor" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.battania_mercy" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.empire" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.empire_boasting" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.empire_boasting_cruel" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.empire_honor" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.empire_mercy" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.goblin" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.goblin_boasting" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.khuzait" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.khuzait_blooddragon_cruel" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.khuzait_blooddragon_mercy" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.khuzait_boasting" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.khuzait_boasting_blooddragon" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.khuzait_boasting_blooddragon_honor" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.mousillon" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.mousillon_boasting" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.mousillon_boasting_cruel" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.mousillon_honor" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.mousillon_mercy" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.sturgia" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.sturgia_boasting" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.sturgia_boasting_2" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.vlandia" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.vlandia_boasting" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.vlandia_boasting_cruel" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.vlandia_honor" category="culture related" />
-  <String id="str_comment_noble_introduces_self_and_clan.vlandia_mercy" category="culture related" />
-  <String id="str_comment_noble_introduces_self.battania" category="culture related" />
-  <String id="str_comment_noble_introduces_self.empire" category="culture related" />
-  <String id="str_comment_noble_introduces_self.khuzait" category="culture related" />
-  <String id="str_comment_noble_introduces_self.mousillon" category="culture related" />
-  <String id="str_comment_noble_introduces_self.vlandia" category="culture related" />
+  <String id="str_comment_intro.cruel_khuzait" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.aserai" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.aserai_boasting" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.battania" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.battania_boasting" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.battania_boasting_cruel" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.battania_honor" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.battania_mercy" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.empire" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.empire_boasting" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.empire_boasting_cruel" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.empire_honor" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.empire_mercy" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.goblin" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.goblin_boasting" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.khuzait" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.khuzait_blooddragon_cruel" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.khuzait_blooddragon_mercy" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.khuzait_boasting" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.khuzait_boasting_blooddragon" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.khuzait_boasting_blooddragon_honor" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.mousillon" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.mousillon_boasting" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.mousillon_boasting_cruel" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.mousillon_honor" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.mousillon_mercy" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.sturgia" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.sturgia_boasting" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.sturgia_boasting_2" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.vlandia" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.vlandia_boasting" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.vlandia_boasting_cruel" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.vlandia_honor" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self_and_clan.vlandia_mercy" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self.battania" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self.empire" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self.khuzait" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self.mousillon" category="culture related" subcategory="oath line" />
+  <String id="str_comment_noble_introduces_self.vlandia" category="culture related" subcategory="oath line" />
   <String id="str_culture_description.aserai" category="culture related" />
   <String id="str_culture_description.battania" category="culture related" />
   <String id="str_culture_description.chaos_culture" category="culture related" />
@@ -630,26 +630,26 @@
   <String id="str_culture_rich_name.mousillon" category="culture related" />
   <String id="str_culture_rich_name.sturgia" category="culture related" />
   <String id="str_culture_rich_name.vlandia" category="culture related" />
-  <String id="str_faction_formal_name_for_culture.aserai" category="culture related" />
+  <String id="str_faction_formal_name_for_culture.aserai" category="culture related" subcategory="formal name" />
   <String id="str_faction_formal_name_for_culture.battania" category="culture related" />
-  <String id="str_faction_formal_name_for_culture.chaos_culture" category="culture related" />
-  <String id="str_faction_formal_name_for_culture.druchii" category="culture related" />
+  <String id="str_faction_formal_name_for_culture.chaos_culture" category="culture related" subcategory="formal name" />
+  <String id="str_faction_formal_name_for_culture.druchii" category="culture related" subcategory="formal name" />
   <String id="str_faction_formal_name_for_culture.empire" category="culture related" />
   <String id="str_faction_formal_name_for_culture.eonir" category="culture related" />
   <String id="str_faction_formal_name_for_culture.khuzait" category="culture related" />
   <String id="str_faction_formal_name_for_culture.mousillon" category="culture related" />
-  <String id="str_faction_formal_name_for_culture.sturgia" category="culture related" />
+  <String id="str_faction_formal_name_for_culture.sturgia" category="culture related" subcategory="formal name" />
   <String id="str_faction_formal_name_for_culture.vlandia" category="culture related" />
-  <String id="str_faction_informal_name_for_culture.aserai" category="culture related" />
-  <String id="str_faction_informal_name_for_culture.battania" category="culture related" />
-  <String id="str_faction_informal_name_for_culture.chaos_culture" category="culture related" />
-  <String id="str_faction_informal_name_for_culture.druchii" category="culture related" />
-  <String id="str_faction_informal_name_for_culture.empire" category="culture related" />
-  <String id="str_faction_informal_name_for_culture.eonir" category="culture related" />
-  <String id="str_faction_informal_name_for_culture.khuzait" category="culture related" />
-  <String id="str_faction_informal_name_for_culture.mousillon" category="culture related" />
-  <String id="str_faction_informal_name_for_culture.sturgia" category="culture related" />
-  <String id="str_faction_informal_name_for_culture.vlandia" category="culture related" />
+  <String id="str_faction_informal_name_for_culture.aserai" category="culture related" subcategory="neutral name" />
+  <String id="str_faction_informal_name_for_culture.battania" category="culture related" subcategory="neutral name" />
+  <String id="str_faction_informal_name_for_culture.chaos_culture" category="culture related" subcategory="neutral name" />
+  <String id="str_faction_informal_name_for_culture.druchii" category="culture related" subcategory="neutral name" />
+  <String id="str_faction_informal_name_for_culture.empire" category="culture related" subcategory="formal name" />
+  <String id="str_faction_informal_name_for_culture.eonir" category="culture related" subcategory="neutral name" />
+  <String id="str_faction_informal_name_for_culture.khuzait" category="culture related" subcategory="formal name" />
+  <String id="str_faction_informal_name_for_culture.mousillon" category="culture related" subcategory="neutral name" />
+  <String id="str_faction_informal_name_for_culture.sturgia" category="culture related" subcategory="neutral name" />
+  <String id="str_faction_informal_name_for_culture.vlandia" category="culture related" subcategory="neutral name" />
   <String id="str_faction_noble_name_with_title.aserai" category="culture related" />
   <String id="str_faction_noble_name_with_title.battania" category="culture related" />
   <String id="str_faction_noble_name_with_title.chaos_culture" category="culture related" />
@@ -713,32 +713,32 @@
   <String id="str_faction_ruler.sturgia_f" category="culture related" />
   <String id="str_faction_ruler.vlandia" category="culture related" />
   <String id="str_faction_ruler.vlandia_f" category="culture related" />
-  <String id="str_liege_title_female.battania" category="culture related" />
-  <String id="str_liege_title_female.chaos_culture" category="culture related" />
-  <String id="str_liege_title_female.empire" category="culture related" />
-  <String id="str_liege_title_female.eonir" category="culture related" />
-  <String id="str_liege_title_female.khuzait" category="culture related" />
-  <String id="str_liege_title_female.mousillon" category="culture related" />
-  <String id="str_liege_title_female.vlandia" category="culture related" />
-  <String id="str_liege_title.aserai" category="culture related" />
-  <String id="str_liege_title.aserai_goblin" category="culture related" />
-  <String id="str_liege_title.battania" category="culture related" />
-  <String id="str_liege_title.blooddragons" category="culture related" />
-  <String id="str_liege_title.chaos_culture" category="culture related" />
-  <String id="str_liege_title.empire" category="culture related" />
-  <String id="str_liege_title.eonir" category="culture related" />
-  <String id="str_liege_title.khuzait" category="culture related" />
-  <String id="str_liege_title.mousillon" category="culture related" />
-  <String id="str_liege_title.sturgia" category="culture related" />
-  <String id="str_liege_title.vlandia" category="culture related" />
-  <String id="str_neutral_term_for_culture.battania" category="culture related" />
-  <String id="str_neutral_term_for_culture.chaos_culture" category="culture related" />
-  <String id="str_neutral_term_for_culture.druchii" category="culture related" />
-  <String id="str_neutral_term_for_culture.empire" category="culture related" />
-  <String id="str_neutral_term_for_culture.eonir" category="culture related" />
-  <String id="str_neutral_term_for_culture.khuzait" category="culture related" />
-  <String id="str_neutral_term_for_culture.mousillon" category="culture related" />
-  <String id="str_neutral_term_for_culture.vlandia" category="culture related" />
+  <String id="str_liege_title_female.battania" category="culture related" subcategory="oath line" />
+  <String id="str_liege_title_female.chaos_culture" category="culture related" subcategory="oath line" />
+  <String id="str_liege_title_female.empire" category="culture related" subcategory="oath line" />
+  <String id="str_liege_title_female.eonir" category="culture related" subcategory="oath line" />
+  <String id="str_liege_title_female.khuzait" category="culture related" subcategory="oath line" />
+  <String id="str_liege_title_female.mousillon" category="culture related" subcategory="oath line" />
+  <String id="str_liege_title_female.vlandia" category="culture related" subcategory="oath line" />
+  <String id="str_liege_title.aserai" category="culture related" subcategory="oath line" />
+  <String id="str_liege_title.aserai_goblin" category="culture related" subcategory="oath line" />
+  <String id="str_liege_title.battania" category="culture related" subcategory="oath line" />
+  <String id="str_liege_title.blooddragons" category="culture related" subcategory="oath line" />
+  <String id="str_liege_title.chaos_culture" category="culture related" subcategory="oath line" />
+  <String id="str_liege_title.empire" category="culture related" subcategory="oath line" />
+  <String id="str_liege_title.eonir" category="culture related" subcategory="oath line" />
+  <String id="str_liege_title.khuzait" category="culture related" subcategory="oath line" />
+  <String id="str_liege_title.mousillon" category="culture related" subcategory="oath line" />
+  <String id="str_liege_title.sturgia" category="culture related" subcategory="oath line" />
+  <String id="str_liege_title.vlandia" category="culture related" subcategory="oath line" />
+  <String id="str_neutral_term_for_culture.battania" category="culture related" subcategory="neutral name" />
+  <String id="str_neutral_term_for_culture.chaos_culture" category="culture related" subcategory="neutral name" />
+  <String id="str_neutral_term_for_culture.druchii" category="culture related" subcategory="neutral name" />
+  <String id="str_neutral_term_for_culture.empire" category="culture related" subcategory="neutral name" />
+  <String id="str_neutral_term_for_culture.eonir" category="culture related" subcategory="neutral name" />
+  <String id="str_neutral_term_for_culture.khuzait" category="culture related" subcategory="neutral name" />
+  <String id="str_neutral_term_for_culture.mousillon" category="culture related" subcategory="neutral name" />
+  <String id="str_neutral_term_for_culture.vlandia" category="culture related" subcategory="neutral name" />
   <String id="str_short_term_for_faction.anguille" category="culture related" />
   <String id="str_short_term_for_faction.aquitaine" category="culture related" />
   <String id="str_short_term_for_faction.artois" category="culture related" />
@@ -769,236 +769,236 @@
   <String id="str_short_term_for_faction.talabecland" category="culture related" />
   <String id="str_short_term_for_faction.wasteland" category="culture related" />
   <String id="str_short_term_for_faction.wissenland" category="culture related" />
-  <String id="tor_feudal_oath_line1.anguille" category="culture related" />
-  <String id="tor_feudal_oath_line1.aquitaine" category="culture related" />
-  <String id="tor_feudal_oath_line1.artois" category="culture related" />
-  <String id="tor_feudal_oath_line1.athel_loren" category="culture related" />
-  <String id="tor_feudal_oath_line1.averland" category="culture related" />
-  <String id="tor_feudal_oath_line1.bad_axes" category="culture related" />
-  <String id="tor_feudal_oath_line1.bastonne" category="culture related" />
-  <String id="tor_feudal_oath_line1.black_pit" category="culture related" />
-  <String id="tor_feudal_oath_line1.black_sunz" category="culture related" />
-  <String id="tor_feudal_oath_line1.blooddragons" category="culture related" />
-  <String id="tor_feudal_oath_line1.bloody_spearz" category="culture related" />
-  <String id="tor_feudal_oath_line1.bordeleaux" category="culture related" />
-  <String id="tor_feudal_oath_line1.brasskeep" category="culture related" />
-  <String id="tor_feudal_oath_line1.brionne" category="culture related" />
-  <String id="tor_feudal_oath_line1.carcassonne" category="culture related" />
-  <String id="tor_feudal_oath_line1.couronne" category="culture related" />
-  <String id="tor_feudal_oath_line1.crooked_eye" category="culture related" />
-  <String id="tor_feudal_oath_line1.deff_grindaz" category="culture related" />
-  <String id="tor_feudal_oath_line1.gisoreux" category="culture related" />
-  <String id="tor_feudal_oath_line1.hochland" category="culture related" />
-  <String id="tor_feudal_oath_line1.iron_tribe" category="culture related" />
-  <String id="tor_feudal_oath_line1.karak_angazhar" category="culture related" />
-  <String id="tor_feudal_oath_line1.karak_azgaraz" category="culture related" />
-  <String id="tor_feudal_oath_line1.karak_eksfilaz" category="culture related" />
-  <String id="tor_feudal_oath_line1.karak_gantuk" category="culture related" />
-  <String id="tor_feudal_oath_line1.karak_hirn" category="culture related" />
-  <String id="tor_feudal_oath_line1.karak_izor" category="culture related" />
-  <String id="tor_feudal_oath_line1.karak_kadrin" category="culture related" />
-  <String id="tor_feudal_oath_line1.karak_kaferkammaz" category="culture related" />
-  <String id="tor_feudal_oath_line1.karak_norn" category="culture related" />
-  <String id="tor_feudal_oath_line1.karak_zhufbar" category="culture related" />
-  <String id="tor_feudal_oath_line1.karak_ziflin" category="culture related" />
-  <String id="tor_feudal_oath_line1.laurelorn" category="culture related" />
-  <String id="tor_feudal_oath_line1.lyonesse" category="culture related" />
-  <String id="tor_feudal_oath_line1.massif_choppas" category="culture related" />
-  <String id="tor_feudal_oath_line1.middenland" category="culture related" />
-  <String id="tor_feudal_oath_line1.montfort" category="culture related" />
-  <String id="tor_feudal_oath_line1.moot" category="culture related" />
-  <String id="tor_feudal_oath_line1.mousillon" category="culture related" />
-  <String id="tor_feudal_oath_line1.neck_snappers" category="culture related" />
-  <String id="tor_feudal_oath_line1.necrachs" category="culture related" />
-  <String id="tor_feudal_oath_line1.nordland" category="culture related" />
-  <String id="tor_feudal_oath_line1.ostermark" category="culture related" />
-  <String id="tor_feudal_oath_line1.ostland" category="culture related" />
-  <String id="tor_feudal_oath_line1.parravon" category="culture related" />
-  <String id="tor_feudal_oath_line1.quenelles" category="culture related" />
-  <String id="tor_feudal_oath_line1.reavaz" category="culture related" />
-  <String id="tor_feudal_oath_line1.red_eye" category="culture related" />
-  <String id="tor_feudal_oath_line1.reikland" category="culture related" />
-  <String id="tor_feudal_oath_line1.skull_smasherz" category="culture related" />
-  <String id="tor_feudal_oath_line1.stirland" category="culture related" />
-  <String id="tor_feudal_oath_line1.sylvania" category="culture related" />
-  <String id="tor_feudal_oath_line1.talabecland" category="culture related" />
-  <String id="tor_feudal_oath_line1.wasteland" category="culture related" />
-  <String id="tor_feudal_oath_line1.wissenland" category="culture related" />
-  <String id="tor_feudal_oath_line2.anguille" category="culture related" />
-  <String id="tor_feudal_oath_line2.aquitaine" category="culture related" />
-  <String id="tor_feudal_oath_line2.artois" category="culture related" />
-  <String id="tor_feudal_oath_line2.athel_loren" category="culture related" />
-  <String id="tor_feudal_oath_line2.averland" category="culture related" />
-  <String id="tor_feudal_oath_line2.bad_axes" category="culture related" />
-  <String id="tor_feudal_oath_line2.bastonne" category="culture related" />
-  <String id="tor_feudal_oath_line2.black_pit" category="culture related" />
-  <String id="tor_feudal_oath_line2.black_sunz" category="culture related" />
-  <String id="tor_feudal_oath_line2.blooddragons" category="culture related" />
-  <String id="tor_feudal_oath_line2.bloody_spearz" category="culture related" />
-  <String id="tor_feudal_oath_line2.bordeleaux" category="culture related" />
-  <String id="tor_feudal_oath_line2.brasskeep" category="culture related" />
-  <String id="tor_feudal_oath_line2.brionne" category="culture related" />
-  <String id="tor_feudal_oath_line2.carcassonne" category="culture related" />
-  <String id="tor_feudal_oath_line2.couronne" category="culture related" />
-  <String id="tor_feudal_oath_line2.crooked_eye" category="culture related" />
-  <String id="tor_feudal_oath_line2.deff_grindaz" category="culture related" />
-  <String id="tor_feudal_oath_line2.gisoreux" category="culture related" />
-  <String id="tor_feudal_oath_line2.hochland" category="culture related" />
-  <String id="tor_feudal_oath_line2.iron_tribe" category="culture related" />
-  <String id="tor_feudal_oath_line2.karak_angazhar" category="culture related" />
-  <String id="tor_feudal_oath_line2.karak_azgaraz" category="culture related" />
-  <String id="tor_feudal_oath_line2.karak_eksfilaz" category="culture related" />
-  <String id="tor_feudal_oath_line2.karak_gantuk" category="culture related" />
-  <String id="tor_feudal_oath_line2.karak_hirn" category="culture related" />
-  <String id="tor_feudal_oath_line2.karak_izor" category="culture related" />
-  <String id="tor_feudal_oath_line2.karak_kadrin" category="culture related" />
-  <String id="tor_feudal_oath_line2.karak_kaferkammaz" category="culture related" />
-  <String id="tor_feudal_oath_line2.karak_norn" category="culture related" />
-  <String id="tor_feudal_oath_line2.karak_zhufbar" category="culture related" />
-  <String id="tor_feudal_oath_line2.karak_ziflin" category="culture related" />
-  <String id="tor_feudal_oath_line2.laurelorn" category="culture related" />
-  <String id="tor_feudal_oath_line2.lyonesse" category="culture related" />
-  <String id="tor_feudal_oath_line2.massif_choppas" category="culture related" />
-  <String id="tor_feudal_oath_line2.middenland" category="culture related" />
-  <String id="tor_feudal_oath_line2.montfort" category="culture related" />
-  <String id="tor_feudal_oath_line2.moot" category="culture related" />
-  <String id="tor_feudal_oath_line2.mousillon" category="culture related" />
-  <String id="tor_feudal_oath_line2.neck_snappers" category="culture related" />
-  <String id="tor_feudal_oath_line2.necrachs" category="culture related" />
-  <String id="tor_feudal_oath_line2.nordland" category="culture related" />
-  <String id="tor_feudal_oath_line2.ostermark" category="culture related" />
-  <String id="tor_feudal_oath_line2.ostland" category="culture related" />
-  <String id="tor_feudal_oath_line2.parravon" category="culture related" />
-  <String id="tor_feudal_oath_line2.quenelles" category="culture related" />
-  <String id="tor_feudal_oath_line2.reavaz" category="culture related" />
-  <String id="tor_feudal_oath_line2.red_eye" category="culture related" />
-  <String id="tor_feudal_oath_line2.reikland" category="culture related" />
-  <String id="tor_feudal_oath_line2.skull_smasherz" category="culture related" />
-  <String id="tor_feudal_oath_line2.stirland" category="culture related" />
-  <String id="tor_feudal_oath_line2.sylvania" category="culture related" />
-  <String id="tor_feudal_oath_line2.talabecland" category="culture related" />
-  <String id="tor_feudal_oath_line2.wasteland" category="culture related" />
-  <String id="tor_feudal_oath_line2.wissenland" category="culture related" />
-  <String id="tor_feudal_oath_line3.anguille" category="culture related" />
-  <String id="tor_feudal_oath_line3.aquitaine" category="culture related" />
-  <String id="tor_feudal_oath_line3.artois" category="culture related" />
-  <String id="tor_feudal_oath_line3.athel_loren" category="culture related" />
-  <String id="tor_feudal_oath_line3.averland" category="culture related" />
-  <String id="tor_feudal_oath_line3.bad_axes" category="culture related" />
-  <String id="tor_feudal_oath_line3.bastonne" category="culture related" />
-  <String id="tor_feudal_oath_line3.black_pit" category="culture related" />
-  <String id="tor_feudal_oath_line3.black_sunz" category="culture related" />
-  <String id="tor_feudal_oath_line3.blooddragons" category="culture related" />
-  <String id="tor_feudal_oath_line3.bloody_spearz" category="culture related" />
-  <String id="tor_feudal_oath_line3.bordeleaux" category="culture related" />
-  <String id="tor_feudal_oath_line3.brasskeep" category="culture related" />
-  <String id="tor_feudal_oath_line3.brionne" category="culture related" />
-  <String id="tor_feudal_oath_line3.carcassonne" category="culture related" />
-  <String id="tor_feudal_oath_line3.couronne" category="culture related" />
-  <String id="tor_feudal_oath_line3.crooked_eye" category="culture related" />
-  <String id="tor_feudal_oath_line3.deff_grindaz" category="culture related" />
-  <String id="tor_feudal_oath_line3.gisoreux" category="culture related" />
-  <String id="tor_feudal_oath_line3.hochland" category="culture related" />
-  <String id="tor_feudal_oath_line3.iron_tribe" category="culture related" />
-  <String id="tor_feudal_oath_line3.karak_angazhar" category="culture related" />
-  <String id="tor_feudal_oath_line3.karak_azgaraz" category="culture related" />
-  <String id="tor_feudal_oath_line3.karak_eksfilaz" category="culture related" />
-  <String id="tor_feudal_oath_line3.karak_gantuk" category="culture related" />
-  <String id="tor_feudal_oath_line3.karak_hirn" category="culture related" />
-  <String id="tor_feudal_oath_line3.karak_izor" category="culture related" />
-  <String id="tor_feudal_oath_line3.karak_kadrin" category="culture related" />
-  <String id="tor_feudal_oath_line3.karak_kaferkammaz" category="culture related" />
-  <String id="tor_feudal_oath_line3.karak_norn" category="culture related" />
-  <String id="tor_feudal_oath_line3.karak_zhufbar" category="culture related" />
-  <String id="tor_feudal_oath_line3.karak_ziflin" category="culture related" />
-  <String id="tor_feudal_oath_line3.laurelorn" category="culture related" />
-  <String id="tor_feudal_oath_line3.lyonesse" category="culture related" />
-  <String id="tor_feudal_oath_line3.massif_choppas" category="culture related" />
-  <String id="tor_feudal_oath_line3.middenland" category="culture related" />
-  <String id="tor_feudal_oath_line3.montfort" category="culture related" />
-  <String id="tor_feudal_oath_line3.moot" category="culture related" />
-  <String id="tor_feudal_oath_line3.mousillon" category="culture related" />
-  <String id="tor_feudal_oath_line3.neck_snappers" category="culture related" />
-  <String id="tor_feudal_oath_line3.necrachs" category="culture related" />
-  <String id="tor_feudal_oath_line3.nordland" category="culture related" />
-  <String id="tor_feudal_oath_line3.ostermark" category="culture related" />
-  <String id="tor_feudal_oath_line3.ostland" category="culture related" />
-  <String id="tor_feudal_oath_line3.parravon" category="culture related" />
-  <String id="tor_feudal_oath_line3.quenelles" category="culture related" />
-  <String id="tor_feudal_oath_line3.reavaz" category="culture related" />
-  <String id="tor_feudal_oath_line3.red_eye" category="culture related" />
-  <String id="tor_feudal_oath_line3.reikland" category="culture related" />
-  <String id="tor_feudal_oath_line3.skull_smasherz" category="culture related" />
-  <String id="tor_feudal_oath_line3.stirland" category="culture related" />
-  <String id="tor_feudal_oath_line3.sylvania" category="culture related" />
-  <String id="tor_feudal_oath_line3.talabecland" category="culture related" />
-  <String id="tor_feudal_oath_line3.wasteland" category="culture related" />
-  <String id="tor_feudal_oath_line3.wissenland" category="culture related" />
-  <String id="tor_feudal_oath_line4.anguille" category="culture related" />
-  <String id="tor_feudal_oath_line4.aquitaine" category="culture related" />
-  <String id="tor_feudal_oath_line4.artois" category="culture related" />
-  <String id="tor_feudal_oath_line4.athel_loren" category="culture related" />
-  <String id="tor_feudal_oath_line4.averland" category="culture related" />
-  <String id="tor_feudal_oath_line4.bad_axes" category="culture related" />
-  <String id="tor_feudal_oath_line4.bastonne" category="culture related" />
-  <String id="tor_feudal_oath_line4.black_pit" category="culture related" />
-  <String id="tor_feudal_oath_line4.black_sunz" category="culture related" />
-  <String id="tor_feudal_oath_line4.blooddragons" category="culture related" />
-  <String id="tor_feudal_oath_line4.bloody_spearz" category="culture related" />
-  <String id="tor_feudal_oath_line4.bordeleaux" category="culture related" />
-  <String id="tor_feudal_oath_line4.brasskeep" category="culture related" />
-  <String id="tor_feudal_oath_line4.brionne" category="culture related" />
-  <String id="tor_feudal_oath_line4.carcassonne" category="culture related" />
-  <String id="tor_feudal_oath_line4.couronne" category="culture related" />
-  <String id="tor_feudal_oath_line4.crooked_eye" category="culture related" />
-  <String id="tor_feudal_oath_line4.deff_grindaz" category="culture related" />
-  <String id="tor_feudal_oath_line4.gisoreux" category="culture related" />
-  <String id="tor_feudal_oath_line4.hochland" category="culture related" />
-  <String id="tor_feudal_oath_line4.iron_tribe" category="culture related" />
-  <String id="tor_feudal_oath_line4.karak_angazhar" category="culture related" />
-  <String id="tor_feudal_oath_line4.karak_azgaraz" category="culture related" />
-  <String id="tor_feudal_oath_line4.karak_eksfilaz" category="culture related" />
-  <String id="tor_feudal_oath_line4.karak_gantuk" category="culture related" />
-  <String id="tor_feudal_oath_line4.karak_hirn" category="culture related" />
-  <String id="tor_feudal_oath_line4.karak_izor" category="culture related" />
-  <String id="tor_feudal_oath_line4.karak_kadrin" category="culture related" />
-  <String id="tor_feudal_oath_line4.karak_kaferkammaz" category="culture related" />
-  <String id="tor_feudal_oath_line4.karak_norn" category="culture related" />
-  <String id="tor_feudal_oath_line4.karak_zhufbar" category="culture related" />
-  <String id="tor_feudal_oath_line4.karak_ziflin" category="culture related" />
-  <String id="tor_feudal_oath_line4.laurelorn" category="culture related" />
-  <String id="tor_feudal_oath_line4.lyonesse" category="culture related" />
-  <String id="tor_feudal_oath_line4.massif_choppas" category="culture related" />
-  <String id="tor_feudal_oath_line4.middenland" category="culture related" />
-  <String id="tor_feudal_oath_line4.montfort" category="culture related" />
-  <String id="tor_feudal_oath_line4.moot" category="culture related" />
-  <String id="tor_feudal_oath_line4.mousillon" category="culture related" />
-  <String id="tor_feudal_oath_line4.neck_snappers" category="culture related" />
-  <String id="tor_feudal_oath_line4.necrachs" category="culture related" />
-  <String id="tor_feudal_oath_line4.nordland" category="culture related" />
-  <String id="tor_feudal_oath_line4.ostermark" category="culture related" />
-  <String id="tor_feudal_oath_line4.ostland" category="culture related" />
-  <String id="tor_feudal_oath_line4.parravon" category="culture related" />
-  <String id="tor_feudal_oath_line4.quenelles" category="culture related" />
-  <String id="tor_feudal_oath_line4.reavaz" category="culture related" />
-  <String id="tor_feudal_oath_line4.red_eye" category="culture related" />
-  <String id="tor_feudal_oath_line4.reikland" category="culture related" />
-  <String id="tor_feudal_oath_line4.skull_smasherz" category="culture related" />
-  <String id="tor_feudal_oath_line4.stirland" category="culture related" />
-  <String id="tor_feudal_oath_line4.sylvania" category="culture related" />
-  <String id="tor_feudal_oath_line4.talabecland" category="culture related" />
-  <String id="tor_feudal_oath_line4.wasteland" category="culture related" />
-  <String id="tor_feudal_oath_line4.wissenland" category="culture related" />
-  <String id="tor_player_accept_vassalage.aserai" category="culture related" />
-  <String id="tor_player_accept_vassalage.battania" category="culture related" />
-  <String id="tor_player_accept_vassalage.blooddragons" category="culture related" />
-  <String id="tor_player_accept_vassalage.chaos_culture" category="culture related" />
-  <String id="tor_player_accept_vassalage.empire" category="culture related" />
-  <String id="tor_player_accept_vassalage.eonir" category="culture related" />
-  <String id="tor_player_accept_vassalage.khuzait" category="culture related" />
-  <String id="tor_player_accept_vassalage.mousillon" category="culture related" />
-  <String id="tor_player_accept_vassalage.sturgia" category="culture related" />
-  <String id="tor_player_accept_vassalage.vlandia" category="culture related" />
+  <String id="tor_feudal_oath_line1.anguille" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.aquitaine" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.artois" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.athel_loren" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.averland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.bad_axes" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.bastonne" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.black_pit" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.black_sunz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.blooddragons" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.bloody_spearz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.bordeleaux" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.brasskeep" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.brionne" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.carcassonne" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.couronne" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.crooked_eye" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.deff_grindaz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.gisoreux" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.hochland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.iron_tribe" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.karak_angazhar" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.karak_azgaraz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.karak_eksfilaz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.karak_gantuk" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.karak_hirn" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.karak_izor" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.karak_kadrin" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.karak_kaferkammaz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.karak_norn" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.karak_zhufbar" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.karak_ziflin" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.laurelorn" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.lyonesse" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.massif_choppas" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.middenland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.montfort" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.moot" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.mousillon" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.neck_snappers" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.necrachs" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.nordland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.ostermark" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.ostland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.parravon" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.quenelles" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.reavaz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.red_eye" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.reikland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.skull_smasherz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.stirland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.sylvania" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.talabecland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.wasteland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line1.wissenland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.anguille" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.aquitaine" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.artois" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.athel_loren" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.averland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.bad_axes" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.bastonne" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.black_pit" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.black_sunz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.blooddragons" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.bloody_spearz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.bordeleaux" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.brasskeep" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.brionne" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.carcassonne" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.couronne" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.crooked_eye" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.deff_grindaz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.gisoreux" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.hochland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.iron_tribe" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.karak_angazhar" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.karak_azgaraz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.karak_eksfilaz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.karak_gantuk" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.karak_hirn" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.karak_izor" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.karak_kadrin" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.karak_kaferkammaz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.karak_norn" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.karak_zhufbar" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.karak_ziflin" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.laurelorn" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.lyonesse" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.massif_choppas" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.middenland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.montfort" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.moot" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.mousillon" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.neck_snappers" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.necrachs" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.nordland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.ostermark" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.ostland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.parravon" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.quenelles" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.reavaz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.red_eye" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.reikland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.skull_smasherz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.stirland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.sylvania" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.talabecland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.wasteland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line2.wissenland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.anguille" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.aquitaine" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.artois" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.athel_loren" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.averland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.bad_axes" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.bastonne" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.black_pit" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.black_sunz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.blooddragons" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.bloody_spearz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.bordeleaux" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.brasskeep" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.brionne" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.carcassonne" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.couronne" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.crooked_eye" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.deff_grindaz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.gisoreux" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.hochland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.iron_tribe" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.karak_angazhar" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.karak_azgaraz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.karak_eksfilaz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.karak_gantuk" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.karak_hirn" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.karak_izor" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.karak_kadrin" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.karak_kaferkammaz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.karak_norn" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.karak_zhufbar" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.karak_ziflin" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.laurelorn" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.lyonesse" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.massif_choppas" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.middenland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.montfort" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.moot" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.mousillon" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.neck_snappers" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.necrachs" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.nordland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.ostermark" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.ostland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.parravon" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.quenelles" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.reavaz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.red_eye" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.reikland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.skull_smasherz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.stirland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.sylvania" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.talabecland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.wasteland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line3.wissenland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.anguille" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.aquitaine" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.artois" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.athel_loren" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.averland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.bad_axes" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.bastonne" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.black_pit" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.black_sunz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.blooddragons" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.bloody_spearz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.bordeleaux" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.brasskeep" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.brionne" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.carcassonne" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.couronne" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.crooked_eye" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.deff_grindaz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.gisoreux" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.hochland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.iron_tribe" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.karak_angazhar" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.karak_azgaraz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.karak_eksfilaz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.karak_gantuk" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.karak_hirn" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.karak_izor" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.karak_kadrin" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.karak_kaferkammaz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.karak_norn" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.karak_zhufbar" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.karak_ziflin" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.laurelorn" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.lyonesse" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.massif_choppas" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.middenland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.montfort" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.moot" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.mousillon" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.neck_snappers" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.necrachs" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.nordland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.ostermark" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.ostland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.parravon" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.quenelles" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.reavaz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.red_eye" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.reikland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.skull_smasherz" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.stirland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.sylvania" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.talabecland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.wasteland" category="culture related" subcategory="oath line" />
+  <String id="tor_feudal_oath_line4.wissenland" category="culture related" subcategory="oath line" />
+  <String id="tor_player_accept_vassalage.aserai" category="culture related" subcategory="oath line" />
+  <String id="tor_player_accept_vassalage.battania" category="culture related" subcategory="oath line" />
+  <String id="tor_player_accept_vassalage.blooddragons" category="culture related" subcategory="oath line" />
+  <String id="tor_player_accept_vassalage.chaos_culture" category="culture related" subcategory="oath line" />
+  <String id="tor_player_accept_vassalage.empire" category="culture related" subcategory="oath line" />
+  <String id="tor_player_accept_vassalage.eonir" category="culture related" subcategory="oath line" />
+  <String id="tor_player_accept_vassalage.khuzait" category="culture related" subcategory="oath line" />
+  <String id="tor_player_accept_vassalage.mousillon" category="culture related" subcategory="oath line" />
+  <String id="tor_player_accept_vassalage.sturgia" category="culture related" subcategory="oath line" />
+  <String id="tor_player_accept_vassalage.vlandia" category="culture related" subcategory="oath line" />
   <String id="tor_custom_settlement_cursed_site_binding_cooldown" category="Cursed Site Menus" />
   <String id="tor_custom_settlement_cursed_site_empower_progress" category="Cursed Site Menus" />
   <String id="tor_custom_settlement_cursed_site_ghosts_progress" category="Cursed Site Menus" />
@@ -1073,174 +1073,174 @@
   <String id="tor_custom_resource_name.Teef" category="Custom resource names and descriptions - these are built around the resource ID in code which starts with a capital, hence the capitalization in the variant." />
   <String id="tor_custom_resource_name.Waaagh" category="Custom resource names and descriptions - these are built around the resource ID in code which starts with a capital, hence the capitalization in the variant." />
   <String id="tor_custom_resource_name.WindsOfMagic" category="Custom resource names and descriptions - these are built around the resource ID in code which starts with a capital, hence the capitalization in the variant." />
-  <String id="tor_customsettlement_battle.chaos_portal_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_battle.darkelf_camp_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_battle.herdstone_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_battle.herdstone_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_battle.herdstone_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_battle.herdstone_04" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_battle.herdstone_05" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.anath_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.asuryan_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.chaos_portal_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.darkelf_camp_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.gork_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.gork_shrine_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.gork_shrine_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.gork_shrine_04" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.grimnir_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.grimnir_shrine_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.grimnir_shrine_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.grimnir_shrine_04" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.grove_of_the_lady_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.grove_of_the_lady_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.grove_of_the_lady_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.grove_of_the_lady_04" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.grove_of_the_lady_05" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.grungni_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.grungni_shrine_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.grungni_shrine_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.haunted_site_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.haunted_site_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.haunted_site_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.haunted_site_04" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.herdstone_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.herdstone_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.herdstone_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.herdstone_04" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.herdstone_05" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.isha_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.kurnous_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.loec_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.manaan_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.manaan_shrine_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.manaan_shrine_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.manaan_shrine_04" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.manaan_shrine_05" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.manaan_shrine_06" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.mork_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.mork_shrine_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.mork_shrine_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.mork_shrine_04" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.myrmidia_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.myrmidia_shrine_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.oak_of_ages" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.shallya_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.shallya_shrine_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.shallya_shrine_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.shallya_shrine_04" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.shallya_shrine_05" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.sigmar_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.sigmar_shrine_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.sigmar_shrine_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.sigmar_shrine_04" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.sigmar_shrine_05" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.sigmar_shrine_06" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.sigmar_shrine_07" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.taal_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.taal_shrine_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.taal_shrine_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.taal_shrine_04" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.taal_shrine_05" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.ulric_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.ulric_shrine_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.ulric_shrine_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.ulric_shrine_04" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.ulric_shrine_05" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.valaya_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.valaya_shrine_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.vaul_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.worldroot_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.worldroot_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.worldroot_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_disabled.worldroot_04" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customSettlement_generic_inCursedRegion" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.anath_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.asuryan_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.chaos_portal_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.darkelf_camp_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.gork_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.gork_shrine_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.gork_shrine_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.gork_shrine_04" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.grimnir_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.grimnir_shrine_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.grimnir_shrine_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.grimnir_shrine_04" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.grove_of_the_lady_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.grove_of_the_lady_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.grove_of_the_lady_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.grove_of_the_lady_04" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.grove_of_the_lady_05" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.grungni_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.grungni_shrine_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.grungni_shrine_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.haunted_site_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.haunted_site_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.haunted_site_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.haunted_site_04" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.herdstone_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.herdstone_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.herdstone_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.herdstone_04" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.herdstone_05" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.isha_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.kurnous_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.loec_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.manaan_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.manaan_shrine_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.manaan_shrine_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.manaan_shrine_04" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.manaan_shrine_05" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.manaan_shrine_06" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.mork_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.mork_shrine_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.mork_shrine_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.mork_shrine_04" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.myrmidia_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.myrmidia_shrine_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.oak_of_ages" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.shallya_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.shallya_shrine_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.shallya_shrine_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.shallya_shrine_04" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.shallya_shrine_05" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.sigmar_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.sigmar_shrine_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.sigmar_shrine_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.sigmar_shrine_04" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.sigmar_shrine_05" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.sigmar_shrine_06" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.sigmar_shrine_07" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.taal_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.taal_shrine_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.taal_shrine_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.taal_shrine_04" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.taal_shrine_05" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.troll_cave_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.troll_cave_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.troll_cave_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.troll_cave_04" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.ulric_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.ulric_shrine_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.ulric_shrine_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.ulric_shrine_04" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.ulric_shrine_05" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.valaya_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.valaya_shrine_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.vaul_shrine_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.worldroot_01" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.worldroot_02" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.worldroot_02b" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.worldroot_03" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_customsettlement_intro.worldroot_04" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_settlement_arrival_castle_other" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_settlement_arrival_castle_player" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_settlement_arrival_town_other" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_settlement_arrival_town_player" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_settlement_arrival_village_other" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_settlement_arrival_village_player" category="custom settlements e.g. chaos portal, shrines, herdstones" />
-  <String id="tor_trollcave_inactive" category="custom settlements e.g. chaos portal, shrines, herdstones" />
+  <String id="tor_customsettlement_battle.chaos_portal_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_battle.darkelf_camp_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_battle.herdstone_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_battle.herdstone_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_battle.herdstone_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_battle.herdstone_04" category="custom settlement display information" />
+  <String id="tor_customsettlement_battle.herdstone_05" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.anath_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.asuryan_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.chaos_portal_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.darkelf_camp_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.gork_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.gork_shrine_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.gork_shrine_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.gork_shrine_04" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.grimnir_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.grimnir_shrine_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.grimnir_shrine_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.grimnir_shrine_04" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.grove_of_the_lady_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.grove_of_the_lady_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.grove_of_the_lady_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.grove_of_the_lady_04" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.grove_of_the_lady_05" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.grungni_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.grungni_shrine_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.grungni_shrine_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.haunted_site_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.haunted_site_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.haunted_site_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.haunted_site_04" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.herdstone_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.herdstone_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.herdstone_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.herdstone_04" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.herdstone_05" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.isha_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.kurnous_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.loec_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.manaan_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.manaan_shrine_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.manaan_shrine_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.manaan_shrine_04" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.manaan_shrine_05" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.manaan_shrine_06" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.mork_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.mork_shrine_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.mork_shrine_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.mork_shrine_04" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.myrmidia_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.myrmidia_shrine_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.oak_of_ages" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.shallya_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.shallya_shrine_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.shallya_shrine_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.shallya_shrine_04" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.shallya_shrine_05" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.sigmar_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.sigmar_shrine_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.sigmar_shrine_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.sigmar_shrine_04" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.sigmar_shrine_05" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.sigmar_shrine_06" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.sigmar_shrine_07" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.taal_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.taal_shrine_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.taal_shrine_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.taal_shrine_04" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.taal_shrine_05" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.ulric_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.ulric_shrine_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.ulric_shrine_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.ulric_shrine_04" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.ulric_shrine_05" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.valaya_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.valaya_shrine_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.vaul_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.worldroot_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.worldroot_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.worldroot_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_disabled.worldroot_04" category="custom settlement display information" />
+  <String id="tor_customSettlement_generic_inCursedRegion" category="custom settlement display information" subcategory="cursed region" />
+  <String id="tor_customsettlement_intro.anath_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.asuryan_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.chaos_portal_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.darkelf_camp_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.gork_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.gork_shrine_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.gork_shrine_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.gork_shrine_04" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.grimnir_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.grimnir_shrine_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.grimnir_shrine_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.grimnir_shrine_04" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.grove_of_the_lady_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.grove_of_the_lady_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.grove_of_the_lady_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.grove_of_the_lady_04" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.grove_of_the_lady_05" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.grungni_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.grungni_shrine_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.grungni_shrine_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.haunted_site_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.haunted_site_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.haunted_site_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.haunted_site_04" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.herdstone_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.herdstone_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.herdstone_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.herdstone_04" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.herdstone_05" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.isha_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.kurnous_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.loec_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.manaan_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.manaan_shrine_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.manaan_shrine_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.manaan_shrine_04" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.manaan_shrine_05" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.manaan_shrine_06" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.mork_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.mork_shrine_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.mork_shrine_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.mork_shrine_04" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.myrmidia_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.myrmidia_shrine_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.oak_of_ages" category="custom settlement display information" subcategory="oak of ages" />
+  <String id="tor_customsettlement_intro.shallya_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.shallya_shrine_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.shallya_shrine_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.shallya_shrine_04" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.shallya_shrine_05" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.sigmar_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.sigmar_shrine_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.sigmar_shrine_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.sigmar_shrine_04" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.sigmar_shrine_05" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.sigmar_shrine_06" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.sigmar_shrine_07" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.taal_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.taal_shrine_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.taal_shrine_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.taal_shrine_04" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.taal_shrine_05" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.troll_cave_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.troll_cave_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.troll_cave_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.troll_cave_04" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.ulric_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.ulric_shrine_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.ulric_shrine_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.ulric_shrine_04" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.ulric_shrine_05" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.valaya_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.valaya_shrine_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.vaul_shrine_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.worldroot_01" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.worldroot_02" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.worldroot_02b" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.worldroot_03" category="custom settlement display information" />
+  <String id="tor_customsettlement_intro.worldroot_04" category="custom settlement display information" />
+  <String id="tor_settlement_arrival_castle_other" category="custom settlement display information" />
+  <String id="tor_settlement_arrival_castle_player" category="custom settlement display information" />
+  <String id="tor_settlement_arrival_town_other" category="custom settlement display information" />
+  <String id="tor_settlement_arrival_town_player" category="custom settlement display information" />
+  <String id="tor_settlement_arrival_village_other" category="custom settlement display information" />
+  <String id="tor_settlement_arrival_village_player" category="custom settlement display information" />
+  <String id="tor_trollcave_inactive" category="custom settlement display information" />
   <String id="tor_attacktype.All" category="Damage Types" />
   <String id="tor_attacktype.Melee" category="Damage Types" />
   <String id="tor_attacktype.Ranged" category="Damage Types" />
@@ -3985,16 +3985,16 @@
   <String id="tor_shrine_loot_result_detail" category="Shrine Menus" />
   <String id="tor_shrine_looting_progress" category="Shrine Menus" />
   <String id="tor_shrine_praying_progress" category="Shrine Menus" />
-  <String id="tor_skill_effect_blessing_duration" category="Skill Effects" />
-  <String id="tor_skill_effect_gun_accuracy" category="Skill Effects" />
-  <String id="tor_skill_effect_gun_reload_speed" category="Skill Effects" />
-  <String id="tor_skill_effect_max_winds" category="Skill Effects" />
-  <String id="tor_skill_effect_prayer_duration" category="Skill Effects" />
-  <String id="tor_skill_effect_prayer_effectiveness" category="Skill Effects" />
-  <String id="tor_skill_effect_spell_duration" category="Skill Effects" />
-  <String id="tor_skill_effect_spell_effectiveness" category="Skill Effects" />
-  <String id="tor_skill_effect_ward_save" category="Skill Effects" />
-  <String id="tor_skill_effect_winds_recharge_rate" category="Skill Effects" />
+  <String id="tor_skill_effect_blessing_duration" category="Skill Effects" subcategory="Skill labels" />
+  <String id="tor_skill_effect_gun_accuracy" category="Skill Effects" subcategory="Skill labels" />
+  <String id="tor_skill_effect_gun_reload_speed" category="Skill Effects" subcategory="Skill labels" />
+  <String id="tor_skill_effect_max_winds" category="Skill Effects" subcategory="Skill labels" />
+  <String id="tor_skill_effect_prayer_duration" category="Skill Effects" subcategory="Skill labels" />
+  <String id="tor_skill_effect_prayer_effectiveness" category="Skill Effects" subcategory="Skill labels" />
+  <String id="tor_skill_effect_spell_duration" category="Skill Effects" subcategory="Skill labels" />
+  <String id="tor_skill_effect_spell_effectiveness" category="Skill Effects" subcategory="Skill labels" />
+  <String id="tor_skill_effect_ward_save" category="Skill Effects" subcategory="Skill labels" />
+  <String id="tor_skill_effect_winds_recharge_rate" category="Skill Effects" subcategory="Skill labels" />
   <String id="tor_priest_train_hub_quit_p" category="Skill Trainer Texts" />
   <String id="tor_priest_train_hub_select_companion" category="Skill Trainer Texts" />
   <String id="tor_skill_teacher_train_1" category="Skill Trainer Texts" />
@@ -4067,15 +4067,15 @@
   <String id="tor_teach_skills_dialog_p.ShallyaTrainRE" category="skill training" />
   <String id="tor_teach_skills_dialog_p.SigmarTrain" category="skill training" />
   <String id="tor_teach_skills_dialog_p.UlricTrain" category="skill training" />
-  <String id="str_how_to_learn_skill.Faith" category="skills" />
-  <String id="str_how_to_learn_skill.Gunpowder" category="skills" />
+  <String id="str_how_to_learn_skill.Faith" category="skills" subcategory="oath line" />
+  <String id="str_how_to_learn_skill.Gunpowder" category="skills" subcategory="oath line" />
   <String id="str_how_to_learn_skill.Spellcraft" category="skills" />
-  <String id="tor_skill_faith" category="Skills" />
-  <String id="tor_skill_faith_description" category="Skills" />
-  <String id="tor_skill_gunpowder" category="Skills" />
-  <String id="tor_skill_gunpowder_description" category="Skills" />
-  <String id="tor_skill_spellcraft" category="Skills" />
-  <String id="tor_skill_spellcraft_description" category="Skills" />
+  <String id="tor_skill_faith" category="Skills" subcategory="Skill labels" />
+  <String id="tor_skill_faith_description" category="Skills" subcategory="Skill labels" />
+  <String id="tor_skill_gunpowder" category="Skills" subcategory="Skill labels" />
+  <String id="tor_skill_gunpowder_description" category="Skills" subcategory="Skill labels" />
+  <String id="tor_skill_spellcraft" category="Skills" subcategory="Skill labels" />
+  <String id="tor_skill_spellcraft_description" category="Skills" subcategory="Skill labels" />
   <String id="tor_careerunlock_level_1.Slayer" category="Slayer" />
   <String id="tor_careerunlock_level_2.Slayer" category="Slayer" />
   <String id="tor_careerunlock_level_3.Slayer" category="Slayer" />
@@ -4172,16 +4172,16 @@
   <String id="tor_spelltrainer_magictest_vc_specialize_lore" category="Spell Trainer Vampire Dialogs" />
   <String id="tor_spelltrainer_magictest_vc_vampire_player_specialize_lore" category="Spell Trainer Vampire Dialogs" />
   <String id="tor_spelltrainer_magictest_vc_vampire_specialize_lore" category="Spell Trainer Vampire Dialogs" />
-  <String id="tor_cooldown_seconds" category="Spell/Prayer Stats" />
-  <String id="tor_prayer_stat_cooldown" category="Spell/Prayer Stats" />
-  <String id="tor_prayer_stat_name" category="Spell/Prayer Stats" />
-  <String id="tor_prayer_stat_tier" category="Spell/Prayer Stats" />
-  <String id="tor_prayer_stat_type" category="Spell/Prayer Stats" />
-  <String id="tor_spell_stat_cooldown" category="Spell/Prayer Stats" />
-  <String id="tor_spell_stat_name" category="Spell/Prayer Stats" />
-  <String id="tor_spell_stat_tier" category="Spell/Prayer Stats" />
-  <String id="tor_spell_stat_type" category="Spell/Prayer Stats" />
-  <String id="tor_spell_stat_wom_cost" category="Spell/Prayer Stats" />
+  <String id="tor_cooldown_seconds" category="Spell/Prayer Stats" subcategory="UI Label" />
+  <String id="tor_prayer_stat_cooldown" category="Spell/Prayer Stats" subcategory="UI Label" />
+  <String id="tor_prayer_stat_name" category="Spell/Prayer Stats" subcategory="UI Label" />
+  <String id="tor_prayer_stat_tier" category="Spell/Prayer Stats" subcategory="UI Label" />
+  <String id="tor_prayer_stat_type" category="Spell/Prayer Stats" subcategory="UI Label" />
+  <String id="tor_spell_stat_cooldown" category="Spell/Prayer Stats" subcategory="UI Label" />
+  <String id="tor_spell_stat_name" category="Spell/Prayer Stats" subcategory="UI Label" />
+  <String id="tor_spell_stat_tier" category="Spell/Prayer Stats" subcategory="UI Label" />
+  <String id="tor_spell_stat_type" category="Spell/Prayer Stats" subcategory="UI Label" />
+  <String id="tor_spell_stat_wom_cost" category="Spell/Prayer Stats" subcategory="UI Label" />
   <String id="tor_spellbook_casting_level" category="SpellBook UI" />
   <String id="tor_spellbook_current_wom" category="SpellBook UI" />
   <String id="tor_spellbook_hero_name" category="SpellBook UI" />
@@ -4361,37 +4361,37 @@
   <String id="tor_ui_winds_of_magic_recharge_rate" category="UI Strings" />
   <String id="tor_ui_winds_of_magic_title" category="UI Strings" />
   <String id="tor_cc_review_description" category="Uncategorized" />
-  <String id="tor_inquiry_cancel_text" category="Unit Rune Texts" />
-  <String id="tor_inquiry_confirm_text" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_active_display" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_add_rune_text" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_battle_desc" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_battle_name" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_cost_display" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_cost_insufficient" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_description" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_grimnir_desc" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_grimnir_name" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_grungni_desc" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_grungni_name" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_guarding_desc" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_guarding_name" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_no_runes_known_text" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_not_for_heroes_text" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_only_in_karak_text" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_rapid_fire_desc" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_rapid_fire_name" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_retribution_desc" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_retribution_name" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_sanctuary_desc" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_sanctuary_name" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_strollaz_desc" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_strollaz_name" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_title" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_unknown_runes_text" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_valaya_desc" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_valaya_name" category="Unit Rune Texts" />
-  <String id="tor_unit_rune_warning_text" category="Unit Rune Texts" />
+  <String id="tor_inquiry_cancel_text" category="Career Button" subcategory="UI" />
+  <String id="tor_inquiry_confirm_text" category="Career Button" subcategory="UI" />
+  <String id="tor_unit_rune_active_display" category="Career Button" />
+  <String id="tor_unit_rune_add_rune_text" category="Career Button" />
+  <String id="tor_unit_rune_battle_desc" category="Career Button" />
+  <String id="tor_unit_rune_battle_name" category="Career Button" />
+  <String id="tor_unit_rune_cost_display" category="Career Button" subcategory="unit rune" />
+  <String id="tor_unit_rune_cost_insufficient" category="Career Button" />
+  <String id="tor_unit_rune_description" category="Career Button" />
+  <String id="tor_unit_rune_grimnir_desc" category="Career Button" />
+  <String id="tor_unit_rune_grimnir_name" category="Career Button" />
+  <String id="tor_unit_rune_grungni_desc" category="Career Button" />
+  <String id="tor_unit_rune_grungni_name" category="Career Button" />
+  <String id="tor_unit_rune_guarding_desc" category="Career Button" />
+  <String id="tor_unit_rune_guarding_name" category="Career Button" />
+  <String id="tor_unit_rune_no_runes_known_text" category="Career Button" />
+  <String id="tor_unit_rune_not_for_heroes_text" category="Career Button" />
+  <String id="tor_unit_rune_only_in_karak_text" category="Career Button" />
+  <String id="tor_unit_rune_rapid_fire_desc" category="Career Button" />
+  <String id="tor_unit_rune_rapid_fire_name" category="Career Button" />
+  <String id="tor_unit_rune_retribution_desc" category="Career Button" />
+  <String id="tor_unit_rune_retribution_name" category="Career Button" />
+  <String id="tor_unit_rune_sanctuary_desc" category="Career Button" />
+  <String id="tor_unit_rune_sanctuary_name" category="Career Button" />
+  <String id="tor_unit_rune_strollaz_desc" category="Career Button" />
+  <String id="tor_unit_rune_strollaz_name" category="Career Button" />
+  <String id="tor_unit_rune_title" category="Career Button" />
+  <String id="tor_unit_rune_unknown_runes_text" category="Career Button" />
+  <String id="tor_unit_rune_valaya_desc" category="Career Button" />
+  <String id="tor_unit_rune_valaya_name" category="Career Button" />
+  <String id="tor_unit_rune_warning_text" category="Career Button" />
   <String id="tor_backstory_a.tor_wanderer_vampire_0" category="Vampire 0 - Necromancer" />
   <String id="tor_backstory_b.tor_wanderer_vampire_0" category="Vampire 0 - Necromancer" />
   <String id="tor_backstory_c.tor_wanderer_vampire_0" category="Vampire 0 - Necromancer" />
@@ -4819,4 +4819,9 @@
   <String id="tor_prebackstory.tor_wanderer_woodelf_2" category="Wood Elf 2 - Waywatcher" />
   <String id="tor_response_1.tor_wanderer_woodelf_2" category="Wood Elf 2 - Waywatcher" />
   <String id="tor_response_2.tor_wanderer_woodelf_2" category="Wood Elf 2 - Waywatcher" />
+  <String id="tor_spelltrainer_shop_welcome" category="Spelltrainer" />
+  <String id="tor_spelltrainer_shop_browse" category="Spelltrainer" />
+  <String id="tor_spelltrainer_shop_purchase" category="Spelltrainer" />
+  <String id="tor_spelltrainer_shop_no_gold" category="Spelltrainer" />
+  <String id="tor_spelltrainer_shop_farewell" category="Spelltrainer" />
 </StringMetadata>

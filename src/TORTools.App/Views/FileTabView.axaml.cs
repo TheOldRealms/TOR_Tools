@@ -2463,7 +2463,7 @@ public partial class FileTabView : UserControl
                     // When editing ends, add prefix back
                     textBox.LostFocus += (s, e) =>
                     {
-                        var newValue = textBox.Text?.Trim() ?? "";
+                        var newValue = textBox.Text ?? "";
                         if (!string.IsNullOrEmpty(newValue) && !string.IsNullOrEmpty(prefixToAdd))
                         {
                             // Add prefix if not already present
