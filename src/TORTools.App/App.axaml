@@ -4,6 +4,66 @@
              RequestedThemeVariant="Dark">
 
     <Application.Resources>
+        <!-- Custom Thumb ControlTheme - no animations -->
+        <ControlTheme x:Key="AlwaysVisibleThumb" TargetType="Thumb">
+            <Setter Property="Background" Value="#5a5d63"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            CornerRadius="4"
+                            Margin="2"/>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+
+        <!-- Custom ScrollBar ControlTheme - always visible, no auto-hide -->
+        <ControlTheme x:Key="AlwaysVisibleScrollBarVertical" TargetType="ScrollBar">
+            <Setter Property="Width" Value="14"/>
+            <Setter Property="MinWidth" Value="14"/>
+            <Setter Property="Background" Value="#2a2d32"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}" CornerRadius="4">
+                        <Track Minimum="{TemplateBinding Minimum}"
+                               Maximum="{TemplateBinding Maximum}"
+                               Value="{TemplateBinding Value, Mode=TwoWay}"
+                               Orientation="Vertical"
+                               ViewportSize="{TemplateBinding ViewportSize}"
+                               IsDirectionReversed="True">
+                            <Track.Thumb>
+                                <Thumb Theme="{StaticResource AlwaysVisibleThumb}"
+                                       Width="10"
+                                       MinHeight="20"/>
+                            </Track.Thumb>
+                        </Track>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+
+        <ControlTheme x:Key="AlwaysVisibleScrollBarHorizontal" TargetType="ScrollBar">
+            <Setter Property="Height" Value="14"/>
+            <Setter Property="MinHeight" Value="14"/>
+            <Setter Property="Background" Value="#2a2d32"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}" CornerRadius="4">
+                        <Track Minimum="{TemplateBinding Minimum}"
+                               Maximum="{TemplateBinding Maximum}"
+                               Value="{TemplateBinding Value, Mode=TwoWay}"
+                               Orientation="Horizontal"
+                               ViewportSize="{TemplateBinding ViewportSize}">
+                            <Track.Thumb>
+                                <Thumb Theme="{StaticResource AlwaysVisibleThumb}"
+                                       Height="10"
+                                       MinWidth="20"/>
+                            </Track.Thumb>
+                        </Track>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+
         <!-- Discord Dark Mode Colors -->
         <Color x:Key="DiscordBgDarkest">#202225</Color>
         <Color x:Key="DiscordBgDark">#2f3136</Color>
@@ -103,6 +163,17 @@
             <Setter Property="Background" Value="{StaticResource DiscordBgDarkestBrush}"/>
             <Setter Property="Foreground" Value="{StaticResource DiscordTextPrimaryBrush}"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <!-- Always-visible ScrollBars - use custom themes -->
+        <Style Selector="ScrollViewer">
+            <Setter Property="AllowAutoHide" Value="False"/>
+        </Style>
+        <Style Selector="ScrollBar:vertical">
+            <Setter Property="Theme" Value="{StaticResource AlwaysVisibleScrollBarVertical}"/>
+        </Style>
+        <Style Selector="ScrollBar:horizontal">
+            <Setter Property="Theme" Value="{StaticResource AlwaysVisibleScrollBarHorizontal}"/>
         </Style>
     </Application.Styles>
 </Application>

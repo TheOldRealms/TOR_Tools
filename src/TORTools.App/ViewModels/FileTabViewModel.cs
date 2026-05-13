@@ -1554,11 +1554,20 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         var rosterEntry = selectedRow.XmlEntry;
         var variationElementName = Schema?.VariationElement ?? "EquipmentSet";
 
+        // Debug: Log which roster we're adding to
+        var rosterId = rosterEntry.Id ?? "(no id)";
+        var existingVariationCount = rosterEntry.OriginalElement.Elements(variationElementName).Count();
+        Console.WriteLine($"[AddVariation] Adding variation to roster '{rosterId}' (currently has {existingVariationCount} variations in XElement)");
+
         var command = new AddVariationCommand(Context.Document, rosterEntry, variationElementName);
         _undoRedoService.Execute(command);
 
         if (command.AddedVariation != null)
         {
+            // Debug: Verify the variation was added to the correct roster
+            var newVariationCount = rosterEntry.OriginalElement.Elements(variationElementName).Count();
+            Console.WriteLine($"[AddVariation] After add: roster '{rosterId}' now has {newVariationCount} variations in XElement");
+
             // Create a new row for the variation
             var newVariationIndex = rosterEntry.Children
                 .Count(c => c.ElementName == variationElementName &&
@@ -1575,6 +1584,8 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
 
             SelectedIndex = lastRosterRowIndex + 1;
             MarkAsModified();
+
+            Console.WriteLine($"[AddVariation] New row inserted at index {lastRosterRowIndex + 1}, variation index {newVariationIndex}");
         }
     }
 
