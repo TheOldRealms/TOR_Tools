@@ -392,9 +392,17 @@ public class FileSaverService
                             var oldValue = metadataElement.Attribute(sourceField)?.Value;
                             if (oldValue != value)
                             {
+                                if (targetField == "subcategory" && updatedCount < 5)
+                                {
+                                    Console.WriteLine($"[SaveMergedData] Updating {entryId}.{targetField}: '{oldValue}' -> '{value}'");
+                                }
                                 metadataElement.SetAttributeValue(sourceField, value);
                                 updatedCount++;
                             }
+                        }
+                        else if (targetField == "subcategory" && updatedCount < 3)
+                        {
+                            Console.WriteLine($"[SaveMergedData] Skipped {entryId}.{targetField}: value is empty/null (attr exists: {entry.GetAttribute(targetField) != null})");
                         }
                     }
                 }

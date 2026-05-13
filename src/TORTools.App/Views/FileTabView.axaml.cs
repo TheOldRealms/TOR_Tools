@@ -2205,11 +2205,9 @@ public partial class FileTabView : UserControl
                         // Calculate target row index (allow dragging both up and down)
                         var targetRow = _fillStartRowIndex + rowOffset;
 
-                        // Clamp to valid range
-                        if (targetRow >= 0 && targetRow < vm.DisplayRows.Count)
-                        {
-                            _fillEndRowIndex = targetRow;
-                        }
+                        // Always update to current position, clamped to valid range
+                        // This ensures dragging back up reduces the fill range
+                        _fillEndRowIndex = Math.Clamp(targetRow, 0, vm.DisplayRows.Count - 1);
                         e.Handled = true;
                     }
                 };
@@ -2305,18 +2303,35 @@ public partial class FileTabView : UserControl
 
         Console.WriteLine($"[FillDown] Filling {_fillColumnName} from row {startRow} to {endRow} with value '{_fillValue}'");
 
+        // Skip the source row (startRow if dragging down, endRow if dragging up)
+        // We only need to fill rows AFTER the source
+        int sourceRow = _fillStartRowIndex;
+        int fillCount = 0;
+
         for (int i = startRow; i <= endRow; i++)
         {
+            // Skip the source row - it already has the value
+            if (i == sourceRow)
+                continue;
+
             if (i >= 0 && i < rows.Count)
             {
                 var row = rows[i];
                 if (!row.IsRemoved)
                 {
+                    // Set the UI value (triggers CellValueChanged if value changed)
                     row[_fillColumnName] = _fillValue;
+
+                    // Also directly sync to XmlEntry to ensure it's updated
+                    // This handles cases where UI value was already equal but XmlEntry wasn't updated
+                    row.XmlEntry.SetAttributeValue(_fillColumnName, _fillValue);
+                    fillCount++;
                 }
             }
         }
 
+        Console.WriteLine($"[FillDown] Updated {fillCount} rows");
+        vm.MarkAsModified();
         vm.RequestCellRefresh();
     }
 

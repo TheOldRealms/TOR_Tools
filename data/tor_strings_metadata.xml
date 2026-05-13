@@ -3351,38 +3351,38 @@
   <String id="tor_religion_cult_name_cult_of_valaya_str" category="Overturned Cart" />
   <String id="tor_religion_cult_name_cult_of_vaul" category="Overturned Cart" />
   <String id="str_customresource_trade_label" category="party screen" />
-  <String id="tor_perk_adept_prayer_1" category="Perks - Faith" />
-  <String id="tor_perk_adept_prayer_label" category="Perks - Faith" />
-  <String id="tor_perk_blessed_1" category="Perks - Faith" />
-  <String id="tor_perk_blessed_2" category="Perks - Faith" />
-  <String id="tor_perk_blessed_label" category="Perks - Faith" />
-  <String id="tor_perk_devotee_1" category="Perks - Faith" />
-  <String id="tor_perk_devotee_2" category="Perks - Faith" />
-  <String id="tor_perk_devotee_label" category="Perks - Faith" />
-  <String id="tor_perk_divine_mission_1" category="Perks - Faith" />
-  <String id="tor_perk_divine_mission_2" category="Perks - Faith" />
-  <String id="tor_perk_divine_mission_label" category="Perks - Faith" />
-  <String id="tor_perk_foresight_1" category="Perks - Faith" />
-  <String id="tor_perk_foresight_2" category="Perks - Faith" />
-  <String id="tor_perk_foresight_label" category="Perks - Faith" />
-  <String id="tor_perk_grand_prayer_1" category="Perks - Faith" />
-  <String id="tor_perk_grand_prayer_label" category="Perks - Faith" />
-  <String id="tor_perk_imperturbable_1" category="Perks - Faith" />
-  <String id="tor_perk_imperturbable_2" category="Perks - Faith" />
-  <String id="tor_perk_imperturbable_label" category="Perks - Faith" />
-  <String id="tor_perk_miracle_1" category="Perks - Faith" />
-  <String id="tor_perk_miracle_label" category="Perks - Faith" />
-  <String id="tor_perk_novice_prayer_1" category="Perks - Faith" />
-  <String id="tor_perk_novice_prayer_label" category="Perks - Faith" />
-  <String id="tor_perk_offering_1" category="Perks - Faith" />
-  <String id="tor_perk_offering_label" category="Perks - Faith" />
-  <String id="tor_perk_revival_1" category="Perks - Faith" />
-  <String id="tor_perk_revival_label" category="Perks - Faith" />
-  <String id="tor_perk_spirit_1" category="Perks - Faith" />
-  <String id="tor_perk_spirit_label" category="Perks - Faith" />
-  <String id="tor_perk_superstitious_1" category="Perks - Faith" />
-  <String id="tor_perk_superstitious_2" category="Perks - Faith" />
-  <String id="tor_perk_superstitious_label" category="Perks - Faith" />
+  <String id="tor_perk_adept_prayer_1" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_adept_prayer_label" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_blessed_1" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_blessed_2" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_blessed_label" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_devotee_1" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_devotee_2" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_devotee_label" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_divine_mission_1" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_divine_mission_2" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_divine_mission_label" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_foresight_1" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_foresight_2" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_foresight_label" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_grand_prayer_1" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_grand_prayer_label" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_imperturbable_1" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_imperturbable_2" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_imperturbable_label" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_miracle_1" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_miracle_label" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_novice_prayer_1" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_novice_prayer_label" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_offering_1" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_offering_label" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_revival_1" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_revival_label" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_spirit_1" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_spirit_label" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_superstitious_1" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_superstitious_2" category="Skill perks" subcategory="Faith" />
+  <String id="tor_perk_superstitious_label" category="Skill perks" subcategory="Faith" />
   <String id="tor_perk_ammunition_wagons_1" category="Skill perks" subcategory="Gunpowder" />
   <String id="tor_perk_ammunition_wagons_2" category="Skill perks" subcategory="Gunpowder" />
   <String id="tor_perk_ammunition_wagons_label" category="Skill perks" subcategory="Gunpowder" />
@@ -3416,42 +3416,42 @@
   <String id="tor_perk_steel_terror_1" category="Skill perks" subcategory="Gunpowder" />
   <String id="tor_perk_steel_terror_2" category="Skill perks" subcategory="Gunpowder" />
   <String id="tor_perk_steel_terror_label" category="Skill perks" subcategory="Gunpowder" />
-  <String id="tor_perk_adept_spellcaster_1" category="Perks - Spellcraft" />
-  <String id="tor_perk_adept_spellcaster_label" category="Perks - Spellcraft" />
-  <String id="tor_perk_arcane_link_1" category="Perks - Spellcraft" />
-  <String id="tor_perk_arcane_link_2" category="Perks - Spellcraft" />
-  <String id="tor_perk_arcane_link_label" category="Perks - Spellcraft" />
-  <String id="tor_perk_catalyst_1" category="Perks - Spellcraft" />
-  <String id="tor_perk_catalyst_2" category="Perks - Spellcraft" />
-  <String id="tor_perk_catalyst_label" category="Perks - Spellcraft" />
-  <String id="tor_perk_dampener_1" category="Perks - Spellcraft" />
-  <String id="tor_perk_dampener_2" category="Perks - Spellcraft" />
-  <String id="tor_perk_dampener_label" category="Perks - Spellcraft" />
-  <String id="tor_perk_effective_spellcaster_1" category="Perks - Spellcraft" />
-  <String id="tor_perk_effective_spellcaster_label" category="Perks - Spellcraft" />
-  <String id="tor_perk_exchange_1" category="Perks - Spellcraft" />
-  <String id="tor_perk_exchange_label" category="Perks - Spellcraft" />
-  <String id="tor_perk_improvision_1" category="Perks - Spellcraft" />
-  <String id="tor_perk_improvision_2" category="Perks - Spellcraft" />
-  <String id="tor_perk_improvision_label" category="Perks - Spellcraft" />
-  <String id="tor_perk_librarian_1" category="Perks - Spellcraft" />
-  <String id="tor_perk_librarian_2" category="Perks - Spellcraft" />
-  <String id="tor_perk_librarian_label" category="Perks - Spellcraft" />
-  <String id="tor_perk_master_spellcaster_1" category="Perks - Spellcraft" />
-  <String id="tor_perk_master_spellcaster_label" category="Perks - Spellcraft" />
-  <String id="tor_perk_novice_spellcaster_1" category="Perks - Spellcraft" />
-  <String id="tor_perk_novice_spellcaster_label" category="Perks - Spellcraft" subcategory="Spellcraft" />
-  <String id="tor_perk_overcaster_1" category="Perks - Spellcraft" />
-  <String id="tor_perk_overcaster_label" category="Perks - Spellcraft" />
-  <String id="tor_perk_selfish_1" category="Perks - Spellcraft" />
-  <String id="tor_perk_selfish_2" category="Perks - Spellcraft" />
-  <String id="tor_perk_selfish_label" category="Perks - Spellcraft" />
-  <String id="tor_perk_story_teller_1" category="Perks - Spellcraft" />
-  <String id="tor_perk_story_teller_2" category="Perks - Spellcraft" />
-  <String id="tor_perk_story_teller_label" category="Perks - Spellcraft" />
-  <String id="tor_perk_well_controlled_1" category="Perks - Spellcraft" />
-  <String id="tor_perk_well_controlled_2" category="Perks - Spellcraft" />
-  <String id="tor_perk_well_controlled_label" category="Perks - Spellcraft" />
+  <String id="tor_perk_adept_spellcaster_1" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_adept_spellcaster_label" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_arcane_link_1" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_arcane_link_2" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_arcane_link_label" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_catalyst_1" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_catalyst_2" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_catalyst_label" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_dampener_1" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_dampener_2" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_dampener_label" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_effective_spellcaster_1" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_effective_spellcaster_label" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_exchange_1" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_exchange_label" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_improvision_1" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_improvision_2" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_improvision_label" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_librarian_1" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_librarian_2" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_librarian_label" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_master_spellcaster_1" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_master_spellcaster_label" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_novice_spellcaster_1" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_novice_spellcaster_label" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_overcaster_1" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_overcaster_label" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_selfish_1" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_selfish_2" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_selfish_label" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_story_teller_1" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_story_teller_2" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_story_teller_label" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_well_controlled_1" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_well_controlled_2" category="Skill perks" subcategory="Spellcraft" />
+  <String id="tor_perk_well_controlled_label" category="Skill perks" subcategory="Spellcraft" />
   <String id="eonir_spellsinger_mercenary_lore_accept_text" category="Player acceptance" />
   <String id="tor_empire_prestigenoble_exitconvo_p" category="Political projects that cost influence and are 1 time only except for last" />
   <String id="tor_empire_prestigenoble_influenceask_p" category="Political projects that cost influence and are 1 time only except for last" />

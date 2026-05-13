@@ -1095,14 +1095,45 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         // Create and execute an edit command
         var command = new CellEditCommand(rowVm, e.ColumnName, e.OldValue, e.NewValue, nestedPath);
 
-        // Don't use Execute() here since the value is already changed
-        // Just push to undo stack
+        // Sync the XmlEntry with the new value immediately
+        // (AlreadyExecutedCommand skips Execute() on first call, so we must sync here)
+        SyncXmlEntry(rowVm, e.ColumnName, e.NewValue, nestedPath);
+
+        // Don't use Execute() here since the value is already changed in the UI
+        // Just push to undo stack for undo/redo support
         _undoRedoService.Execute(new AlreadyExecutedCommand(command));
 
         // Handle auto-fill fields
         ApplyAutoFill(rowVm, e.ColumnName, e.NewValue);
 
         MarkAsModified();
+    }
+
+    /// <summary>
+    /// Syncs a cell value change to the underlying XmlEntry.
+    /// This is needed because AlreadyExecutedCommand skips Execute() on first call,
+    /// so we must manually update the XmlEntry when the UI changes a value.
+    /// </summary>
+    private void SyncXmlEntry(EntryRowViewModel rowVm, string columnName, string value, string? nestedPath)
+    {
+        // Handle nested fields
+        if (!string.IsNullOrEmpty(nestedPath))
+        {
+            rowVm.XmlEntry.SetNestedValue(nestedPath, value);
+            return;
+        }
+
+        var attr = rowVm.XmlEntry.GetAttribute(columnName);
+        if (attr != null)
+        {
+            var rawValue = LocalizationHelper.Wrap(attr.LocalizationKey, value);
+            rowVm.XmlEntry.SetAttributeValue(columnName, rawValue);
+        }
+        else
+        {
+            // New attribute - add it directly without localization wrapping
+            rowVm.XmlEntry.SetAttributeValue(columnName, value);
+        }
     }
 
     /// <summary>
