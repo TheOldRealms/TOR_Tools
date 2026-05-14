@@ -313,6 +313,10 @@ public partial class MainWindowViewModel : ViewModelBase
     private void Save()
     {
         ActiveTab?.Save();
+
+        // Refresh cross-references on all other tabs so they pick up newly added entries
+        RefreshAllTabsCrossReferences();
+
         StatusMessage = "Saved";
     }
 
@@ -323,7 +327,24 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             tab.Save();
         }
+
+        // Refresh cross-references on all tabs
+        RefreshAllTabsCrossReferences();
+
         StatusMessage = "All files saved";
+    }
+
+    /// <summary>
+    /// Refreshes cross-reference data on all open tabs.
+    /// Call this after any save operation so that newly added entries
+    /// appear in autocomplete dropdowns across tabs.
+    /// </summary>
+    private void RefreshAllTabsCrossReferences()
+    {
+        foreach (var tab in OpenTabs)
+        {
+            tab.RefreshCrossReferences();
+        }
     }
 
     [RelayCommand]

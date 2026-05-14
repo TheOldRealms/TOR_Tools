@@ -227,10 +227,25 @@
                     </MenuItem>
                     <Separator IsVisible="{Binding !HasNestedVariations}"/>
 
-                    <!-- Delete (available for all files) -->
-                    <MenuItem Header="Delete Row" Command="{Binding DeleteRowCommand}" Foreground="#C62828">
+                    <!-- Delete for regular files -->
+                    <MenuItem Header="Delete Row" Command="{Binding DeleteRowCommand}" Foreground="#C62828"
+                              IsVisible="{Binding !HasNestedVariations}">
                         <MenuItem.Icon>
                             <TextBlock Text="✕" FontWeight="Bold" Foreground="#C62828"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+
+                    <!-- Delete options for equipment sets -->
+                    <MenuItem Header="Delete Variation" Command="{Binding DeleteSelectedVariationCommand}" Foreground="#C62828"
+                              IsVisible="{Binding HasNestedVariations}">
+                        <MenuItem.Icon>
+                            <TextBlock Text="✕" FontWeight="Bold" Foreground="#C62828"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Delete Roster" Command="{Binding DeleteSelectedRosterCommand}" Foreground="#B71C1C"
+                              IsVisible="{Binding HasNestedVariations}">
+                        <MenuItem.Icon>
+                            <TextBlock Text="✕✕" FontWeight="Bold" Foreground="#B71C1C" FontSize="10"/>
                         </MenuItem.Icon>
                     </MenuItem>
                 </ContextMenu>

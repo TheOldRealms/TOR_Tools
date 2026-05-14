@@ -493,13 +493,15 @@ public partial class FileTabView : UserControl
             else
             {
                 // Create text column - all text cells now use templates for consistent styling
+                // IsReadOnly is true if either the display mapping says so OR the schema field has readOnly: true
+                var isColumnReadOnly = displayInfo.IsReadOnly || fieldDef?.ReadOnly == true;
                 column = new DataGridTemplateColumn
                 {
                     Header = isIdColumn ? CreateIdColumnHeader(displayInfo, vm) : CreateColumnHeader(displayInfo, fieldDef),
                     Width = new DataGridLength(displayInfo.Width),
-                    IsReadOnly = displayInfo.IsReadOnly,
+                    IsReadOnly = isColumnReadOnly,
                     CellTemplate = CreateTextCellTemplate(displayInfo.AttributeName, fieldDef, vm),
-                    CellEditingTemplate = CreateTextEditingTemplate(displayInfo.AttributeName, fieldDef)
+                    CellEditingTemplate = isColumnReadOnly ? null : CreateTextEditingTemplate(displayInfo.AttributeName, fieldDef)
                 };
             }
 
@@ -2109,6 +2111,14 @@ public partial class FileTabView : UserControl
                 {
                     // Normal text display
                     text.Text = StripPrefix(rowVm[attributeName]);
+                }
+
+                // Read-only fields: grey out and make non-interactive
+                if (fieldDef?.ReadOnly == true)
+                {
+                    text.Foreground = new SolidColorBrush(Color.FromRgb(128, 128, 128));
+                    text.IsHitTestVisible = false;
+                    border.IsHitTestVisible = false;
                 }
 
                 // Validate on render if we have field definition
