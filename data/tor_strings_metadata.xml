@@ -427,19 +427,19 @@
   <String id="tor_chaos_raiders" category="Chaos Portal Menus" />
   <String id="tor_custom_settlement_chaos_portal_lose" category="Chaos Portal Menus" />
   <String id="tor_custom_settlement_chaos_portal_victory" category="Chaos Portal Menus" />
-  <String id="tor_cc_growth_fallback_text" category="Character Creation" />
-  <String id="tor_cc_growth_summary" category="Character Creation" />
+  <String id="tor_cc_growth_fallback_text" category="Character Creation" subcategory="Stage 2" />
+  <String id="tor_cc_growth_summary" category="Character Creation" subcategory="Stage 1" />
   <String id="tor_cc_origin_fallback_text" category="Character Creation" subcategory="specialization" />
   <String id="tor_cc_origin_summary" category="Character Creation" subcategory="specialization" />
-  <String id="tor_cc_profession_fallback_text" category="Character Creation" />
-  <String id="tor_cc_profession_summary" category="Character Creation" />
+  <String id="tor_cc_profession_fallback_text" category="Character Creation" subcategory="Stage 1" />
+  <String id="tor_cc_profession_summary" category="Character Creation" subcategory="Stage 3" />
   <String id="tor_cc_specialization_desc_bloodline" category="Character Creation" subcategory="specialization" />
   <String id="tor_cc_specialization_desc_generic" category="Character Creation" subcategory="specialization" />
   <String id="tor_cc_specialization_desc_god" category="Character Creation" subcategory="specialization" />
   <String id="tor_cc_specialization_desc_lore" category="Character Creation" subcategory="specialization" />
   <String id="tor_cc_specialization_desc_order" category="Character Creation" subcategory="specialization" />
   <String id="tor_cc_specialization_title_bloodline" category="Character Creation" subcategory="specialization" />
-  <String id="tor_cc_specialization_title_generic" category="Character Creation" />
+  <String id="tor_cc_specialization_title_generic" category="Character Creation" subcategory="specialization" />
   <String id="tor_cc_specialization_title_god" category="Character Creation" subcategory="specialization" />
   <String id="tor_cc_specialization_title_lore" category="Character Creation" subcategory="specialization" />
   <String id="tor_cc_specialization_title_order" category="Character Creation" subcategory="specialization" />
@@ -3995,78 +3995,78 @@
   <String id="tor_skill_effect_spell_effectiveness" category="Skill Effects" subcategory="Skill labels" />
   <String id="tor_skill_effect_ward_save" category="Skill Effects" subcategory="Skill labels" />
   <String id="tor_skill_effect_winds_recharge_rate" category="Skill Effects" subcategory="Skill labels" />
-  <String id="tor_priest_train_hub_quit_p" category="Skill Trainer Texts" />
-  <String id="tor_priest_train_hub_select_companion" category="Skill Trainer Texts" />
-  <String id="tor_skill_teacher_train_1" category="Skill Trainer Texts" />
-  <String id="tor_skill_teacher_train_2" category="Skill Trainer Texts" />
-  <String id="tor_skill_train_hub_select_companion_decline" category="Skill Trainer Texts" />
-  <String id="tor_skill_train_hub_select_companion_p" category="Skill Trainer Texts" />
-  <String id="tor_teach_skills_dialog_p" category="Skill Trainer Texts" />
-  <String id="tor_priest_train_hub_quit_p.DwarfRunelord" category="skill training" />
-  <String id="tor_priest_train_hub_quit_p.EmpireMagister" category="skill training" />
-  <String id="tor_priest_train_hub_quit_p.EngineerEmpire" category="skill training" />
+  <String id="tor_priest_train_hub_quit_p" category="Skill Trainer" subcategory="general" />
+  <String id="tor_priest_train_hub_select_companion" category="Skill Trainer" subcategory="general" />
+  <String id="tor_skill_teacher_train_1" category="Skill Trainer" subcategory="general" />
+  <String id="tor_skill_teacher_train_2" category="Skill Trainer" subcategory="general" />
+  <String id="tor_skill_train_hub_select_companion_decline" category="Skill Trainer" subcategory="general" />
+  <String id="tor_skill_train_hub_select_companion_p" category="Skill Trainer" subcategory="general" />
+  <String id="tor_teach_skills_dialog_p" category="Skill Trainer" subcategory="general" />
+  <String id="tor_priest_train_hub_quit_p.DwarfRunelord" category="skill training" subcategory="runelord" />
+  <String id="tor_priest_train_hub_quit_p.EmpireMagister" category="skill training" subcategory="empire magister" />
+  <String id="tor_priest_train_hub_quit_p.EngineerEmpire" category="skill training" subcategory="empire engineer" />
   <String id="tor_priest_train_hub_quit_p.Necromancer" category="skill training" />
   <String id="tor_priest_train_hub_quit_p.ShallyaTrainCO" category="skill training" />
   <String id="tor_priest_train_hub_quit_p.ShallyaTrainRE" category="skill training" />
-  <String id="tor_priest_train_hub_quit_p.SigmarTrain" category="skill training" />
-  <String id="tor_priest_train_hub_quit_p.UlricTrain" category="skill training" />
-  <String id="tor_skill_teacher_train_1.DwarfRunelord" category="skill training" />
-  <String id="tor_skill_teacher_train_1.EmpireMagister" category="skill training" />
-  <String id="tor_skill_teacher_train_1.EngineerEmpire" category="skill training" />
+  <String id="tor_priest_train_hub_quit_p.SigmarTrain" category="skill training" subcategory="sigmar priest" />
+  <String id="tor_priest_train_hub_quit_p.UlricTrain" category="skill training" subcategory="ui" />
+  <String id="tor_skill_teacher_train_1.DwarfRunelord" category="skill training" subcategory="runelord" />
+  <String id="tor_skill_teacher_train_1.EmpireMagister" category="skill training" subcategory="empire magister" />
+  <String id="tor_skill_teacher_train_1.EngineerEmpire" category="skill training" subcategory="empire engineer" />
   <String id="tor_skill_teacher_train_1.Necromancer" category="skill training" />
   <String id="tor_skill_teacher_train_1.ShallyaTrainCO" category="skill training" />
   <String id="tor_skill_teacher_train_1.ShallyaTrainRE" category="skill training" />
-  <String id="tor_skill_teacher_train_1.SigmarTrain" category="skill training" />
-  <String id="tor_skill_teacher_train_1.UlricTrain" category="skill training" />
-  <String id="tor_skill_teacher_train_2.DwarfRunelord" category="skill training" />
-  <String id="tor_skill_teacher_train_2.EmpireMagister" category="skill training" />
-  <String id="tor_skill_teacher_train_2.EngineerEmpire" category="skill training" />
+  <String id="tor_skill_teacher_train_1.SigmarTrain" category="skill training" subcategory="sigmar priest" />
+  <String id="tor_skill_teacher_train_1.UlricTrain" category="skill training" subcategory="ulric priest" />
+  <String id="tor_skill_teacher_train_2.DwarfRunelord" category="skill training" subcategory="runelord" />
+  <String id="tor_skill_teacher_train_2.EmpireMagister" category="skill training" subcategory="empire magister" />
+  <String id="tor_skill_teacher_train_2.EngineerEmpire" category="skill training" subcategory="empire engineer" />
   <String id="tor_skill_teacher_train_2.Necromancer" category="skill training" />
   <String id="tor_skill_teacher_train_2.ShallyaTrainCO" category="skill training" />
   <String id="tor_skill_teacher_train_2.ShallyaTrainRE" category="skill training" />
-  <String id="tor_skill_teacher_train_2.SigmarTrain" category="skill training" />
-  <String id="tor_skill_teacher_train_2.UlricTrain" category="skill training" />
-  <String id="tor_skill_train_hub_select_companion" category="skill training" />
-  <String id="tor_skill_train_hub_select_companion_decline.DwarfRunelord" category="skill training" />
-  <String id="tor_skill_train_hub_select_companion_decline.EmpireMagister" category="skill training" />
-  <String id="tor_skill_train_hub_select_companion_decline.EngineerEmpire" category="skill training" />
+  <String id="tor_skill_teacher_train_2.SigmarTrain" category="skill training" subcategory="sigmar priest" />
+  <String id="tor_skill_teacher_train_2.UlricTrain" category="skill training" subcategory="ulric priest" />
+  <String id="tor_skill_train_hub_select_companion" category="skill training" subcategory="general" />
+  <String id="tor_skill_train_hub_select_companion_decline.DwarfRunelord" category="skill training" subcategory="runelord" />
+  <String id="tor_skill_train_hub_select_companion_decline.EmpireMagister" category="skill training" subcategory="empire magister" />
+  <String id="tor_skill_train_hub_select_companion_decline.EngineerEmpire" category="skill training" subcategory="empire engineer" />
   <String id="tor_skill_train_hub_select_companion_decline.Necromancer" category="skill training" />
   <String id="tor_skill_train_hub_select_companion_decline.ShallyaTrainCO" category="skill training" />
   <String id="tor_skill_train_hub_select_companion_decline.ShallyaTrainRE" category="skill training" />
-  <String id="tor_skill_train_hub_select_companion_decline.SigmarTrain" category="skill training" />
-  <String id="tor_skill_train_hub_select_companion_decline.UlricTrain" category="skill training" />
-  <String id="tor_skill_train_hub_select_companion_p.DwarfRunelord" category="skill training" />
-  <String id="tor_skill_train_hub_select_companion_p.EmpireMagister" category="skill training" />
-  <String id="tor_skill_train_hub_select_companion_p.EngineerEmpire" category="skill training" />
+  <String id="tor_skill_train_hub_select_companion_decline.SigmarTrain" category="skill training" subcategory="sigmar priest" />
+  <String id="tor_skill_train_hub_select_companion_decline.UlricTrain" category="skill training" subcategory="ulric priest" />
+  <String id="tor_skill_train_hub_select_companion_p.DwarfRunelord" category="skill training" subcategory="runelord" />
+  <String id="tor_skill_train_hub_select_companion_p.EmpireMagister" category="skill training" subcategory="empire magister" />
+  <String id="tor_skill_train_hub_select_companion_p.EngineerEmpire" category="skill training" subcategory="empire engineer" />
   <String id="tor_skill_train_hub_select_companion_p.Necromancer" category="skill training" />
   <String id="tor_skill_train_hub_select_companion_p.ShallyaTrainCO" category="skill training" />
   <String id="tor_skill_train_hub_select_companion_p.ShallyaTrainRE" category="skill training" />
-  <String id="tor_skill_train_hub_select_companion_p.SigmarTrain" category="skill training" />
-  <String id="tor_skill_train_hub_select_companion_p.UlricTrain" category="skill training" />
-  <String id="tor_skill_train_hub_select_companion.DwarfRunelord" category="skill training" />
-  <String id="tor_skill_train_hub_select_companion.EmpireMagister" category="skill training" />
-  <String id="tor_skill_train_hub_select_companion.EngineerEmpire" category="skill training" />
+  <String id="tor_skill_train_hub_select_companion_p.SigmarTrain" category="skill training" subcategory="sigmar priest" />
+  <String id="tor_skill_train_hub_select_companion_p.UlricTrain" category="skill training" subcategory="ulric priest" />
+  <String id="tor_skill_train_hub_select_companion.DwarfRunelord" category="skill training" subcategory="runelord" />
+  <String id="tor_skill_train_hub_select_companion.EmpireMagister" category="skill training" subcategory="empire magister" />
+  <String id="tor_skill_train_hub_select_companion.EngineerEmpire" category="skill training" subcategory="empire engineer" />
   <String id="tor_skill_train_hub_select_companion.Necromancer" category="skill training" />
   <String id="tor_skill_train_hub_select_companion.ShallyaTrainCO" category="skill training" />
   <String id="tor_skill_train_hub_select_companion.ShallyaTrainRE" category="skill training" />
-  <String id="tor_skill_train_hub_select_companion.SigmarTrain" category="skill training" />
-  <String id="tor_skill_train_hub_select_companion.UlricTrain" category="skill training" />
-  <String id="tor_skill_training_hover.Costs" category="skill training" />
-  <String id="tor_skill_training_hover.Full" category="skill training" />
-  <String id="tor_skill_training_hover.NoCustomResource" category="skill training" />
-  <String id="tor_skill_training_hover.NoGold" category="skill training" />
+  <String id="tor_skill_train_hub_select_companion.SigmarTrain" category="skill training" subcategory="sigmar priest" />
+  <String id="tor_skill_train_hub_select_companion.UlricTrain" category="skill training" subcategory="ulric priest" />
+  <String id="tor_skill_training_hover.Costs" category="skill training" subcategory="ui" />
+  <String id="tor_skill_training_hover.Full" category="skill training" subcategory="ui" />
+  <String id="tor_skill_training_hover.NoCustomResource" category="skill training" subcategory="ui" />
+  <String id="tor_skill_training_hover.NoGold" category="skill training" subcategory="ui" />
   <String id="tor_skill_training_prompt.description" category="skill training" />
-  <String id="tor_skill_training_prompt.skill_value" category="skill training" />
-  <String id="tor_skill_training_prompt.title" category="skill training" />
-  <String id="tor_skill_training_reason.NoCustomResource" category="skill training" />
-  <String id="tor_teach_skills_dialog_p.DwarfRunelord" category="skill training" />
-  <String id="tor_teach_skills_dialog_p.EmpireMagister" category="skill training" />
-  <String id="tor_teach_skills_dialog_p.EngineerEmpire" category="skill training" />
+  <String id="tor_skill_training_prompt.skill_value" category="skill training" subcategory="ui" />
+  <String id="tor_skill_training_prompt.title" category="skill training" subcategory="ui" />
+  <String id="tor_skill_training_reason.NoCustomResource" category="skill training" subcategory="ui" />
+  <String id="tor_teach_skills_dialog_p.DwarfRunelord" category="skill training" subcategory="runelord" />
+  <String id="tor_teach_skills_dialog_p.EmpireMagister" category="skill training" subcategory="empire magister" />
+  <String id="tor_teach_skills_dialog_p.EngineerEmpire" category="skill training" subcategory="empire engineer" />
   <String id="tor_teach_skills_dialog_p.Necromancer" category="skill training" />
   <String id="tor_teach_skills_dialog_p.ShallyaTrainCO" category="skill training" />
   <String id="tor_teach_skills_dialog_p.ShallyaTrainRE" category="skill training" />
-  <String id="tor_teach_skills_dialog_p.SigmarTrain" category="skill training" />
-  <String id="tor_teach_skills_dialog_p.UlricTrain" category="skill training" />
+  <String id="tor_teach_skills_dialog_p.SigmarTrain" category="skill training" subcategory="empire magister" />
+  <String id="tor_teach_skills_dialog_p.UlricTrain" category="skill training" subcategory="ulric priest" />
   <String id="str_how_to_learn_skill.Faith" category="skills" subcategory="oath line" />
   <String id="str_how_to_learn_skill.Gunpowder" category="skills" subcategory="oath line" />
   <String id="str_how_to_learn_skill.Spellcraft" category="skills" />
