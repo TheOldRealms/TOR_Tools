@@ -2,8 +2,11 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using TORTools.App.Services;
+using TORTools.App.ViewModels.Translation;
 using TORTools.Core.Models;
+using TORTools.Core.Models.Translation;
 using TORTools.Core.Services;
+using TORTools.Core.Services.Translation;
 using TORTools.Core.Workspace;
 
 namespace TORTools.App.ViewModels;
@@ -20,6 +23,22 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly IXmlDocumentService _xmlDocumentService;
     private WorkspaceConfig _config;
 
+    /// <summary>
+    /// ViewModel for the Translations sidebar section.
+    /// </summary>
+    public TranslationsSidebarViewModel? TranslationsSidebar { get; private set; }
+
+    /// <summary>
+    /// Open translation sheet tabs.
+    /// </summary>
+    public ObservableCollection<TranslationSheetTabViewModel> TranslationTabs { get; } = new();
+
+    /// <summary>
+    /// The active translation sheet tab (if any).
+    /// </summary>
+    [ObservableProperty]
+    private TranslationSheetTabViewModel? _activeTranslationTab;
+
     [ObservableProperty]
     private string _statusMessage = "Ready";
 
@@ -28,6 +47,18 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     private string _workspacePath = "";
+
+    /// <summary>
+    /// Error message to display prominently in the main content area.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasError))]
+    private string _errorMessage = "";
+
+    /// <summary>
+    /// Whether there's an error to display.
+    /// </summary>
+    public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
     [ObservableProperty]
     private FileTabViewModel? _activeTab;
@@ -38,11 +69,31 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public bool HasSearchText => !string.IsNullOrEmpty(SearchText);
 
-    public ObservableCollection<CatalogNode> Catalogs { get; } = new();
+    public ObservableCollection<object> Catalogs { get; } = new();
 
     public ObservableCollection<FileTabViewModel> OpenTabs { get; } = new();
 
     public bool HasOpenTabs => OpenTabs.Count > 0;
+
+    /// <summary>
+    /// Whether any tab (file or translation) is open.
+    /// </summary>
+    public bool HasAnyOpenTab => ActiveTab != null || ActiveTranslationTab != null;
+
+    /// <summary>
+    /// The current tab content (either file or translation tab).
+    /// </summary>
+    public object? CurrentTabContent => (object?)ActiveTranslationTab ?? ActiveTab;
+
+    /// <summary>
+    /// The current tab title.
+    /// </summary>
+    public string CurrentTabTitle => ActiveTranslationTab?.FullTitle ?? ActiveTab?.Title ?? "";
+
+    /// <summary>
+    /// Whether the current tab has unsaved changes.
+    /// </summary>
+    public bool CurrentTabHasUnsavedChanges => ActiveTranslationTab?.HasUnsavedChanges ?? ActiveTab?.HasUnsavedChanges ?? false;
 
     /// <summary>
     /// Event raised when focus should be given to the search box.
@@ -102,6 +153,18 @@ public partial class MainWindowViewModel : ViewModelBase
             }
         }
 
+        // Initialize translations sidebar
+        if (!string.IsNullOrEmpty(_config.BannerlordPath))
+        {
+            var modulesPath = Path.Combine(_config.BannerlordPath, "Modules");
+            if (Directory.Exists(modulesPath))
+            {
+                TranslationsSidebar = new TranslationsSidebarViewModel(modulesPath);
+                TranslationsSidebar.OpenTranslationSheetRequested += OnOpenTranslationSheetRequested;
+                TranslationsSidebar.SourceFileMissing += OnSourceFileMissing;
+            }
+        }
+
         LoadCatalogs();
     }
 
@@ -134,6 +197,12 @@ public partial class MainWindowViewModel : ViewModelBase
             }
 
             Catalogs.Add(catalogNode);
+        }
+
+        // Add Translations catalog at the end
+        if (TranslationsSidebar != null)
+        {
+            Catalogs.Add(TranslationsSidebar);
         }
 
         var totalFiles = catalogGroups.Sum(c => c.Files.Count);
@@ -191,6 +260,100 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     /// <summary>
+    /// Handles request to open a translation sheet tab.
+    /// </summary>
+    private void OnOpenTranslationSheetRequested(object? sender, OpenTranslationSheetEventArgs e)
+    {
+        OpenTranslationSheet(e.Sheet, e.Config);
+    }
+
+    /// <summary>
+    /// Handles when a source file is missing for translation.
+    /// </summary>
+    private void OnSourceFileMissing(object? sender, SourceFileMissingEventArgs e)
+    {
+        // Show error message prominently in main content area
+        ErrorMessage = $"File not found!\n\nExpected location:\n{e.ExpectedSourcePath}\n\nPlease ensure the file exists at the expected path.";
+        StatusMessage = "File not found";
+
+        // Log for debugging
+        Console.WriteLine($"[Translation] File missing!");
+        Console.WriteLine($"[Translation] Translation entry: {e.TranslationPath}");
+        Console.WriteLine($"[Translation] Expected file: {e.ExpectedSourcePath}");
+    }
+
+    /// <summary>
+    /// Clears the error message.
+    /// </summary>
+    [RelayCommand]
+    private void ClearError()
+    {
+        ErrorMessage = "";
+    }
+
+    /// <summary>
+    /// Opens a translation sheet as a tab.
+    /// </summary>
+    public void OpenTranslationSheet(TranslationSheet sheet, LanguageConfig config)
+    {
+        Console.WriteLine($"[MainVM] OpenTranslationSheet called: {sheet.FileName}, lang: {config.LanguageCode}");
+
+        // Check if already open
+        var tabKey = $"{config.LanguageCode}:{sheet.FileName}";
+        var existingTab = TranslationTabs.FirstOrDefault(t =>
+            t.LanguageCode == config.LanguageCode && t.FileName == sheet.FileName);
+
+        if (existingTab != null)
+        {
+            Console.WriteLine($"[MainVM] Tab already open, switching...");
+            ActiveTranslationTab = existingTab;
+            ActiveTab = null; // Deselect file tab
+            StatusMessage = $"Switched to {existingTab.Title}";
+            return;
+        }
+
+        // Create new tab
+        Console.WriteLine($"[MainVM] Creating new TranslationSheetTabViewModel...");
+        var newTab = new TranslationSheetTabViewModel(
+            sheet,
+            TranslationsSidebar!.TranslationService,
+            config);
+
+        TranslationTabs.Add(newTab);
+        Console.WriteLine($"[MainVM] Added tab, setting ActiveTranslationTab...");
+        ActiveTranslationTab = newTab;
+        ActiveTab = null; // Deselect file tab
+
+        Console.WriteLine($"[MainVM] ActiveTranslationTab set, HasAnyOpenTab: {HasAnyOpenTab}, CurrentTabContent type: {CurrentTabContent?.GetType().Name}");
+
+        StatusMessage = $"Opened {newTab.Title} - {newTab.CompletionText} complete";
+        RowCountText = $"{sheet.Entries.Count} entries";
+    }
+
+    /// <summary>
+    /// Closes a translation sheet tab.
+    /// </summary>
+    [RelayCommand]
+    private void CloseTranslationTab(TranslationSheetTabViewModel? tab)
+    {
+        if (tab == null) return;
+
+        var index = TranslationTabs.IndexOf(tab);
+        TranslationTabs.Remove(tab);
+        tab.Dispose();
+
+        // Select adjacent tab
+        if (TranslationTabs.Count > 0)
+        {
+            ActiveTranslationTab = TranslationTabs[Math.Min(index, TranslationTabs.Count - 1)];
+        }
+        else
+        {
+            ActiveTranslationTab = null;
+        }
+    }
+
+    /// <summary>
     /// Handles navigation to a cross-referenced entry in another file.
     /// Searches through multiple target files until the entry is found.
     /// </summary>
@@ -239,7 +402,7 @@ public partial class MainWindowViewModel : ViewModelBase
     /// </summary>
     private string? FindFileByName(string fileName)
     {
-        foreach (var catalog in Catalogs)
+        foreach (var catalog in Catalogs.OfType<CatalogNode>())
         {
             foreach (var file in catalog.Files)
             {
@@ -273,6 +436,8 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         if (value != null)
         {
+            // Deselect translation tab when selecting file tab
+            ActiveTranslationTab = null;
             // Apply current search filter to newly active tab
             value.FilterText = SearchText;
             UpdateRowCountText();
@@ -281,6 +446,28 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             RowCountText = "";
         }
+
+        // Notify computed properties
+        OnPropertyChanged(nameof(HasAnyOpenTab));
+        OnPropertyChanged(nameof(CurrentTabContent));
+        OnPropertyChanged(nameof(CurrentTabTitle));
+        OnPropertyChanged(nameof(CurrentTabHasUnsavedChanges));
+    }
+
+    partial void OnActiveTranslationTabChanged(TranslationSheetTabViewModel? value)
+    {
+        if (value != null)
+        {
+            // Deselect file tab when selecting translation tab
+            ActiveTab = null;
+            RowCountText = $"{value.TotalEntries} entries";
+        }
+
+        // Notify computed properties
+        OnPropertyChanged(nameof(HasAnyOpenTab));
+        OnPropertyChanged(nameof(CurrentTabContent));
+        OnPropertyChanged(nameof(CurrentTabTitle));
+        OnPropertyChanged(nameof(CurrentTabHasUnsavedChanges));
     }
 
     partial void OnSearchTextChanged(string value)
@@ -455,6 +642,24 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         _config = _workspaceService.LoadConfig();
         LoadCatalogs();
+    }
+
+    /// <summary>
+    /// Adds an existing language folder to the translations sidebar.
+    /// Called from the UI after folder picker selection.
+    /// </summary>
+    public void AddExistingLanguageFolder(string folderPath)
+    {
+        TranslationsSidebar?.AddExistingLanguage(folderPath);
+    }
+
+    /// <summary>
+    /// Creates a new language folder with translation stubs.
+    /// Called from the UI after folder picker selection and language code entry.
+    /// </summary>
+    public void CreateNewLanguageFolder(string folderPath, string languageCode, string languageName)
+    {
+        TranslationsSidebar?.CreateNewLanguage(folderPath, languageCode, languageName);
     }
 
     [RelayCommand]

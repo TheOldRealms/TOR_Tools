@@ -1,0 +1,168 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:tvm="using:TORTools.App.ViewModels.Translation"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="TORTools.App.Views.TranslationSheetView"
+             x:DataType="tvm:TranslationSheetTabViewModel">
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Toolbar -->
+        <Border Grid.Row="0"
+                Background="#2f3136"
+                Padding="8"
+                BorderBrush="#202225"
+                BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto,Auto,Auto">
+                <!-- Filter buttons -->
+                <Button Grid.Column="0"
+                        Content="All"
+                        Command="{Binding ClearFilterCommand}"
+                        Margin="0,0,4,0"
+                        Padding="8,4"/>
+                <Button Grid.Column="1"
+                        Content="TODO"
+                        Command="{Binding ShowTodoOnlyCommand}"
+                        Margin="0,0,4,0"
+                        Padding="8,4"/>
+                <Button Grid.Column="2"
+                        Content="Missing"
+                        Command="{Binding ShowMissingOnlyCommand}"
+                        Margin="0,0,4,0"
+                        Padding="8,4"/>
+
+                <!-- Search -->
+                <TextBox Grid.Column="3"
+                         Text="{Binding FilterText, Mode=TwoWay}"
+                         PlaceholderText="Search translations..."
+                         Margin="8,0"
+                         MinWidth="200"/>
+
+                <!-- Stats -->
+                <TextBlock Grid.Column="4"
+                           VerticalAlignment="Center"
+                           Margin="8,0">
+                    <Run Text="{Binding TranslatedCount}"/>
+                    <Run Text="/" Foreground="#72767d"/>
+                    <Run Text="{Binding TotalEntries}"/>
+                    <Run Text=" (" Foreground="#72767d"/>
+                    <Run Text="{Binding CompletionText}" Foreground="#43b581"/>
+                    <Run Text=")" Foreground="#72767d"/>
+                </TextBlock>
+
+                <!-- TODO count -->
+                <TextBlock Grid.Column="5"
+                           VerticalAlignment="Center"
+                           Margin="8,0"
+                           Foreground="#faa61a"
+                           IsVisible="{Binding TodoCount}">
+                    <Run Text="TODO: "/>
+                    <Run Text="{Binding TodoCount}"/>
+                </TextBlock>
+
+                <!-- Orphaned count -->
+                <TextBlock Grid.Column="6"
+                           VerticalAlignment="Center"
+                           Margin="8,0"
+                           Foreground="#f04747"
+                           IsVisible="{Binding OrphanedCount}">
+                    <Run Text="???: "/>
+                    <Run Text="{Binding OrphanedCount}"/>
+                </TextBlock>
+
+                <!-- Export button -->
+                <Button Grid.Column="7"
+                        Content="Export"
+                        Command="{Binding ExportCommand}"
+                        Margin="8,0,0,0"
+                        Padding="12,4"/>
+
+                <!-- Unsaved indicator -->
+                <TextBlock Grid.Column="8"
+                           Text="*"
+                           FontSize="16"
+                           FontWeight="Bold"
+                           Foreground="Orange"
+                           VerticalAlignment="Center"
+                           Margin="4,0"
+                           IsVisible="{Binding HasUnsavedChanges}"/>
+            </Grid>
+        </Border>
+
+        <!-- Data Grid -->
+        <DataGrid Grid.Row="1"
+                  x:Name="TranslationGrid"
+                  ItemsSource="{Binding Rows}"
+                  AutoGenerateColumns="False"
+                  CanUserReorderColumns="True"
+                  CanUserResizeColumns="True"
+                  CanUserSortColumns="True"
+                  GridLinesVisibility="All"
+                  BorderThickness="0"
+                  IsReadOnly="False">
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Remove Orphaned Entry"
+                              Command="{Binding RemoveOrphanedEntryCommand}"
+                              CommandParameter="{Binding #TranslationGrid.SelectedItem}"/>
+                </ContextMenu>
+            </DataGrid.ContextMenu>
+            <DataGrid.Columns>
+                <!-- Status -->
+                <DataGridTextColumn Header="Status"
+                                    Binding="{Binding StatusIndicator}"
+                                    Width="60"
+                                    IsReadOnly="True"/>
+
+                <!-- Localization ID -->
+                <DataGridTextColumn Header="Localization ID"
+                                    Binding="{Binding LocalizationId}"
+                                    Width="250"
+                                    IsReadOnly="True"/>
+
+                <!-- English Text (readonly with popup) -->
+                <DataGridTemplateColumn Header="English" Width="300">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Grid ColumnDefinitions="Auto,*">
+                                <Button Grid.Column="0"
+                                        Content="..."
+                                        Padding="6,2"
+                                        Margin="2"
+                                        ToolTip.Tip="View full English text"
+                                        Click="ViewEnglishText_Click"/>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding EnglishText}"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center"
+                                           Margin="4,0"/>
+                            </Grid>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- Translation (editable with popup) -->
+                <DataGridTemplateColumn Header="Translation" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Grid ColumnDefinitions="Auto,*">
+                                <Button Grid.Column="0"
+                                        Content="..."
+                                        Padding="6,2"
+                                        Margin="2"
+                                        ToolTip.Tip="Edit translation"
+                                        Click="EditTranslation_Click"/>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding TranslatedText}"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center"
+                                           Margin="4,0"/>
+                            </Grid>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>
