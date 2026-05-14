@@ -12,11 +12,13 @@ public class TextEditorDialog : BaseEditorDialog
 {
     private readonly TextBox _textBox;
     private readonly string _currentValue;
+    private readonly bool _isReadOnly;
 
-    public TextEditorDialog(string fieldName, string currentValue)
-        : base($"Edit {fieldName}", 700, 500)
+    public TextEditorDialog(string fieldName, string currentValue, bool isReadOnly = false)
+        : base(isReadOnly ? $"View {fieldName}" : $"Edit {fieldName}", 700, 500, isReadOnly)
     {
         _currentValue = currentValue;
+        _isReadOnly = isReadOnly;
         _textBox = new TextBox
         {
             Text = currentValue,
@@ -28,7 +30,8 @@ public class TextEditorDialog : BaseEditorDialog
             FontSize = 13,
             Padding = new Avalonia.Thickness(8),
             BorderThickness = new Avalonia.Thickness(1),
-            BorderBrush = new SolidColorBrush(Color.FromRgb(60, 60, 60))
+            BorderBrush = new SolidColorBrush(Color.FromRgb(60, 60, 60)),
+            IsReadOnly = isReadOnly
         };
 
         Initialize();

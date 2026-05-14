@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<StringOverrideMetadata>
+  <Override id="GAsVO8cZ" translation_key="str_tor_arena_orc" category="Arena" subcategory="Greetings" vanilla_text="Good day, friend. I'll bet you came here for the games, or as they say nowadays, the tournament!" comment="Tournament available greeting" />
+  <Override id="rqFKxm24" translation_key="str_tor_arena_orc_no_tournament" category="Arena" subcategory="Greetings" vanilla_text="Greetings, friend. If you came for the games, the big fights, I'm afraid you're out of luck. There won't be games, or a 'tournament' as they say nowadays, any time soon." comment="No tournament available greeting" />
+</StringOverrideMetadata>

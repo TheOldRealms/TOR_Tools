@@ -74,6 +74,7 @@ public class WorkspaceService : IWorkspaceService
 
         // Text Catalog - Localization
         ["tor_strings.xml"] = ("Text Catalog", "Strings / Localization"),
+        ["tor_string_overrides.xml"] = ("Text Catalog", "String Overrides (Vanilla)"),
         ["tor_voiced_strings.xml"] = ("Text Catalog", "Voiced Strings"),
         ["tor_tags.xml"] = ("Text Catalog", "String Tags"),
     };

@@ -2397,18 +2397,19 @@ public partial class FileTabView : UserControl
             grid.Children.Add(text);
 
             // Handle click
+            var isReadOnly = fieldDef?.ReadOnly ?? false;
             editButton.Click += async (sender, e) =>
             {
                 if (rowVm == null) return;
 
                 var currentValue = rowVm[attributeName] ?? "";
-                var dialog = new TextEditorDialog(fieldDef?.DisplayName ?? attributeName, currentValue);
+                var dialog = new TextEditorDialog(fieldDef?.DisplayName ?? attributeName, currentValue, isReadOnly);
                 var parentWindow = TopLevel.GetTopLevel(editButton) as Window;
                 if (parentWindow == null) return;
 
                 var result = await dialog.ShowDialog<string?>(parentWindow);
 
-                if (result != null && result != currentValue)
+                if (!isReadOnly && result != null && result != currentValue)
                 {
                     rowVm[attributeName] = result;
                     text.Text = result;
