@@ -111,8 +111,9 @@ public partial class TranslationsSidebarViewModel : ViewModelBase
             Console.WriteLine($"[TranslationsSidebar] Translation file not found: {translationPath}");
             StatusMessage = $"Translation file not found!";
 
-            // Raise event to show error with expected path
-            SourceFileMissing?.Invoke(this, new SourceFileMissingEventArgs(relativePath, translationPath));
+            // Raise event to show error - can create template for missing translation files
+            SourceFileMissing?.Invoke(this, new SourceFileMissingEventArgs(
+                relativePath, translationPath, isTranslationFileMissing: true, languageCode: config.LanguageCode));
             return;
         }
 
@@ -124,8 +125,9 @@ public partial class TranslationsSidebarViewModel : ViewModelBase
             Console.WriteLine($"[TranslationsSidebar] English source not found. Expected: {expectedPath}");
             StatusMessage = $"Source file not found!";
 
-            // Raise event to show error with expected path
-            SourceFileMissing?.Invoke(this, new SourceFileMissingEventArgs(relativePath, expectedPath));
+            // Raise event to show error - can't create template for missing source files
+            SourceFileMissing?.Invoke(this, new SourceFileMissingEventArgs(
+                relativePath, expectedPath, isTranslationFileMissing: false));
             return;
         }
 
@@ -150,6 +152,74 @@ public partial class TranslationsSidebarViewModel : ViewModelBase
     /// Event raised when a source file is missing.
     /// </summary>
     public event EventHandler<SourceFileMissingEventArgs>? SourceFileMissing;
+
+    /// <summary>
+    /// Event raised when validation results are ready.
+    /// </summary>
+    public event EventHandler<LanguageValidationEventArgs>? ValidationCompleted;
+
+    /// <summary>
+    /// Validates a language configuration and raises an event with the results.
+    /// </summary>
+    public void ValidateLanguage(LanguageTreeItem languageItem)
+    {
+        var result = _translationService.ValidateLanguageConfig(languageItem.Config);
+        var missingFiles = _translationService.FindMissingTranslationFiles(languageItem.Config);
+
+        Console.WriteLine($"[TranslationsSidebar] Validation complete: {result.ValidEntries.Count} valid, {result.InvalidEntries.Count} invalid, {missingFiles.Count} missing");
+
+        ValidationCompleted?.Invoke(this, new LanguageValidationEventArgs(result, missingFiles, languageItem));
+    }
+
+    /// <summary>
+    /// Repairs the language_data.xml by removing invalid entries.
+    /// </summary>
+    public bool RepairLanguageData(LanguageConfig config, List<string> entriesToRemove)
+    {
+        var success = _translationService.RepairLanguageData(config, entriesToRemove);
+
+        if (success)
+        {
+            RefreshLanguageTreeItem(config);
+            StatusMessage = $"Repaired {config.DisplayName} - removed {entriesToRemove.Count} invalid entries";
+        }
+
+        return success;
+    }
+
+    /// <summary>
+    /// Adds missing translation files to language_data.xml and creates templates.
+    /// </summary>
+    public bool AddMissingFiles(LanguageConfig config, List<string> filesToAdd)
+    {
+        var success = _translationService.AddMissingTranslationFiles(config, filesToAdd);
+
+        if (success)
+        {
+            RefreshLanguageTreeItem(config);
+            StatusMessage = $"Added {filesToAdd.Count} files to {config.DisplayName}";
+        }
+
+        return success;
+    }
+
+    /// <summary>
+    /// Refreshes the language tree item after changes to the config.
+    /// </summary>
+    private void RefreshLanguageTreeItem(LanguageConfig config)
+    {
+        var langItem = Languages.FirstOrDefault(l => l.Config.LanguageCode == config.LanguageCode);
+        if (langItem != null)
+        {
+            // Rebuild the tree structure
+            langItem.Modules.Clear();
+            var newItem = CreateLanguageTreeItem(config);
+            foreach (var module in newItem.Modules)
+            {
+                langItem.Modules.Add(module);
+            }
+        }
+    }
 
     private LanguageTreeItem CreateLanguageTreeItem(LanguageConfig config)
     {
@@ -224,6 +294,15 @@ public partial class LanguageTreeItem : ViewModelBase
     {
         _parent.OpenFile(Config, relativePath);
     }
+
+    /// <summary>
+    /// Validates the language configuration.
+    /// </summary>
+    [RelayCommand]
+    public void Validate()
+    {
+        _parent.ValidateLanguage(this);
+    }
 }
 
 /// <summary>
@@ -263,10 +342,31 @@ public class SourceFileMissingEventArgs : EventArgs
 {
     public string TranslationPath { get; }
     public string ExpectedSourcePath { get; }
+    public bool IsTranslationFileMissing { get; }
+    public string? LanguageCode { get; }
 
-    public SourceFileMissingEventArgs(string translationPath, string expectedSourcePath)
+    public SourceFileMissingEventArgs(string translationPath, string expectedSourcePath, bool isTranslationFileMissing = false, string? languageCode = null)
     {
         TranslationPath = translationPath;
         ExpectedSourcePath = expectedSourcePath;
+        IsTranslationFileMissing = isTranslationFileMissing;
+        LanguageCode = languageCode;
+    }
+}
+
+/// <summary>
+/// Event args for language validation results.
+/// </summary>
+public class LanguageValidationEventArgs : EventArgs
+{
+    public LanguageValidationResult Result { get; }
+    public List<string> MissingFiles { get; }
+    public LanguageTreeItem LanguageItem { get; }
+
+    public LanguageValidationEventArgs(LanguageValidationResult result, List<string> missingFiles, LanguageTreeItem languageItem)
+    {
+        Result = result;
+        MissingFiles = missingFiles;
+        LanguageItem = languageItem;
     }
 }

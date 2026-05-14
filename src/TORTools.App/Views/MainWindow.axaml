@@ -103,6 +103,12 @@
                         <!-- Template for language nodes (under Translations catalog) -->
                         <TreeDataTemplate DataType="tvm:LanguageTreeItem" ItemsSource="{Binding Modules}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
+                                <StackPanel.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Validate language_data.xml"
+                                                  Command="{Binding ValidateCommand}"/>
+                                    </ContextMenu>
+                                </StackPanel.ContextMenu>
                                 <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="13"/>
                             </StackPanel>
                         </TreeDataTemplate>
@@ -238,11 +244,60 @@
                                      TextWrapping="Wrap"
                                      HorizontalAlignment="Center"
                                      TextAlignment="Center"/>
-                <Button Content="Dismiss"
-                        Command="{Binding ClearErrorCommand}"
-                        HorizontalAlignment="Center"
-                        Padding="20,8"
-                        Margin="0,10,0,0"/>
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            Spacing="10"
+                            Margin="0,10,0,0">
+                    <Button Content="Create Template"
+                            Command="{Binding CreateTemplateCommand}"
+                            IsVisible="{Binding CanCreateTemplate}"
+                            Padding="20,8"
+                            Background="#43b581"/>
+                    <Button Content="Dismiss"
+                            Command="{Binding ClearErrorCommand}"
+                            Padding="20,8"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Validation results overlay -->
+        <Border Grid.Row="1" Grid.Column="2"
+                IsVisible="{Binding ShowValidationResults}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="#1e1f22"
+                BorderBrush="#5865f2"
+                BorderThickness="2"
+                CornerRadius="8"
+                Padding="30,20"
+                MaxWidth="700">
+            <StackPanel Spacing="15">
+                <TextBlock Text="Validation Results"
+                           FontSize="20"
+                           FontWeight="SemiBold"
+                           Foreground="#5865f2"
+                           HorizontalAlignment="Center"/>
+                <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
+                    <SelectableTextBlock Text="{Binding ValidationMessage}"
+                                         FontSize="12"
+                                         Foreground="#dcddde"
+                                         FontFamily="Consolas,Courier New,monospace"
+                                         TextWrapping="Wrap"/>
+                </ScrollViewer>
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            Spacing="10"
+                            Margin="0,10,0,0">
+                    <Button Content="Repair"
+                            Command="{Binding RepairLanguageDataCommand}"
+                            IsEnabled="{Binding CanRepair}"
+                            Padding="20,8"
+                            Background="#43b581"
+                            ToolTip.Tip="Remove invalid entries and add missing files to language_data.xml"/>
+                    <Button Content="Close"
+                            Command="{Binding CloseValidationCommand}"
+                            Padding="20,8"/>
+                </StackPanel>
             </StackPanel>
         </Border>
 

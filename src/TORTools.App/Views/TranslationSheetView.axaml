@@ -142,7 +142,7 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
-                <!-- Translation (editable with popup) -->
+                <!-- Translation (editable with popup or inline) -->
                 <DataGridTemplateColumn Header="Translation" Width="*">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -151,7 +151,7 @@
                                         Content="..."
                                         Padding="6,2"
                                         Margin="2"
-                                        ToolTip.Tip="Edit translation"
+                                        ToolTip.Tip="Edit translation (popup)"
                                         Click="EditTranslation_Click"/>
                                 <TextBlock Grid.Column="1"
                                            Text="{Binding TranslatedText}"
@@ -161,6 +161,14 @@
                             </Grid>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <TextBox Text="{Binding TranslatedText, Mode=TwoWay}"
+                                     BorderThickness="0"
+                                     Padding="4,2"
+                                     AcceptsReturn="False"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>

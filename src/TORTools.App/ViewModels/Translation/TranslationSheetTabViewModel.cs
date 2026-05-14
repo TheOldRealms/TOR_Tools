@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using TORTools.Core.Models.Translation;
@@ -14,25 +15,35 @@ public partial class TranslationSheetTabViewModel : ViewModelBase, IDisposable
     private readonly TranslationSheet _sheet;
     private readonly TranslationService _translationService;
     private readonly LanguageConfig _languageConfig;
+    private readonly TranslationCacheService? _cacheService;
     private CancellationTokenSource? _filterCts;
+    private CancellationTokenSource? _saveCts;
     private const int FilterDebounceMs = 300;
+    private const int SaveDebounceMs = 1000;
+    private readonly HashSet<string> _removedEntryIds = new();
 
     public TranslationSheetTabViewModel(
         TranslationSheet sheet,
         TranslationService translationService,
-        LanguageConfig languageConfig)
+        LanguageConfig languageConfig,
+        TranslationCacheService? cacheService = null)
     {
         _sheet = sheet;
         _translationService = translationService;
         _languageConfig = languageConfig;
+        _cacheService = cacheService;
 
         // Create row ViewModels
         foreach (var entry in sheet.Entries)
         {
             var row = new TranslationEntryRowViewModel(entry);
             row.Initialize();
+            row.PropertyChanged += OnRowPropertyChanged;
             _allRows.Add(row);
         }
+
+        // Load cached changes and apply them
+        LoadCachedChanges();
 
         // Initially show all rows
         foreach (var row in _allRows)
@@ -41,6 +52,115 @@ public partial class TranslationSheetTabViewModel : ViewModelBase, IDisposable
         }
 
         UpdateStats();
+    }
+
+    private void OnRowPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(TranslationEntryRowViewModel.TranslatedText) ||
+            e.PropertyName == nameof(TranslationEntryRowViewModel.IsDirty))
+        {
+            UpdateStats();
+            SaveToCacheDebounced();
+        }
+    }
+
+    private void LoadCachedChanges()
+    {
+        if (_cacheService == null) return;
+
+        var cache = _cacheService.LoadFromCache(LanguageCode, RelativePath);
+        if (cache == null) return;
+
+        Console.WriteLine($"[TranslationSheet] Applying {cache.Entries.Count} cached changes");
+
+        // Build lookup for fast access
+        var rowLookup = _allRows.ToDictionary(r => r.LocalizationId);
+
+        foreach (var cachedEntry in cache.Entries)
+        {
+            if (cachedEntry.IsRemoved)
+            {
+                // Entry was removed - track it and remove from rows
+                _removedEntryIds.Add(cachedEntry.LocalizationId);
+                if (rowLookup.TryGetValue(cachedEntry.LocalizationId, out var rowToRemove))
+                {
+                    rowToRemove.PropertyChanged -= OnRowPropertyChanged;
+                    _allRows.Remove(rowToRemove);
+                    _sheet.Entries.Remove(rowToRemove.Entry);
+                }
+            }
+            else if (rowLookup.TryGetValue(cachedEntry.LocalizationId, out var row))
+            {
+                // Apply cached translation
+                if (cachedEntry.TranslatedText != null && cachedEntry.TranslatedText != row.TranslatedText)
+                {
+                    row.TranslatedText = cachedEntry.TranslatedText;
+                    row.IsDirty = true;
+                }
+            }
+        }
+
+        // Mark as having cached changes if any were applied
+        HasUnsavedChanges = _allRows.Any(r => r.IsDirty) || _removedEntryIds.Count > 0;
+    }
+
+    private void SaveToCacheDebounced()
+    {
+        if (_cacheService == null) return;
+
+        _saveCts?.Cancel();
+        _saveCts = new CancellationTokenSource();
+
+        var token = _saveCts.Token;
+        Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(SaveDebounceMs, token);
+                if (!token.IsCancellationRequested)
+                {
+                    SaveToCache();
+                }
+            }
+            catch (TaskCanceledException)
+            {
+                // Ignored
+            }
+        });
+    }
+
+    private void SaveToCache()
+    {
+        if (_cacheService == null) return;
+
+        var entries = new List<CachedTranslationEntry>();
+
+        // Add dirty rows
+        foreach (var row in _allRows.Where(r => r.IsDirty))
+        {
+            entries.Add(new CachedTranslationEntry
+            {
+                LocalizationId = row.LocalizationId,
+                TranslatedText = row.TranslatedText,
+                IsRemoved = false
+            });
+        }
+
+        // Add removed entries
+        foreach (var removedId in _removedEntryIds)
+        {
+            entries.Add(new CachedTranslationEntry
+            {
+                LocalizationId = removedId,
+                TranslatedText = null,
+                IsRemoved = true
+            });
+        }
+
+        if (entries.Count > 0)
+        {
+            _cacheService.SaveToCache(LanguageCode, RelativePath, entries);
+        }
     }
 
     /// <summary>
@@ -227,10 +347,14 @@ public partial class TranslationSheetTabViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private void Export()
     {
-        // Build output path
-        var outputPath = Path.Combine(
-            _languageConfig.FolderPath,
-            RelativePath.Replace('/', Path.DirectorySeparatorChar));
+        // Build output path - strip the language code from RelativePath since FolderPath already includes it
+        // RelativePath is like "DE/TOR_Armory/ModuleData/file.xml", we need "TOR_Armory/ModuleData/file.xml"
+        var parts = RelativePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        var pathWithoutLang = parts.Length > 1
+            ? string.Join(Path.DirectorySeparatorChar.ToString(), parts.Skip(1))
+            : RelativePath;
+
+        var outputPath = Path.Combine(_languageConfig.FolderPath, pathWithoutLang);
 
         // Sync row changes back to sheet
         foreach (var row in _allRows)
@@ -248,7 +372,12 @@ public partial class TranslationSheetTabViewModel : ViewModelBase, IDisposable
             row.Entry.IsDirty = false;
         }
 
+        // Clear the cache since changes are now exported
+        _cacheService?.ClearCache(LanguageCode, RelativePath);
+        _removedEntryIds.Clear();
+
         HasUnsavedChanges = false;
+        Console.WriteLine($"[TranslationSheet] Exported to {outputPath} and cleared cache");
     }
 
     /// <summary>
@@ -297,6 +426,12 @@ public partial class TranslationSheetTabViewModel : ViewModelBase, IDisposable
         if (row == null || row.Status != TranslationStatus.Orphaned)
             return;
 
+        // Track the removed entry for cache
+        _removedEntryIds.Add(row.LocalizationId);
+
+        // Unsubscribe from events
+        row.PropertyChanged -= OnRowPropertyChanged;
+
         // Remove from both collections
         _allRows.Remove(row);
         Rows.Remove(row);
@@ -307,6 +442,9 @@ public partial class TranslationSheetTabViewModel : ViewModelBase, IDisposable
         // Mark as having unsaved changes and update stats
         HasUnsavedChanges = true;
         UpdateStats();
+
+        // Save to cache
+        SaveToCacheDebounced();
     }
 
     private bool CanRemoveOrphanedEntry(TranslationEntryRowViewModel? row)
@@ -316,7 +454,15 @@ public partial class TranslationSheetTabViewModel : ViewModelBase, IDisposable
 
     public void Dispose()
     {
+        // Unsubscribe from all row events
+        foreach (var row in _allRows)
+        {
+            row.PropertyChanged -= OnRowPropertyChanged;
+        }
+
         _filterCts?.Cancel();
         _filterCts?.Dispose();
+        _saveCts?.Cancel();
+        _saveCts?.Dispose();
     }
 }

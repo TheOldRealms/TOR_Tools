@@ -21,6 +21,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly ItemTraitCatalogService _itemTraitCatalogService;
     private readonly BannerImageService? _bannerImageService;
     private readonly IXmlDocumentService _xmlDocumentService;
+    private readonly TranslationCacheService? _translationCacheService;
     private WorkspaceConfig _config;
 
     /// <summary>
@@ -59,6 +60,50 @@ public partial class MainWindowViewModel : ViewModelBase
     /// Whether there's an error to display.
     /// </summary>
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
+
+    /// <summary>
+    /// Whether the current error allows creating a template file.
+    /// </summary>
+    [ObservableProperty]
+    private bool _canCreateTemplate;
+
+    /// <summary>
+    /// The path where a template should be created.
+    /// </summary>
+    private string? _missingFilePath;
+
+    /// <summary>
+    /// The relative path for template creation.
+    /// </summary>
+    private string? _missingFileRelativePath;
+
+    /// <summary>
+    /// The language code for template creation.
+    /// </summary>
+    private string? _missingFileLanguageCode;
+
+    /// <summary>
+    /// Whether validation results are being shown.
+    /// </summary>
+    [ObservableProperty]
+    private bool _showValidationResults;
+
+    /// <summary>
+    /// Validation result message.
+    /// </summary>
+    [ObservableProperty]
+    private string _validationMessage = "";
+
+    /// <summary>
+    /// Whether repair is possible (there are invalid entries).
+    /// </summary>
+    [ObservableProperty]
+    private bool _canRepair;
+
+    /// <summary>
+    /// The current validation event args for repair.
+    /// </summary>
+    private LanguageValidationEventArgs? _currentValidation;
 
     [ObservableProperty]
     private FileTabViewModel? _activeTab;
@@ -153,7 +198,7 @@ public partial class MainWindowViewModel : ViewModelBase
             }
         }
 
-        // Initialize translations sidebar
+        // Initialize translations sidebar and cache service
         if (!string.IsNullOrEmpty(_config.BannerlordPath))
         {
             var modulesPath = Path.Combine(_config.BannerlordPath, "Modules");
@@ -162,6 +207,15 @@ public partial class MainWindowViewModel : ViewModelBase
                 TranslationsSidebar = new TranslationsSidebarViewModel(modulesPath);
                 TranslationsSidebar.OpenTranslationSheetRequested += OnOpenTranslationSheetRequested;
                 TranslationsSidebar.SourceFileMissing += OnSourceFileMissing;
+                TranslationsSidebar.ValidationCompleted += OnValidationCompleted;
+
+                // Initialize translation cache service in TORTools module
+                var torToolsPath = Path.Combine(modulesPath, "TORTools");
+                if (Directory.Exists(torToolsPath))
+                {
+                    _translationCacheService = new TranslationCacheService(torToolsPath);
+                    Console.WriteLine($"[MainVM] Translation cache initialized at {torToolsPath}");
+                }
             }
         }
 
@@ -272,12 +326,25 @@ public partial class MainWindowViewModel : ViewModelBase
     /// </summary>
     private void OnSourceFileMissing(object? sender, SourceFileMissingEventArgs e)
     {
-        // Show error message prominently in main content area
-        ErrorMessage = $"File not found!\n\nExpected location:\n{e.ExpectedSourcePath}\n\nPlease ensure the file exists at the expected path.";
+        // Store info for template creation
+        _missingFilePath = e.ExpectedSourcePath;
+        _missingFileRelativePath = e.TranslationPath;
+        _missingFileLanguageCode = e.LanguageCode;
+        CanCreateTemplate = e.IsTranslationFileMissing;
+
+        // Show error message with different text based on file type
+        if (e.IsTranslationFileMissing)
+        {
+            ErrorMessage = $"Translation file not found!\n\nExpected location:\n{e.ExpectedSourcePath}\n\nYou can create an empty template file at this location.";
+        }
+        else
+        {
+            ErrorMessage = $"Source file not found!\n\nExpected location:\n{e.ExpectedSourcePath}\n\nPlease ensure the English source file exists at the expected path.";
+        }
         StatusMessage = "File not found";
 
         // Log for debugging
-        Console.WriteLine($"[Translation] File missing!");
+        Console.WriteLine($"[Translation] File missing! IsTranslation: {e.IsTranslationFileMissing}");
         Console.WriteLine($"[Translation] Translation entry: {e.TranslationPath}");
         Console.WriteLine($"[Translation] Expected file: {e.ExpectedSourcePath}");
     }
@@ -289,6 +356,198 @@ public partial class MainWindowViewModel : ViewModelBase
     private void ClearError()
     {
         ErrorMessage = "";
+        CanCreateTemplate = false;
+        _missingFilePath = null;
+        _missingFileRelativePath = null;
+        _missingFileLanguageCode = null;
+    }
+
+    /// <summary>
+    /// Creates a template translation file at the missing path.
+    /// </summary>
+    [RelayCommand]
+    private void CreateTemplate()
+    {
+        if (string.IsNullOrEmpty(_missingFilePath) || string.IsNullOrEmpty(_missingFileRelativePath))
+            return;
+
+        try
+        {
+            // Ensure directory exists
+            var directory = Path.GetDirectoryName(_missingFilePath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            // Get the language name (default to language code if not found)
+            var languageName = _missingFileLanguageCode ?? "Unknown";
+            if (TranslationsSidebar != null)
+            {
+                var lang = TranslationsSidebar.Languages.FirstOrDefault(l => l.Config.LanguageCode == _missingFileLanguageCode);
+                if (lang != null)
+                {
+                    languageName = lang.Config.LanguageName;
+                }
+            }
+
+            // Create empty translation template
+            var template = $"""
+                <?xml version="1.0" encoding="utf-8"?>
+                <base xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" type="string">
+                  <tags>
+                    <tag language="{languageName}" />
+                  </tags>
+                  <strings>
+                    <!-- Translation entries will be added here -->
+                  </strings>
+                </base>
+                """;
+
+            File.WriteAllText(_missingFilePath, template);
+
+            StatusMessage = $"Created template: {Path.GetFileName(_missingFilePath)}";
+            Console.WriteLine($"[Translation] Created template at: {_missingFilePath}");
+
+            // Clear error and refresh
+            ClearError();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Failed to create template:\n{ex.Message}";
+            Console.WriteLine($"[Translation] Failed to create template: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Handles validation completion.
+    /// </summary>
+    private void OnValidationCompleted(object? sender, LanguageValidationEventArgs e)
+    {
+        _currentValidation = e;
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"Validation Results for {e.Result.LanguageName}");
+        sb.AppendLine();
+        sb.AppendLine($"Valid entries: {e.Result.ValidEntries.Count}");
+        sb.AppendLine($"Invalid entries: {e.Result.InvalidEntries.Count}");
+        sb.AppendLine($"Missing files: {e.MissingFiles.Count}");
+
+        if (e.Result.HasInvalidEntries)
+        {
+            sb.AppendLine();
+            sb.AppendLine("Invalid entries (will be REMOVED):");
+            foreach (var invalid in e.Result.InvalidEntries.Take(10))
+            {
+                sb.AppendLine($"  - {invalid.RelativePath}");
+            }
+            if (e.Result.InvalidEntries.Count > 10)
+            {
+                sb.AppendLine($"  ... and {e.Result.InvalidEntries.Count - 10} more");
+            }
+        }
+
+        if (e.MissingFiles.Count > 0)
+        {
+            sb.AppendLine();
+            sb.AppendLine("Missing files (will be ADDED):");
+            foreach (var missing in e.MissingFiles.Take(10))
+            {
+                sb.AppendLine($"  + {missing}");
+            }
+            if (e.MissingFiles.Count > 10)
+            {
+                sb.AppendLine($"  ... and {e.MissingFiles.Count - 10} more");
+            }
+        }
+
+        ValidationMessage = sb.ToString();
+        CanRepair = e.Result.HasInvalidEntries || e.MissingFiles.Count > 0;
+        ShowValidationResults = true;
+
+        if (e.Result.HasInvalidEntries && e.MissingFiles.Count > 0)
+            StatusMessage = $"Found {e.Result.InvalidEntries.Count} invalid, {e.MissingFiles.Count} missing";
+        else if (e.Result.HasInvalidEntries)
+            StatusMessage = $"Found {e.Result.InvalidEntries.Count} invalid entries";
+        else if (e.MissingFiles.Count > 0)
+            StatusMessage = $"Found {e.MissingFiles.Count} missing files";
+        else
+            StatusMessage = "Validation passed - all entries valid";
+    }
+
+    /// <summary>
+    /// Closes the validation results panel.
+    /// </summary>
+    [RelayCommand]
+    private void CloseValidation()
+    {
+        ShowValidationResults = false;
+        CanRepair = false;
+        _currentValidation = null;
+    }
+
+    /// <summary>
+    /// Repairs the language_data.xml by removing invalid entries and adding missing files.
+    /// </summary>
+    [RelayCommand]
+    private void RepairLanguageData()
+    {
+        if (_currentValidation == null)
+            return;
+
+        var hasInvalid = _currentValidation.Result.HasInvalidEntries;
+        var hasMissing = _currentValidation.MissingFiles.Count > 0;
+
+        if (!hasInvalid && !hasMissing)
+            return;
+
+        var config = _currentValidation.LanguageItem.Config;
+        var messages = new List<string>();
+        bool anyFailure = false;
+
+        // Remove invalid entries
+        if (hasInvalid)
+        {
+            var entriesToRemove = _currentValidation.Result.InvalidEntries
+                .Select(e => e.RelativePath)
+                .ToList();
+
+            var removeSuccess = TranslationsSidebar?.RepairLanguageData(config, entriesToRemove) ?? false;
+            if (removeSuccess)
+            {
+                messages.Add($"Removed {entriesToRemove.Count} invalid");
+            }
+            else
+            {
+                anyFailure = true;
+            }
+        }
+
+        // Add missing files
+        if (hasMissing)
+        {
+            var addSuccess = TranslationsSidebar?.AddMissingFiles(config, _currentValidation.MissingFiles) ?? false;
+            if (addSuccess)
+            {
+                messages.Add($"Added {_currentValidation.MissingFiles.Count} missing");
+            }
+            else
+            {
+                anyFailure = true;
+            }
+        }
+
+        if (anyFailure)
+        {
+            ErrorMessage = "Some repair operations failed. Check console for details.";
+        }
+        else
+        {
+            StatusMessage = string.Join(", ", messages);
+            ShowValidationResults = false;
+            CanRepair = false;
+            _currentValidation = null;
+        }
     }
 
     /// <summary>
@@ -317,7 +576,8 @@ public partial class MainWindowViewModel : ViewModelBase
         var newTab = new TranslationSheetTabViewModel(
             sheet,
             TranslationsSidebar!.TranslationService,
-            config);
+            config,
+            _translationCacheService);
 
         TranslationTabs.Add(newTab);
         Console.WriteLine($"[MainVM] Added tab, setting ActiveTranslationTab...");

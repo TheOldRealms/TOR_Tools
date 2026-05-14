@@ -383,4 +383,232 @@ public partial class TranslationService
             .Replace("\"", "&quot;")
             .Replace("'", "&apos;");
     }
+
+    /// <summary>
+    /// Validates a language configuration against actual source files.
+    /// Returns a list of invalid entries (files that don't have a matching source).
+    /// </summary>
+    public LanguageValidationResult ValidateLanguageConfig(LanguageConfig config)
+    {
+        var result = new LanguageValidationResult
+        {
+            LanguageCode = config.LanguageCode,
+            LanguageName = config.LanguageName
+        };
+
+        foreach (var translationFile in config.TranslationFiles)
+        {
+            // Translation file format: DE/TOR_Core/ModuleData/file.xml
+            var (sourcePath, expectedPath) = ResolveEnglishSourcePathWithExpected(translationFile);
+
+            if (sourcePath == null)
+            {
+                result.InvalidEntries.Add(new InvalidTranslationEntry
+                {
+                    RelativePath = translationFile,
+                    ExpectedSourcePath = expectedPath,
+                    Reason = "Source file not found"
+                });
+            }
+            else
+            {
+                result.ValidEntries.Add(translationFile);
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Repairs a language_data.xml by removing invalid entries.
+    /// </summary>
+    public bool RepairLanguageData(LanguageConfig config, List<string> entriesToRemove)
+    {
+        var languageDataPath = Path.Combine(config.FolderPath, "language_data.xml");
+        if (!File.Exists(languageDataPath))
+            return false;
+
+        try
+        {
+            var doc = XDocument.Load(languageDataPath);
+            var root = doc.Root;
+            if (root == null)
+                return false;
+
+            var toRemoveSet = new HashSet<string>(entriesToRemove, StringComparer.OrdinalIgnoreCase);
+
+            // Find and remove invalid LanguageFile elements
+            var elementsToRemove = root.Descendants("LanguageFile")
+                .Where(e =>
+                {
+                    var xmlPath = e.Attribute("xml_path")?.Value;
+                    return xmlPath != null && toRemoveSet.Contains(xmlPath);
+                })
+                .ToList();
+
+            foreach (var element in elementsToRemove)
+            {
+                element.Remove();
+            }
+
+            // Save the repaired file
+            doc.Save(languageDataPath);
+
+            // Update the config
+            config.TranslationFiles = config.TranslationFiles
+                .Where(f => !toRemoveSet.Contains(f))
+                .ToList();
+
+            Console.WriteLine($"[TranslationService] Repaired language_data.xml - removed {elementsToRemove.Count} invalid entries");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[TranslationService] Failed to repair language_data.xml: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Adds missing translation files to language_data.xml and creates empty template files.
+    /// </summary>
+    public bool AddMissingTranslationFiles(LanguageConfig config, List<string> filesToAdd)
+    {
+        var languageDataPath = Path.Combine(config.FolderPath, "language_data.xml");
+        if (!File.Exists(languageDataPath))
+            return false;
+
+        try
+        {
+            var doc = XDocument.Load(languageDataPath);
+            var root = doc.Root;
+            if (root == null)
+                return false;
+
+            // Find the LanguageData element (or create one if needed)
+            var languageDataElement = root.Element("LanguageData") ?? root;
+
+            int addedCount = 0;
+            int templatesCreated = 0;
+
+            foreach (var filePath in filesToAdd)
+            {
+                // Add to language_data.xml
+                var newElement = new XElement("LanguageFile",
+                    new XAttribute("xml_path", filePath));
+                languageDataElement.Add(newElement);
+                addedCount++;
+
+                // Create empty template file
+                // filePath format: DE/TOR_Core/ModuleData/file.xml
+                var parts = filePath.Split('/');
+                if (parts.Length >= 2)
+                {
+                    // Build the actual file path: LanguageFolder/MODULE/ModuleData/...
+                    var templatePath = Path.Combine(config.FolderPath, string.Join(Path.DirectorySeparatorChar.ToString(), parts.Skip(1)));
+
+                    var templateDir = Path.GetDirectoryName(templatePath);
+                    if (!string.IsNullOrEmpty(templateDir) && !Directory.Exists(templateDir))
+                    {
+                        Directory.CreateDirectory(templateDir);
+                    }
+
+                    if (!File.Exists(templatePath))
+                    {
+                        var template = $"""
+                            <?xml version="1.0" encoding="utf-8"?>
+                            <base xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" type="string">
+                              <tags>
+                                <tag language="{config.LanguageName}" />
+                              </tags>
+                              <strings>
+                                <!-- Translation entries will be populated when you open and export this file -->
+                              </strings>
+                            </base>
+                            """;
+                        File.WriteAllText(templatePath, template, Encoding.UTF8);
+                        templatesCreated++;
+                        Console.WriteLine($"[TranslationService] Created template: {templatePath}");
+                    }
+                }
+
+                // Update the config's file list
+                config.TranslationFiles.Add(filePath);
+            }
+
+            // Save the updated language_data.xml
+            doc.Save(languageDataPath);
+
+            Console.WriteLine($"[TranslationService] Added {addedCount} entries to language_data.xml, created {templatesCreated} template files");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[TranslationService] Failed to add missing files: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Scans TOR modules for files with localization IDs that aren't in the language config.
+    /// </summary>
+    public List<string> FindMissingTranslationFiles(LanguageConfig config)
+    {
+        var missing = new List<string>();
+        var existingFiles = new HashSet<string>(config.TranslationFiles, StringComparer.OrdinalIgnoreCase);
+
+        // Scan each TOR module
+        var modules = new[] { "TOR_Core", "TOR_Armory", "TOR_Environment" };
+
+        foreach (var module in modules)
+        {
+            var moduleDataPath = Path.Combine(_modulesBasePath, module, "ModuleData");
+            if (!Directory.Exists(moduleDataPath))
+                continue;
+
+            // Find all XML files
+            foreach (var xmlFile in Directory.GetFiles(moduleDataPath, "*.xml", SearchOption.AllDirectories))
+            {
+                // Check if this file has localization IDs
+                var locIds = ExtractLocalizationIds(xmlFile);
+                if (locIds.Count == 0)
+                    continue;
+
+                // Build the relative path for the translation config
+                var relativePath = Path.GetRelativePath(Path.Combine(_modulesBasePath, module), xmlFile);
+                var translationPath = $"{config.LanguageCode}/{module}/{relativePath.Replace(Path.DirectorySeparatorChar, '/')}";
+
+                if (!existingFiles.Contains(translationPath))
+                {
+                    missing.Add(translationPath);
+                }
+            }
+        }
+
+        return missing;
+    }
+}
+
+/// <summary>
+/// Result of validating a language configuration.
+/// </summary>
+public class LanguageValidationResult
+{
+    public string LanguageCode { get; set; } = "";
+    public string LanguageName { get; set; } = "";
+    public List<string> ValidEntries { get; } = new();
+    public List<InvalidTranslationEntry> InvalidEntries { get; } = new();
+
+    public bool HasInvalidEntries => InvalidEntries.Count > 0;
+    public int TotalEntries => ValidEntries.Count + InvalidEntries.Count;
+}
+
+/// <summary>
+/// An invalid translation entry that references a non-existent source file.
+/// </summary>
+public class InvalidTranslationEntry
+{
+    public string RelativePath { get; set; } = "";
+    public string ExpectedSourcePath { get; set; } = "";
+    public string Reason { get; set; } = "";
 }
