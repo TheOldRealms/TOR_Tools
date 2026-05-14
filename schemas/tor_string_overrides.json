@@ -13,28 +13,29 @@
     "matchField": "id",
     "fieldMappings": {
       "category": "category",
-      "subcategory": "subcategory",
+      "suffix": "suffix",
       "translation_key": "translation_key",
       "vanilla_text": "vanilla_text",
       "comment": "comment"
     }
   },
   "fields": {
+    "id": {
+      "displayName": "ID",
+      "description": "Combined ID: vanilla hash + conversation ID + race (e.g., 'GAsVO8cZ.arena_master_tournament_meet_orc').",
+      "type": "string",
+      "required": true,
+      "order": 1,
+      "width": 280
+    },
     "translation_key": {
       "displayName": "Translation Key",
       "description": "The translation key (e.g., 'str_tor_arena_orc'). Used in the {=key} prefix.",
       "type": "string",
-      "order": 1,
+      "order": 99,
       "width": 220,
-      "linkedField": true
-    },
-    "id": {
-      "displayName": "Vanilla ID",
-      "description": "The vanilla string hash ID (e.g., 'GAsVO8cZ'). Found in SandBox/ModuleData/Languages/std_SandBox.xml.",
-      "type": "string",
-      "required": true,
-      "order": 2,
-      "width": 100
+      "linkedField": true,
+      "hidden": true
     },
     "category": {
       "displayName": "Category",
@@ -44,12 +45,12 @@
       "width": 120,
       "linkedField": true
     },
-    "subcategory": {
-      "displayName": "Subcategory",
-      "description": "Subcategory for finer organization.",
+    "suffix": {
+      "displayName": "Suffix",
+      "description": "Race/culture suffix for the string variation (e.g., 'orc', 'dwarf').",
       "type": "string",
       "order": 4,
-      "width": 120,
+      "width": 80,
       "linkedField": true
     },
     "vanilla_text": {

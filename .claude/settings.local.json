@@ -16,7 +16,8 @@
       "Bash(powershell:*)",
       "Bash(grep:*)",
       "Bash(taskkill:*)",
-      "Bash(tail:*)"
+      "Bash(tail:*)",
+      "Bash(done)"
     ]
   }
 }
