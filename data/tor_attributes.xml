@@ -56,7 +56,4 @@
   <UnitAttribute id="HasAnimationTriggeredEffects" display_description="Has special animation-triggered effects. Excluded from joust and archery contest tournaments." implementation_note="Effects via AnimationTriggerMissionLogic." />
   <UnitAttribute id="IllFated" display_description="Cursed hero. Each ill-fated hero in party adds +10% chance of negative random events." implementation_note="Event chance modifier in TORCareerPerkCampaignBehavior." />
   <UnitAttribute id="Shadowblood" display_description="Dark Elf shadowblood designation. Placeholder - not implemented." implementation_note="No specific implementation found." />
-  <UnitAttribute id="Test" />
-  <UnitAttribute id="Test2" />
-  <UnitAttribute id="Test 3" />
 </UnitAttributes>

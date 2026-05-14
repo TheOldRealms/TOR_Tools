@@ -15,9 +15,11 @@ public abstract class BaseEditorDialog : Window
     protected StackPanel MainStack;
     protected string? Result;
     protected bool Completed;
+    protected bool IsReadOnly;
 
-    protected BaseEditorDialog(string title, int width = 500, int height = 500)
+    protected BaseEditorDialog(string title, int width = 500, int height = 500, bool isReadOnly = false)
     {
+        IsReadOnly = isReadOnly;
         Title = title;
         Width = width;
         Height = height;
@@ -88,42 +90,68 @@ public abstract class BaseEditorDialog : Window
             Margin = new Thickness(0, 16, 0, 0)
         };
 
-        var okButton = new Button
+        if (IsReadOnly)
         {
-            Content = "OK",
-            Padding = new Thickness(24, 6),
-            Background = new SolidColorBrush(Color.FromRgb(0, 120, 215)),
-            Foreground = Brushes.White
-        };
-        okButton.Click += (s, e) =>
-        {
-            if (!Completed)
+            // Read-only mode: just show Close button
+            var closeButton = new Button
             {
-                Completed = true;
-                Result = GetResultValue();
-                Close();
-            }
-        };
-
-        var cancelButton = new Button
-        {
-            Content = "Cancel",
-            Padding = new Thickness(24, 6),
-            Background = new SolidColorBrush(Color.FromRgb(60, 60, 60)),
-            Foreground = Brushes.White
-        };
-        cancelButton.Click += (s, e) =>
-        {
-            if (!Completed)
+                Content = "Close",
+                Padding = new Thickness(24, 6),
+                Background = new SolidColorBrush(Color.FromRgb(60, 60, 60)),
+                Foreground = Brushes.White
+            };
+            closeButton.Click += (s, e) =>
             {
-                Completed = true;
-                OnCancel();
-                Close();
-            }
-        };
+                if (!Completed)
+                {
+                    Completed = true;
+                    OnCancel();
+                    Close();
+                }
+            };
+            buttonPanel.Children.Add(closeButton);
+        }
+        else
+        {
+            // Edit mode: OK and Cancel buttons
+            var okButton = new Button
+            {
+                Content = "OK",
+                Padding = new Thickness(24, 6),
+                Background = new SolidColorBrush(Color.FromRgb(0, 120, 215)),
+                Foreground = Brushes.White
+            };
+            okButton.Click += (s, e) =>
+            {
+                if (!Completed)
+                {
+                    Completed = true;
+                    Result = GetResultValue();
+                    Close(Result);
+                }
+            };
 
-        buttonPanel.Children.Add(okButton);
-        buttonPanel.Children.Add(cancelButton);
+            var cancelButton = new Button
+            {
+                Content = "Cancel",
+                Padding = new Thickness(24, 6),
+                Background = new SolidColorBrush(Color.FromRgb(60, 60, 60)),
+                Foreground = Brushes.White
+            };
+            cancelButton.Click += (s, e) =>
+            {
+                if (!Completed)
+                {
+                    Completed = true;
+                    OnCancel();
+                    Close();
+                }
+            };
+
+            buttonPanel.Children.Add(okButton);
+            buttonPanel.Children.Add(cancelButton);
+        }
+
         MainStack.Children.Add(buttonPanel);
     }
 

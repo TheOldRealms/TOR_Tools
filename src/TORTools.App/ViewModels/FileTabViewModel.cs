@@ -313,6 +313,11 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     public FactionCatalogService? FactionCatalogService { get; set; }
 
     /// <summary>
+    /// XML document service for file path resolution. Set after construction by MainWindowViewModel.
+    /// </summary>
+    public IXmlDocumentService? XmlDocumentService { get; set; }
+
+    /// <summary>
     /// The schema definition for this file type - now accessed through Context.
     /// </summary>
     public SchemaDefinition? Schema => Context.Schema;
@@ -1118,14 +1123,64 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         // Create and execute an edit command
         var command = new CellEditCommand(rowVm, e.ColumnName, e.OldValue, e.NewValue, nestedPath);
 
-        // Don't use Execute() here since the value is already changed
-        // Just push to undo stack
+        // Sync the XmlEntry with the new value immediately
+        // (AlreadyExecutedCommand skips Execute() on first call, so we must sync here)
+        SyncXmlEntry(rowVm, e.ColumnName, e.NewValue, nestedPath);
+
+        // Don't use Execute() here since the value is already changed in the UI
+        // Just push to undo stack for undo/redo support
         _undoRedoService.Execute(new AlreadyExecutedCommand(command));
 
         // Handle auto-fill fields
         ApplyAutoFill(rowVm, e.ColumnName, e.NewValue);
 
         MarkAsModified();
+    }
+
+    /// <summary>
+    /// Syncs a cell value change to the underlying XmlEntry.
+    /// This is needed because AlreadyExecutedCommand skips Execute() on first call,
+    /// so we must manually update the XmlEntry when the UI changes a value.
+    /// </summary>
+    private void SyncXmlEntry(EntryRowViewModel rowVm, string columnName, string value, string? nestedPath)
+    {
+        // Handle nested fields
+        if (!string.IsNullOrEmpty(nestedPath))
+        {
+            rowVm.XmlEntry.SetNestedValue(nestedPath, value);
+            return;
+        }
+
+        // Check if this is a linked field (stored in metadata, not main XML)
+        var fieldDef = GetFieldDefinition(columnName);
+        var isLinkedField = fieldDef?.LinkedField == true;
+
+        var attr = rowVm.XmlEntry.GetAttribute(columnName);
+        if (attr != null)
+        {
+            var rawValue = LocalizationHelper.Wrap(attr.LocalizationKey, value);
+            rowVm.XmlEntry.SetAttributeValue(columnName, rawValue);
+            if (isLinkedField)
+            {
+                Console.WriteLine($"[SyncXmlEntry] Updated linked field {rowVm.XmlEntry.Id}.{columnName} = '{value}' (had attr)");
+            }
+        }
+        else
+        {
+            // New attribute - add it directly without localization wrapping
+            rowVm.XmlEntry.SetAttributeValue(columnName, value);
+            if (isLinkedField)
+            {
+                Console.WriteLine($"[SyncXmlEntry] Created linked field {rowVm.XmlEntry.Id}.{columnName} = '{value}' (new attr)");
+            }
+        }
+
+        // Verify the value was set
+        if (isLinkedField)
+        {
+            var verify = rowVm.XmlEntry.GetAttributeValue(columnName);
+            Console.WriteLine($"[SyncXmlEntry] Verify: {rowVm.XmlEntry.Id}.{columnName} = '{verify}'");
+        }
     }
 
     /// <summary>

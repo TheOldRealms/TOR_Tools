@@ -62,7 +62,46 @@ public class FileSaverService
             {
                 // Standard single-file save
                 var compactFormat = context.Schema.CompactFormat;
-                _xmlService.Save(context.Document, null, compactFormat);
+                var groupByField = context.Schema.GroupByField;
+
+                // Get linked fields that should not be written to the main file
+                var linkedFields = context.Schema.Fields
+                    .Where(f => f.Value.LinkedField == true)
+                    .Select(f => f.Key)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                // Check if we need to use category comments (groupByField is a linked field)
+                var groupFieldDef = !string.IsNullOrEmpty(groupByField)
+                    ? context.Schema.GetField(groupByField)
+                    : null;
+
+                if (groupFieldDef?.LinkedField == true)
+                {
+                    // Use special save method that reads category from XmlEntry values
+                    _xmlService.SaveWithCategoryComments(
+                        context.Document,
+                        context.XmlEntries,
+                        context.FilePath,
+                        context.Schema.RootElement ?? "strings",
+                        compactFormat,
+                        linkedFields.Count > 0 ? linkedFields : null);
+                }
+                else
+                {
+                    // Regular save (groupByField is an actual XML attribute)
+                    _xmlService.Save(context.Document, null, compactFormat, groupByField,
+                        linkedFields.Count > 0 ? linkedFields : null);
+                }
+
+                // Save merged data file if configured (e.g., tor_strings_metadata.xml)
+                if (context.Schema.MergedDataFile != null)
+                {
+                    var baseDir = Path.GetDirectoryName(context.FilePath);
+                    if (!string.IsNullOrEmpty(baseDir))
+                    {
+                        SaveMergedDataFile(context, baseDir);
+                    }
+                }
             }
 
             context.HasUnsavedChanges = false;
@@ -97,7 +136,30 @@ public class FileSaverService
                 if (fieldDef?.CrossReference != null)
                     continue;
 
-                var currentValue = rowVm[columnName]?.Trim();
+                var currentValue = rowVm[columnName];
+
+                // Handle tagList fields
+                if (fieldDef?.TagList != null)
+                {
+                    var tagConfig = fieldDef.TagList;
+                    var existingValue = xmlEntry.GetTagList(
+                        tagConfig.ContainerElement,
+                        tagConfig.ItemElement,
+                        tagConfig.NameAttribute,
+                        tagConfig.WeightAttribute) ?? "";
+                    var normalizedCurrent = currentValue ?? "";
+                    if (existingValue != normalizedCurrent)
+                    {
+                        xmlEntry.SetTagList(
+                            currentValue,
+                            tagConfig.ContainerElement,
+                            tagConfig.ItemElement,
+                            tagConfig.NameAttribute,
+                            tagConfig.WeightAttribute);
+                        context.Document!.HasUnsavedChanges = true;
+                    }
+                    continue;
+                }
 
                 // Handle nested fields
                 if (fieldDef?.Nested == true && !string.IsNullOrEmpty(fieldDef.NestedPath))
@@ -251,7 +313,8 @@ public class FileSaverService
     }
 
     /// <summary>
-    /// Saves merged data fields back to the merged data file (e.g., tor_heroes.xml).
+    /// Saves merged data fields back to the merged data file (e.g., tor_heroes.xml, tor_strings_metadata.xml).
+    /// Creates new entries if they don't exist in the metadata file.
     /// </summary>
     private void SaveMergedDataFile(FileEditContext context, string baseDir)
     {
@@ -259,69 +322,134 @@ public class FileSaverService
 
         var mergedConfig = context.Schema.MergedDataFile;
         var mergedFilePath = FindSourceFile(baseDir, mergedConfig.FileName);
+
+        var entryElementName = mergedConfig.EntryElement ?? "String";
+        var matchField = mergedConfig.MatchField ?? "id";
+        var rootElementName = mergedConfig.RootElement ?? "StringMetadata";
+
+        XDocument mergedDoc;
+        XElement mergedRoot;
+
         if (mergedFilePath == null)
         {
-            Console.WriteLine($"[SaveMergedData] Merged data file not found: {mergedConfig.FileName}");
-            return;
+            // Create new metadata file (prefer TORTools/data/)
+            mergedFilePath = GetMetadataFilePath(baseDir, mergedConfig.FileName);
+            Console.WriteLine($"[SaveMergedData] Creating new merged data file: {mergedFilePath}");
+            mergedRoot = new XElement(rootElementName);
+            mergedDoc = new XDocument(new XDeclaration("1.0", "UTF-8", null), mergedRoot);
+        }
+        else
+        {
+            Console.WriteLine($"[SaveMergedData] Updating merged data file: {mergedFilePath}");
+            try
+            {
+                mergedDoc = XDocument.Load(mergedFilePath);
+                mergedRoot = mergedDoc.Root ?? new XElement(rootElementName);
+            }
+            catch
+            {
+                mergedRoot = new XElement(rootElementName);
+                mergedDoc = new XDocument(new XDeclaration("1.0", "UTF-8", null), mergedRoot);
+            }
         }
 
-        Console.WriteLine($"[SaveMergedData] Updating merged data file: {mergedFilePath}");
-
-        try
+        // Build a dictionary of existing entries
+        var existingEntries = new Dictionary<string, XElement>(StringComparer.OrdinalIgnoreCase);
+        foreach (var element in mergedRoot.Elements(entryElementName))
         {
-            // Load existing merged data file
-            var mergedDoc = XDocument.Load(mergedFilePath);
-            var mergedRoot = mergedDoc.Root;
-            if (mergedRoot == null) return;
-
-            var entryElementName = mergedConfig.EntryElement ?? "Hero";
-            var matchField = mergedConfig.MatchField ?? "id";
-
-            // Build a dictionary of existing entries
-            var existingEntries = new Dictionary<string, XElement>(StringComparer.OrdinalIgnoreCase);
-            foreach (var element in mergedRoot.Elements(entryElementName))
+            var key = element.Attribute(matchField)?.Value;
+            if (!string.IsNullOrEmpty(key))
             {
-                var key = element.Attribute(matchField)?.Value;
-                if (!string.IsNullOrEmpty(key))
-                {
-                    existingEntries[key] = element;
-                }
+                existingEntries[key] = element;
             }
+        }
 
-            // Update entries with data from our rows
-            int updatedCount = 0;
-            foreach (var entry in context.XmlEntries)
+        // Update or create entries with data from our rows
+        int updatedCount = 0;
+        int createdCount = 0;
+        foreach (var entry in context.XmlEntries)
+        {
+            var entryId = entry.GetAttributeValue(matchField);
+            if (string.IsNullOrEmpty(entryId)) continue;
+
+            // Check if any linked field has a value worth saving
+            bool hasLinkedData = false;
+            if (mergedConfig.FieldMappings != null)
             {
-                var entryId = entry.GetAttributeValue(matchField);
-                if (string.IsNullOrEmpty(entryId)) continue;
-
-                if (existingEntries.TryGetValue(entryId, out var heroElement))
+                foreach (var mapping in mergedConfig.FieldMappings)
                 {
-                    // Apply reverse field mappings (targetField → sourceField)
-                    if (mergedConfig.FieldMappings != null)
+                    var value = entry.GetAttributeValue(mapping.Key);
+                    if (!string.IsNullOrEmpty(value))
                     {
-                        foreach (var mapping in mergedConfig.FieldMappings)
-                        {
-                            var targetField = mapping.Key;   // "clan" or "encyclopedia_text"
-                            var sourceField = mapping.Value; // "faction" or "text"
-
-                            var value = entry.GetAttributeValue(targetField);
-                            if (!string.IsNullOrEmpty(value))
-                            {
-                                var oldValue = heroElement.Attribute(sourceField)?.Value;
-                                if (oldValue != value)
-                                {
-                                    heroElement.SetAttributeValue(sourceField, value);
-                                    updatedCount++;
-                                }
-                            }
-                        }
+                        hasLinkedData = true;
+                        break;
                     }
                 }
             }
 
-            Console.WriteLine($"[SaveMergedData] Updated {updatedCount} fields in {mergedFilePath}");
+            if (!hasLinkedData) continue;
 
+            if (existingEntries.TryGetValue(entryId, out var metadataElement))
+            {
+                // Update existing entry
+                if (mergedConfig.FieldMappings != null)
+                {
+                    foreach (var mapping in mergedConfig.FieldMappings)
+                    {
+                        var targetField = mapping.Key;
+                        var sourceField = mapping.Value;
+
+                        var value = entry.GetAttributeValue(targetField);
+                        if (!string.IsNullOrEmpty(value))
+                        {
+                            var oldValue = metadataElement.Attribute(sourceField)?.Value;
+                            if (oldValue != value)
+                            {
+                                if (targetField == "subcategory" && updatedCount < 5)
+                                {
+                                    Console.WriteLine($"[SaveMergedData] Updating {entryId}.{targetField}: '{oldValue}' -> '{value}'");
+                                }
+                                metadataElement.SetAttributeValue(sourceField, value);
+                                updatedCount++;
+                            }
+                        }
+                        else if (targetField == "subcategory" && updatedCount < 3)
+                        {
+                            Console.WriteLine($"[SaveMergedData] Skipped {entryId}.{targetField}: value is empty/null (attr exists: {entry.GetAttribute(targetField) != null})");
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // Create new entry
+                var newElement = new XElement(entryElementName);
+                newElement.SetAttributeValue(matchField, entryId);
+
+                if (mergedConfig.FieldMappings != null)
+                {
+                    foreach (var mapping in mergedConfig.FieldMappings)
+                    {
+                        var targetField = mapping.Key;
+                        var sourceField = mapping.Value;
+
+                        var value = entry.GetAttributeValue(targetField);
+                        if (!string.IsNullOrEmpty(value))
+                        {
+                            newElement.SetAttributeValue(sourceField, value);
+                        }
+                    }
+                }
+
+                mergedRoot.Add(newElement);
+                createdCount++;
+            }
+        }
+
+        Console.WriteLine($"[SaveMergedData] Updated {updatedCount} fields, created {createdCount} new entries in {mergedFilePath}");
+
+        try
+        {
             // Save the merged data file with its own compact format setting (default: true)
             var compactFormat = mergedConfig.CompactFormat;
             var mergedDocWrapper = new XmlDocumentWrapper(mergedDoc, mergedFilePath,
@@ -391,9 +519,22 @@ public class FileSaverService
 
     /// <summary>
     /// Finds a source file relative to the base directory.
+    /// Also checks TORTools/data/ for metadata files.
     /// </summary>
     private string? FindSourceFile(string baseDir, string fileName)
     {
+        // Check TORTools/data directory first (for metadata files)
+        var torToolsDataPath = TORTools.Core.Services.FilePathResolver.GetDataDirectory();
+        if (torToolsDataPath != null)
+        {
+            var toolsDataFile = Path.Combine(torToolsDataPath, fileName);
+            if (File.Exists(toolsDataFile))
+            {
+                Console.WriteLine($"[FindSourceFile] Found in TORTools/data: {toolsDataFile}");
+                return toolsDataFile;
+            }
+        }
+
         // Check tor_custom_xmls subdirectory
         var customPath = Path.Combine(baseDir, "tor_custom_xmls", fileName);
         if (File.Exists(customPath))
@@ -414,5 +555,19 @@ public class FileSaverService
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Gets the path where a new metadata file should be created.
+    /// Prefers TORTools/data/ for metadata files.
+    /// </summary>
+    private string GetMetadataFilePath(string baseDir, string fileName)
+    {
+        var torToolsDataPath = TORTools.Core.Services.FilePathResolver.GetDataDirectory();
+        if (torToolsDataPath != null)
+        {
+            return Path.Combine(torToolsDataPath, fileName);
+        }
+        return Path.Combine(baseDir, fileName);
     }
 }
