@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -25,6 +26,15 @@ public partial class FileTabView : UserControl
     private bool _columnsGenerated;
     private object? _pendingScrollTarget;
     private bool _scrollPending;
+
+    // Fill handle (drag-to-fill) tracking
+    private bool _isFillDragging;
+    private int _fillStartRowIndex = -1;
+    private int _fillEndRowIndex = -1;
+    private double _fillStartY = 0;
+    private string? _fillColumnName;
+    private string? _fillValue;
+    private Border? _activeFillHandle;
 
     public FileTabView()
     {
@@ -350,8 +360,11 @@ public partial class FileTabView : UserControl
             var isBannerField = fieldDef?.Type == "banner";
             var isColorField = fieldDef?.Type == "color";
             var isTupleListField = fieldDef?.Type == "tupleList" && fieldDef?.TupleList != null;
+            var isTagListField = fieldDef?.Type == "tagList" && fieldDef?.TagList != null;
 
-            Console.WriteLine($"[FileTabView] Adding column: {displayInfo.DisplayName} ({displayInfo.AttributeName}) - Enum: {isEnumField}, CrossRef: {isCrossRefField}, Icon: {isIconField}, Banner: {isBannerField}, Color: {isColorField}, TupleList: {isTupleListField}");
+            // Use schema width if defined (non-default), otherwise fall back to display mappings
+            var columnWidth = (fieldDef?.Width > 0 && fieldDef.Width != 120) ? fieldDef.Width : displayInfo.Width;
+            Console.WriteLine($"[FileTabView] Adding column: {displayInfo.DisplayName} ({displayInfo.AttributeName}) - Width: {columnWidth}, Enum: {isEnumField}, CrossRef: {isCrossRefField}, Icon: {isIconField}, Banner: {isBannerField}, Color: {isColorField}, TupleList: {isTupleListField}, TagList: {isTagListField}");
 
             // Check if this is the ID column - if so, add lock toggle to header
             var isIdColumn = displayInfo.AttributeName.Equals("id", StringComparison.OrdinalIgnoreCase);
@@ -363,7 +376,7 @@ public partial class FileTabView : UserControl
                 column = new DataGridTemplateColumn
                 {
                     Header = CreateColumnHeader(displayInfo, fieldDef),
-                    Width = new DataGridLength(displayInfo.Width),
+                    Width = new DataGridLength(columnWidth),
                     IsReadOnly = false,
                     CellTemplate = CreateColorCellTemplate(displayInfo.AttributeName, fieldDef!, vm)
                 };
@@ -374,7 +387,7 @@ public partial class FileTabView : UserControl
                 column = new DataGridTemplateColumn
                 {
                     Header = CreateColumnHeader(displayInfo, fieldDef),
-                    Width = new DataGridLength(displayInfo.Width),
+                    Width = new DataGridLength(columnWidth),
                     IsReadOnly = false,
                     CellTemplate = CreateBannerCellTemplate(displayInfo.AttributeName, fieldDef!, vm)
                 };
@@ -385,7 +398,7 @@ public partial class FileTabView : UserControl
                 column = new DataGridTemplateColumn
                 {
                     Header = CreateColumnHeader(displayInfo, fieldDef),
-                    Width = new DataGridLength(displayInfo.Width),
+                    Width = new DataGridLength(columnWidth),
                     IsReadOnly = false,
                     CellTemplate = CreateIconCellTemplate(displayInfo.AttributeName, fieldDef!, vm)
                 };
@@ -402,7 +415,7 @@ public partial class FileTabView : UserControl
                     column = new DataGridTemplateColumn
                     {
                         Header = CreateColumnHeader(displayInfo, fieldDef),
-                        Width = new DataGridLength(displayInfo.Width),
+                        Width = new DataGridLength(columnWidth),
                         IsReadOnly = false,
                         CellTemplate = CreateCrossRefDropdownTemplate(displayInfo.AttributeName, fieldDef, vm),
                         CellEditingTemplate = CreateCrossRefDropdownEditingTemplate(displayInfo.AttributeName, fieldDef, vm)
@@ -414,7 +427,7 @@ public partial class FileTabView : UserControl
                     column = new DataGridTemplateColumn
                     {
                         Header = CreateColumnHeader(displayInfo, fieldDef),
-                        Width = new DataGridLength(displayInfo.Width),
+                        Width = new DataGridLength(columnWidth),
                         IsReadOnly = false,
                         CellTemplate = CreateExternalEnumCellTemplate(displayInfo.AttributeName, fieldDef, vm),
                         CellEditingTemplate = CreateEnumEditingTemplate(displayInfo.AttributeName, fieldDef)
@@ -426,7 +439,7 @@ public partial class FileTabView : UserControl
                     column = new DataGridTemplateColumn
                     {
                         Header = CreateColumnHeader(displayInfo, fieldDef),
-                        Width = new DataGridLength(displayInfo.Width),
+                        Width = new DataGridLength(columnWidth),
                         IsReadOnly = false,
                         CellTemplate = CreateExternalValueCellTemplate(displayInfo.AttributeName, fieldDef, vm),
                         CellEditingTemplate = CreateTextEditingTemplate(displayInfo.AttributeName, fieldDef)
@@ -438,7 +451,7 @@ public partial class FileTabView : UserControl
                     column = new DataGridTemplateColumn
                     {
                         Header = CreateColumnHeader(displayInfo, fieldDef),
-                        Width = new DataGridLength(displayInfo.Width),
+                        Width = new DataGridLength(columnWidth),
                         IsReadOnly = true,
                         CellTemplate = CreateReadOnlyCrossRefTemplate(displayInfo.AttributeName, fieldDef, vm)
                     };
@@ -449,7 +462,7 @@ public partial class FileTabView : UserControl
                     column = new DataGridTemplateColumn
                     {
                         Header = CreateColumnHeader(displayInfo, fieldDef),
-                        Width = new DataGridLength(displayInfo.Width),
+                        Width = new DataGridLength(columnWidth),
                         IsReadOnly = false,
                         CellTemplate = CreateEditableCrossRefTemplate(displayInfo.AttributeName, fieldDef, vm)
                     };
@@ -461,9 +474,20 @@ public partial class FileTabView : UserControl
                 column = new DataGridTemplateColumn
                 {
                     Header = CreateColumnHeader(displayInfo, fieldDef),
-                    Width = new DataGridLength(displayInfo.Width),
+                    Width = new DataGridLength(columnWidth),
                     IsReadOnly = true, // Editing happens via popup
                     CellTemplate = CreateTupleListCellTemplate(displayInfo.AttributeName, fieldDef!, vm)
+                };
+            }
+            else if (isTagListField)
+            {
+                // Tag list field (e.g., Tags on tor_strings)
+                column = new DataGridTemplateColumn
+                {
+                    Header = CreateColumnHeader(displayInfo, fieldDef),
+                    Width = new DataGridLength(columnWidth),
+                    IsReadOnly = true, // Editing happens via popup
+                    CellTemplate = CreateTagListCellTemplate(displayInfo.AttributeName, fieldDef!, vm)
                 };
             }
             else if (isEnumField)
@@ -472,7 +496,7 @@ public partial class FileTabView : UserControl
                 column = new DataGridTemplateColumn
                 {
                     Header = CreateColumnHeader(displayInfo, fieldDef),
-                    Width = new DataGridLength(displayInfo.Width),
+                    Width = new DataGridLength(columnWidth),
                     IsReadOnly = displayInfo.IsReadOnly,
                     CellTemplate = CreateEnumCellTemplate(displayInfo.AttributeName, fieldDef!, vm),
                     CellEditingTemplate = CreateEnumEditingTemplate(displayInfo.AttributeName, fieldDef!)
@@ -484,7 +508,7 @@ public partial class FileTabView : UserControl
                 column = new DataGridTemplateColumn
                 {
                     Header = CreateColumnHeader(displayInfo, fieldDef),
-                    Width = new DataGridLength(displayInfo.Width),
+                    Width = new DataGridLength(columnWidth),
                     IsReadOnly = false,
                     CellTemplate = CreateMultilineTextCellTemplate(displayInfo.AttributeName, fieldDef, vm),
                     CellEditingTemplate = CreateTextEditingTemplate(displayInfo.AttributeName, fieldDef)
@@ -498,8 +522,8 @@ public partial class FileTabView : UserControl
                 column = new DataGridTemplateColumn
                 {
                     Header = isIdColumn ? CreateIdColumnHeader(displayInfo, vm) : CreateColumnHeader(displayInfo, fieldDef),
-                    Width = new DataGridLength(displayInfo.Width),
-                    IsReadOnly = isColumnReadOnly,
+                    Width = new DataGridLength(columnWidth),
+                    IsReadOnly = displayInfo.IsReadOnly,
                     CellTemplate = CreateTextCellTemplate(displayInfo.AttributeName, fieldDef, vm),
                     CellEditingTemplate = isColumnReadOnly ? null : CreateTextEditingTemplate(displayInfo.AttributeName, fieldDef)
                 };
@@ -2045,7 +2069,7 @@ public partial class FileTabView : UserControl
     /// Creates a text cell template that handles validation and dynamic styling.
     /// Uses AXAML styles via pseudo-classes (defined in CellStyles.axaml).
     /// </summary>
-    private static IDataTemplate CreateTextCellTemplate(string attributeName, FieldDefinition? fieldDef, FileTabViewModel vm)
+    private IDataTemplate CreateTextCellTemplate(string attributeName, FieldDefinition? fieldDef, FileTabViewModel vm)
     {
         // Get prefix to strip for display
         var prefixToStrip = fieldDef?.PrefixToStrip;
@@ -2065,7 +2089,10 @@ public partial class FileTabView : UserControl
             var border = new Border();
             border.Classes.Add("dataCell");
 
-            var grid = new Grid
+            // Main container grid for content + fill handle
+            var outerGrid = new Grid();
+
+            var contentGrid = new Grid
             {
                 ColumnDefinitions = new ColumnDefinitions("*,Auto")
             };
@@ -2073,13 +2100,29 @@ public partial class FileTabView : UserControl
             var text = new TextBlock();
             text.Classes.Add("cellText");
             Grid.SetColumn(text, 0);
-            grid.Children.Add(text);
+            contentGrid.Children.Add(text);
 
             // Warning/error icon (styled via pseudo-classes)
             var icon = new TextBlock();
             icon.Classes.Add("cellIcon");
             Grid.SetColumn(icon, 1);
-            grid.Children.Add(icon);
+            contentGrid.Children.Add(icon);
+
+            outerGrid.Children.Add(contentGrid);
+
+            // Fill handle - small square at bottom-right corner
+            var fillHandle = new Border
+            {
+                Width = 8,
+                Height = 8,
+                Background = new SolidColorBrush(Color.FromRgb(88, 101, 242)), // Discord blurple
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Bottom,
+                Margin = new Thickness(0, 0, 1, 1),
+                IsVisible = false, // Hidden by default
+                Cursor = new Avalonia.Input.Cursor(StandardCursorType.Cross)
+            };
+            outerGrid.Children.Add(fillHandle);
 
             if (rowVm != null)
             {
@@ -2135,6 +2178,78 @@ public partial class FileTabView : UserControl
                 // Initial styling
                 CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
 
+                // Show fill handle on hover (like Excel)
+                border.PointerEntered += (s, e) =>
+                {
+                    if (!rowVm.IsRemoved)
+                    {
+                        fillHandle.IsVisible = true;
+                    }
+                };
+
+                border.PointerExited += (s, e) =>
+                {
+                    // Don't hide if we're dragging from this handle
+                    if (!_isFillDragging)
+                    {
+                        fillHandle.IsVisible = false;
+                    }
+                };
+
+                // Fill handle pointer events
+                fillHandle.PointerPressed += (s, e) =>
+                {
+                    _isFillDragging = true;
+                    _fillStartRowIndex = rowVm.RowNumber - 1;
+                    _fillEndRowIndex = _fillStartRowIndex;
+                    _fillColumnName = attributeName;
+                    _fillValue = rowVm[attributeName];
+                    _activeFillHandle = fillHandle;
+                    // Store Y position relative to the fill handle for accurate tracking
+                    _fillStartY = e.GetPosition(fillHandle).Y;
+                    e.Pointer.Capture(fillHandle);
+                    e.Handled = true;
+                };
+
+                fillHandle.PointerMoved += (s, e) =>
+                {
+                    if (_isFillDragging)
+                    {
+                        // Calculate row offset based on Y distance moved
+                        // Use position relative to the captured fill handle for consistency
+                        var currentY = e.GetPosition(fillHandle).Y;
+                        var deltaY = currentY - _fillStartY;
+
+                        // Row height is approximately 28px (standard DataGrid row)
+                        const double rowHeight = 28.0;
+                        var rowOffset = (int)Math.Round(deltaY / rowHeight);
+
+                        // Calculate target row index (allow dragging both up and down)
+                        var targetRow = _fillStartRowIndex + rowOffset;
+
+                        // Always update to current position, clamped to valid range
+                        // This ensures dragging back up reduces the fill range
+                        _fillEndRowIndex = Math.Clamp(targetRow, 0, vm.DisplayRows.Count - 1);
+                        e.Handled = true;
+                    }
+                };
+
+                fillHandle.PointerReleased += (s, e) =>
+                {
+                    if (_isFillDragging && _fillColumnName == attributeName)
+                    {
+                        e.Pointer.Capture(null);
+                        ApplyFillDown(vm);
+                        _isFillDragging = false;
+                        _fillStartRowIndex = -1;
+                        _fillEndRowIndex = -1;
+                        _fillColumnName = null;
+                        _fillValue = null;
+                        _activeFillHandle = null;
+                    }
+                    e.Handled = true;
+                };
+
                 // Subscribe to centralized refresh event for all updates
                 vm.CellRefreshRequested += (s, args) =>
                 {
@@ -2150,12 +2265,103 @@ public partial class FileTabView : UserControl
                     }
                     // Update styling
                     CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
+                    // Hide fill handle if row is removed
+                    if (rowVm.IsRemoved)
+                    {
+                        fillHandle.IsVisible = false;
+                    }
                 };
             }
 
-            border.Child = grid;
+            border.Child = outerGrid;
             return border;
         });
+    }
+
+    /// <summary>
+    /// Gets the row index at the given position within the DataGrid using hit testing.
+    /// </summary>
+    private int GetRowIndexFromPosition(DataGrid grid, double y, FileTabViewModel vm)
+    {
+        // Use hit testing to find the row under the pointer
+        var point = new Point(50, y); // Use middle X, actual Y
+
+        // Find the visual at this point
+        var visual = grid.InputHitTest(point) as Visual;
+
+        if (visual != null)
+        {
+            // Walk up the visual tree to find the DataGridRow
+            var current = visual;
+            while (current != null)
+            {
+                if (current is DataGridRow row && row.DataContext is EntryRowViewModel rowVm)
+                {
+                    return rowVm.RowNumber - 1; // RowNumber is 1-based
+                }
+                current = current.GetVisualParent();
+            }
+        }
+
+        // Fallback: keep current position if we can't find a row
+        return _fillEndRowIndex >= 0 ? _fillEndRowIndex : _fillStartRowIndex;
+    }
+
+    /// <summary>
+    /// Applies fill-down from the start row to the end row.
+    /// </summary>
+    private void ApplyFillDown(FileTabViewModel vm)
+    {
+        if (_fillStartRowIndex < 0 || _fillEndRowIndex < 0 || string.IsNullOrEmpty(_fillColumnName))
+            return;
+
+        var rows = vm.DisplayRows;
+        int startRow = Math.Min(_fillStartRowIndex, _fillEndRowIndex);
+        int endRow = Math.Max(_fillStartRowIndex, _fillEndRowIndex);
+
+        // Don't fill if it's the same row
+        if (startRow == endRow)
+            return;
+
+        Console.WriteLine($"[FillDown] Filling {_fillColumnName} from row {startRow} to {endRow} with value '{_fillValue}'");
+
+        // Skip the source row (startRow if dragging down, endRow if dragging up)
+        // We only need to fill rows AFTER the source
+        int sourceRow = _fillStartRowIndex;
+        int fillCount = 0;
+
+        for (int i = startRow; i <= endRow; i++)
+        {
+            // Skip the source row - it already has the value
+            if (i == sourceRow)
+                continue;
+
+            if (i >= 0 && i < rows.Count)
+            {
+                var row = rows[i];
+                if (!row.IsRemoved)
+                {
+                    // Set the UI value (triggers CellValueChanged if value changed)
+                    row[_fillColumnName] = _fillValue;
+
+                    // Also directly sync to XmlEntry to ensure it's updated
+                    // This handles cases where UI value was already equal but XmlEntry wasn't updated
+                    row.XmlEntry.SetAttributeValue(_fillColumnName, _fillValue);
+
+                    // Verify the value was set
+                    if (fillCount < 3)
+                    {
+                        var verifyValue = row.XmlEntry.GetAttributeValue(_fillColumnName);
+                        Console.WriteLine($"[FillDown] Set {row.XmlEntry.Id}.{_fillColumnName} = '{_fillValue}', verify: '{verifyValue}'");
+                    }
+                    fillCount++;
+                }
+            }
+        }
+
+        Console.WriteLine($"[FillDown] Updated {fillCount} rows");
+        vm.MarkAsModified();
+        vm.RequestCellRefresh();
     }
 
     /// <summary>
@@ -2170,8 +2376,23 @@ public partial class FileTabView : UserControl
 
             var grid = new Grid
             {
-                ColumnDefinitions = new ColumnDefinitions("*,Auto")
+                ColumnDefinitions = new ColumnDefinitions("Auto,*")
             };
+
+            // Edit button (on the left)
+            var editButton = new Button
+            {
+                Content = "...",
+                Width = 24,
+                Height = 24,
+                Padding = new Avalonia.Thickness(2),
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Margin = new Avalonia.Thickness(2)
+            };
+            ToolTip.SetTip(editButton, "Edit text");
+            Grid.SetColumn(editButton, 0);
+            grid.Children.Add(editButton);
 
             // Text display (truncated)
             var text = new TextBlock
@@ -2182,37 +2403,23 @@ public partial class FileTabView : UserControl
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Avalonia.Thickness(4, 0, 4, 0)
             };
-            Grid.SetColumn(text, 0);
+            Grid.SetColumn(text, 1);
             grid.Children.Add(text);
 
-            // Edit button
-            var editButton = new Button
-            {
-                Content = "...",
-                Width = 24,
-                Height = 24,
-                Padding = new Avalonia.Thickness(2),
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Right,
-                Margin = new Avalonia.Thickness(2)
-            };
-            ToolTip.SetTip(editButton, "Edit text");
-            Grid.SetColumn(editButton, 1);
-            grid.Children.Add(editButton);
-
             // Handle click
+            var isReadOnly = fieldDef?.ReadOnly ?? false;
             editButton.Click += async (sender, e) =>
             {
                 if (rowVm == null) return;
 
                 var currentValue = rowVm[attributeName] ?? "";
-                var dialog = new TextEditorDialog(fieldDef?.DisplayName ?? attributeName, currentValue);
+                var dialog = new TextEditorDialog(fieldDef?.DisplayName ?? attributeName, currentValue, isReadOnly);
                 var parentWindow = TopLevel.GetTopLevel(editButton) as Window;
                 if (parentWindow == null) return;
 
                 var result = await dialog.ShowDialog<string?>(parentWindow);
 
-                if (result != null && result != currentValue)
+                if (!isReadOnly && result != null && result != currentValue)
                 {
                     rowVm[attributeName] = result;
                     text.Text = result;
@@ -2279,7 +2486,7 @@ public partial class FileTabView : UserControl
                     // When editing ends, add prefix back
                     textBox.LostFocus += (s, e) =>
                     {
-                        var newValue = textBox.Text?.Trim() ?? "";
+                        var newValue = textBox.Text ?? "";
                         if (!string.IsNullOrEmpty(newValue) && !string.IsNullOrEmpty(prefixToAdd))
                         {
                             // Add prefix if not already present
@@ -2393,6 +2600,181 @@ public partial class FileTabView : UserControl
             border.Child = grid;
             return border;
         });
+    }
+
+    /// <summary>
+    /// Creates a cell template for tag list fields (e.g., conversation tags on strings).
+    /// Displays tags as comma-separated text with an edit button to open TagEditorPopup.
+    /// </summary>
+    private static IDataTemplate CreateTagListCellTemplate(string attributeName, FieldDefinition fieldDef, FileTabViewModel vm)
+    {
+        return new FuncDataTemplate<EntryRowViewModel>((rowVm, _) =>
+        {
+            var border = new Border();
+            border.Classes.Add("dataCell");
+
+            var grid = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitions("Auto,*")
+            };
+
+            // Edit button on the left
+            var editButton = new Button
+            {
+                Content = "...",
+                Padding = new Thickness(6, 2),
+                MinWidth = 28,
+                FontSize = 11,
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Background = new SolidColorBrush(Color.FromRgb(70, 70, 70)),
+                Foreground = Brushes.White,
+                IsVisible = rowVm != null && !rowVm.IsRemoved
+            };
+            Grid.SetColumn(editButton, 0);
+            grid.Children.Add(editButton);
+
+            var text = new TextBlock
+            {
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(4, 0),
+                FontSize = 12,
+                TextTrimming = TextTrimming.CharacterEllipsis
+            };
+            Grid.SetColumn(text, 1);
+            grid.Children.Add(text);
+
+            if (rowVm != null)
+            {
+                // Get the entry ID for context
+                var entryId = rowVm["id"] ?? "";
+
+                // Get current tags value (comma-separated)
+                var currentTags = rowVm[attributeName] ?? "";
+                text.Text = string.IsNullOrEmpty(currentTags) ? "-" : currentTags;
+
+                // Set tooltip
+                if (!string.IsNullOrEmpty(currentTags))
+                {
+                    ToolTip.SetTip(text, currentTags);
+                }
+
+                // Edit button click handler - opens TagEditorPopup
+                editButton.Click += async (s, e) =>
+                {
+                    var currentValue = rowVm[attributeName] ?? "";
+
+                    // Load available tag definitions
+                    var availableTags = LoadTagDefinitions(fieldDef, vm);
+
+                    // Create and show the tag editor popup
+                    var popup = new TagEditorPopup(entryId, attributeName, currentValue, availableTags, vm);
+                    var topLevel = TopLevel.GetTopLevel(editButton);
+                    if (topLevel is Window window)
+                    {
+                        var result = await popup.ShowDialog<bool>(window);
+                        if (result)
+                        {
+                            // Refresh the display text after edit
+                            var newValue = rowVm[attributeName] ?? "";
+                            text.Text = string.IsNullOrEmpty(newValue) ? "-" : newValue;
+                            if (!string.IsNullOrEmpty(newValue))
+                            {
+                                ToolTip.SetTip(text, newValue);
+                            }
+                        }
+                    }
+                };
+
+                // Subscribe to cell refresh events
+                vm.CellRefreshRequested += (s, args) =>
+                {
+                    var newValue = rowVm[attributeName] ?? "";
+                    text.Text = string.IsNullOrEmpty(newValue) ? "-" : newValue;
+                    if (!string.IsNullOrEmpty(newValue))
+                    {
+                        ToolTip.SetTip(text, newValue);
+                    }
+                    // Update visibility for removed rows
+                    editButton.IsVisible = !rowVm.IsRemoved;
+                };
+            }
+            else
+            {
+                text.Text = "-";
+                editButton.IsEnabled = false;
+            }
+
+            border.Child = grid;
+            return border;
+        });
+    }
+
+    /// <summary>
+    /// Loads tag definitions from tor_tags.xml or schema's knownTags.
+    /// </summary>
+    private static List<TagDefinition> LoadTagDefinitions(FieldDefinition fieldDef, FileTabViewModel vm)
+    {
+        var tags = new List<TagDefinition>();
+
+        // Try to load from tor_tags.xml in the data directory
+        try
+        {
+            var dataDir = TORTools.Core.Services.FilePathResolver.GetDataDirectory();
+            if (!string.IsNullOrEmpty(dataDir))
+            {
+                var tagsFilePath = Path.Combine(dataDir, "tor_tags.xml");
+                if (File.Exists(tagsFilePath))
+                {
+                    var doc = System.Xml.Linq.XDocument.Load(tagsFilePath);
+                    var tagElements = doc.Root?.Elements("Tag");
+                    if (tagElements != null)
+                    {
+                        foreach (var element in tagElements)
+                        {
+                            var id = element.Attribute("id")?.Value;
+                            if (!string.IsNullOrEmpty(id))
+                            {
+                                tags.Add(new TagDefinition
+                                {
+                                    Id = id,
+                                    Category = element.Attribute("category")?.Value ?? "",
+                                    Description = element.Attribute("description")?.Value ?? ""
+                                });
+                            }
+                        }
+                    }
+
+                    if (tags.Count > 0)
+                    {
+                        Console.WriteLine($"[TagList] Loaded {tags.Count} tag definitions from tor_tags.xml");
+                        return tags;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[TagList] Error loading tor_tags.xml: {ex.Message}");
+        }
+
+        // Fallback: use knownTags from schema
+        var knownTags = fieldDef.TagList?.KnownTags;
+        if (knownTags != null && knownTags.Count > 0)
+        {
+            Console.WriteLine($"[TagList] Using {knownTags.Count} known tags from schema");
+            foreach (var tagName in knownTags)
+            {
+                tags.Add(new TagDefinition
+                {
+                    Id = tagName,
+                    Category = "",
+                    Description = ""
+                });
+            }
+        }
+
+        return tags;
     }
 
     /// <summary>
