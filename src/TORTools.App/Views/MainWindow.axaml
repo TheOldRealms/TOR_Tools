@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:TORTools.App.ViewModels"
+        xmlns:tvm="using:TORTools.App.ViewModels.Translation"
         xmlns:views="using:TORTools.App.Views"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -26,6 +27,9 @@
     <Window.DataTemplates>
         <DataTemplate DataType="vm:FileTabViewModel">
             <views:FileTabView/>
+        </DataTemplate>
+        <DataTemplate DataType="tvm:TranslationSheetTabViewModel">
+            <views:TranslationSheetView/>
         </DataTemplate>
     </Window.DataTemplates>
 
@@ -61,12 +65,12 @@
             </MenuItem>
         </Menu>
 
-        <!-- Catalog Sidebar -->
+        <!-- Sidebar -->
         <Border Grid.Row="1" Grid.Column="0"
                 BorderBrush="#202225"
                 BorderThickness="0,0,1,0"
                 Background="#2f3136">
-            <Grid RowDefinitions="Auto,*">
+            <Grid RowDefinitions="Auto,*,Auto">
                 <TextBlock Grid.Row="0" Text="Catalogs" FontWeight="SemiBold" Margin="12,10,12,6"
                            Foreground="#dcddde"/>
                 <TreeView Grid.Row="1"
@@ -87,8 +91,41 @@
                         <DataTemplate DataType="vm:FileNode">
                             <TextBlock Text="{Binding DisplayName}" FontSize="12"/>
                         </DataTemplate>
+                        <!-- Template for Translations catalog (TranslationsSidebarViewModel) -->
+                        <TreeDataTemplate DataType="tvm:TranslationsSidebarViewModel" ItemsSource="{Binding Languages}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock Text="Translations" FontWeight="SemiBold" FontSize="13"/>
+                                <TextBlock Text="{Binding Languages.Count, StringFormat='({0})'}"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           FontSize="12"/>
+                            </StackPanel>
+                        </TreeDataTemplate>
+                        <!-- Template for language nodes (under Translations catalog) -->
+                        <TreeDataTemplate DataType="tvm:LanguageTreeItem" ItemsSource="{Binding Modules}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <StackPanel.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Validate language_data.xml"
+                                                  Command="{Binding ValidateCommand}"/>
+                                    </ContextMenu>
+                                </StackPanel.ContextMenu>
+                                <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="13"/>
+                            </StackPanel>
+                        </TreeDataTemplate>
+                        <!-- Template for translation file/module nodes -->
+                        <TreeDataTemplate DataType="tvm:TranslationFileTreeItem" ItemsSource="{Binding Children}">
+                            <TextBlock Text="{Binding DisplayName}" FontSize="12"
+                                       FontWeight="{Binding IsModule, Converter={x:Static vm:Converters.BoolToFontWeight}}"/>
+                        </TreeDataTemplate>
                     </TreeView.DataTemplates>
                 </TreeView>
+                <!-- Add Language Button at bottom -->
+                <Button Grid.Row="2"
+                        Content="+ Add Language"
+                        HorizontalAlignment="Stretch"
+                        Margin="8,4,8,8"
+                        Click="AddLanguage_Click"
+                        IsVisible="{Binding TranslationsSidebar, Converter={x:Static ObjectConverters.IsNotNull}}"/>
             </Grid>
         </Border>
 
@@ -106,15 +143,15 @@
                     BorderBrush="#202225"
                     BorderThickness="0,0,0,1"
                     Padding="16,10"
-                    IsVisible="{Binding HasOpenTabs}">
+                    IsVisible="{Binding HasAnyOpenTab}">
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                    <TextBlock Text="{Binding ActiveTab.Title}"
+                    <TextBlock Text="{Binding CurrentTabTitle}"
                                FontSize="16"
                                FontWeight="SemiBold"
                                Foreground="#ffffff"
                                VerticalAlignment="Center"/>
                     <TextBlock Text="*"
-                               IsVisible="{Binding ActiveTab.HasUnsavedChanges}"
+                               IsVisible="{Binding CurrentTabHasUnsavedChanges}"
                                Foreground="Orange"
                                FontWeight="Bold"
                                FontSize="16"
@@ -122,7 +159,7 @@
                 </StackPanel>
             </Border>
 
-            <!-- Search/Filter Bar -->
+            <!-- Search/Filter Bar (only for file tabs, not translation tabs) -->
             <Border Grid.Row="1"
                     Background="#2f3136"
                     Padding="12,8"
@@ -155,15 +192,15 @@
                 </Grid>
             </Border>
 
-            <!-- Active Tab Content -->
+            <!-- Active Tab Content (either file or translation tab) -->
             <ContentControl Grid.Row="2"
-                            Content="{Binding ActiveTab}"
-                            IsVisible="{Binding HasOpenTabs}"/>
+                            Content="{Binding CurrentTabContent}"
+                            IsVisible="{Binding HasAnyOpenTab}"/>
         </Grid>
 
         <!-- Welcome message when no tabs open -->
         <Border Grid.Row="1" Grid.Column="2"
-                IsVisible="{Binding !HasOpenTabs}"
+                IsVisible="{Binding !HasAnyOpenTab}"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center">
             <StackPanel Spacing="15" HorizontalAlignment="Center">
@@ -181,6 +218,86 @@
                            Foreground="#72767d"
                            HorizontalAlignment="Center"
                            Margin="0,20,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Error message overlay -->
+        <Border Grid.Row="1" Grid.Column="2"
+                IsVisible="{Binding HasError}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="#1e1f22"
+                BorderBrush="#f04747"
+                BorderThickness="2"
+                CornerRadius="8"
+                Padding="30,20"
+                MaxWidth="700">
+            <StackPanel Spacing="15">
+                <TextBlock Text="Error"
+                           FontSize="20"
+                           FontWeight="SemiBold"
+                           Foreground="#f04747"
+                           HorizontalAlignment="Center"/>
+                <SelectableTextBlock Text="{Binding ErrorMessage}"
+                                     FontSize="13"
+                                     Foreground="#dcddde"
+                                     TextWrapping="Wrap"
+                                     HorizontalAlignment="Center"
+                                     TextAlignment="Center"/>
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            Spacing="10"
+                            Margin="0,10,0,0">
+                    <Button Content="Create Template"
+                            Command="{Binding CreateTemplateCommand}"
+                            IsVisible="{Binding CanCreateTemplate}"
+                            Padding="20,8"
+                            Background="#43b581"/>
+                    <Button Content="Dismiss"
+                            Command="{Binding ClearErrorCommand}"
+                            Padding="20,8"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Validation results overlay -->
+        <Border Grid.Row="1" Grid.Column="2"
+                IsVisible="{Binding ShowValidationResults}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="#1e1f22"
+                BorderBrush="#5865f2"
+                BorderThickness="2"
+                CornerRadius="8"
+                Padding="30,20"
+                MaxWidth="700">
+            <StackPanel Spacing="15">
+                <TextBlock Text="Validation Results"
+                           FontSize="20"
+                           FontWeight="SemiBold"
+                           Foreground="#5865f2"
+                           HorizontalAlignment="Center"/>
+                <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
+                    <SelectableTextBlock Text="{Binding ValidationMessage}"
+                                         FontSize="12"
+                                         Foreground="#dcddde"
+                                         FontFamily="Consolas,Courier New,monospace"
+                                         TextWrapping="Wrap"/>
+                </ScrollViewer>
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            Spacing="10"
+                            Margin="0,10,0,0">
+                    <Button Content="Repair"
+                            Command="{Binding RepairLanguageDataCommand}"
+                            IsEnabled="{Binding CanRepair}"
+                            Padding="20,8"
+                            Background="#43b581"
+                            ToolTip.Tip="Remove invalid entries and add missing files to language_data.xml"/>
+                    <Button Content="Close"
+                            Command="{Binding CloseValidationCommand}"
+                            Padding="20,8"/>
+                </StackPanel>
             </StackPanel>
         </Border>
 

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Tags>
+  <!-- Vanilla Culture Tags -->
+  <Tag id="EmpireTag" category="Culture" description="Empire faction culture. Uses Imperial speech patterns." />
+  <Tag id="VlandianTag" category="Culture" description="Vlandian faction culture." />
+  <Tag id="SturgianTag" category="Culture" description="Sturgian faction culture." />
+  <Tag id="AseraiTag" category="Culture" description="Aserai faction culture." />
+  <Tag id="KhuzaitTag" category="Culture" description="Khuzait faction culture." />
+  <Tag id="BattanianTag" category="Culture" description="Battanian faction culture." />
+
+  <!-- TOR Culture Tags -->
+  <Tag id="AsraiTag" category="Culture" description="Wood Elf (Asrai) culture." />
+  <Tag id="EonirTag" category="Culture" description="Eonir (Wood Elf subculture) culture." />
+  <Tag id="MousillonTag" category="Culture" description="Mousillon (cursed Bretonnian) culture." />
+  <Tag id="BloodDragonTag" category="Culture" description="Blood Dragon vampire bloodline culture." />
+  <Tag id="IsBretonnianTag" category="Culture" description="Bretonnian faction culture." />
+  <Tag id="IsEmpireTag" category="Culture" description="Empire of Man faction culture." />
+
+  <!-- Race Tags (NPC) -->
+  <Tag id="IsOrcTag" category="Race" description="Character is an Orc. Triggers Orc-specific dialogue with 'Orky' speech." />
+  <Tag id="IsGoblinTag" category="Race" description="Character is a Goblin." />
+  <Tag id="IsDwarfTag" category="Race" description="Character is a Dwarf." />
+  <Tag id="ElfMaleTag" category="Race" description="Character is a male Elf." />
+  <Tag id="VampireMaleTag" category="Race" description="Character is a male Vampire." />
+  <Tag id="VampireFemaleTag" category="Race" description="Character is a female Vampire." />
+
+  <!-- Player Race Tags -->
+  <Tag id="PlayerIsOrcTag" category="Player" description="Player character is an Orc." />
+  <Tag id="PlayerIsDwarfTag" category="Player" description="Player character is a Dwarf." />
+  <Tag id="PlayerIsElfTag" category="Player" description="Player character is an Elf." />
+  <Tag id="PlayerIsAsraiTag" category="Player" description="Player character is Wood Elf (Asrai)." />
+  <Tag id="PlayerIsEonirTag" category="Player" description="Player character is Eonir." />
+  <Tag id="PlayerIsEmpireTag" category="Player" description="Player character is from the Empire." />
+  <Tag id="PlayerIsBretonnianTag" category="Player" description="Player character is Bretonnian." />
+
+  <!-- Player Career Tags -->
+  <Tag id="IsWarriorPriestTag" category="Career" description="Character is a Warrior Priest." />
+  <Tag id="PlayerIsWarriorPriestTag" category="Career" description="Player has Warrior Priest career." />
+  <Tag id="PlayerIsGrailKnightTag" category="Career" description="Player has Grail Knight career." />
+  <Tag id="PlayerIsRenownedTag" category="Career" description="Player has reached Renowned status." />
+
+  <!-- Trait Tags (can have weight) -->
+  <Tag id="HonorTag" category="Trait" description="Character has Honor trait. Weight determines intensity (0-100)." />
+  <Tag id="MercyTag" category="Trait" description="Character has Mercy trait. Weight determines intensity (0-100)." />
+  <Tag id="CruelTag" category="Trait" description="Character has Cruel trait. Weight determines intensity (0-100)." />
+  <Tag id="UncharitableTag" category="Trait" description="Character has Uncharitable trait. Weight determines intensity (0-100)." />
+</Tags>

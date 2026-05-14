@@ -49,7 +49,9 @@ public class XmlDocumentService : IXmlDocumentService
     /// <param name="document">The document to save.</param>
     /// <param name="filePath">Optional path override.</param>
     /// <param name="compactFormat">If true, write all attributes on single line; if false, each on new line.</param>
-    public void Save(XmlDocumentWrapper document, string? filePath = null, bool compactFormat = false)
+    /// <param name="groupByField">Optional field to group entries by, with comments between groups.</param>
+    /// <param name="excludeFields">Optional fields to exclude from writing (e.g., linked fields stored elsewhere).</param>
+    public void Save(XmlDocumentWrapper document, string? filePath = null, bool compactFormat = false, string? groupByField = null, HashSet<string>? excludeFields = null)
     {
         var targetPath = filePath ?? document.FilePath;
         var tempPath = targetPath + ".tmp";
@@ -73,13 +75,38 @@ public class XmlDocumentService : IXmlDocumentService
                 // Write root element
                 sb.AppendLine($"<{root.Name.LocalName}>");
 
-                // Write each entry with appropriate formatting
-                foreach (var element in root.Elements())
+                // Group by field if specified
+                if (!string.IsNullOrEmpty(groupByField))
                 {
-                    if (compactFormat)
-                        WriteElementCompact(sb, element, indent);
-                    else
-                        WriteElementWithMultiLineAttributes(sb, element, indent);
+                    var grouped = root.Elements()
+                        .GroupBy(e => e.Attribute(groupByField)?.Value ?? "Uncategorized")
+                        .OrderBy(g => g.Key);
+
+                    foreach (var group in grouped)
+                    {
+                        // Write category comment
+                        sb.AppendLine();
+                        sb.AppendLine($"{indent}<!-- {group.Key} -->");
+
+                        foreach (var element in group)
+                        {
+                            if (compactFormat)
+                                WriteElementCompact(sb, element, indent, excludeFields);
+                            else
+                                WriteElementWithMultiLineAttributes(sb, element, indent, excludeFields);
+                        }
+                    }
+                }
+                else
+                {
+                    // Write each entry with appropriate formatting
+                    foreach (var element in root.Elements())
+                    {
+                        if (compactFormat)
+                            WriteElementCompact(sb, element, indent, excludeFields);
+                        else
+                            WriteElementWithMultiLineAttributes(sb, element, indent, excludeFields);
+                    }
                 }
 
                 sb.Append($"</{root.Name.LocalName}>");
@@ -123,11 +150,13 @@ public class XmlDocumentService : IXmlDocumentService
     /// <summary>
     /// Writes an element with each attribute on its own line.
     /// </summary>
-    private static void WriteElementWithMultiLineAttributes(StringBuilder sb, XElement element, string baseIndent, int depth = 1)
+    private static void WriteElementWithMultiLineAttributes(StringBuilder sb, XElement element, string baseIndent, HashSet<string>? excludeFields = null, int depth = 1)
     {
         var indent = string.Concat(Enumerable.Repeat(baseIndent, depth));
         var elementName = element.Name.LocalName;
-        var attributes = element.Attributes().ToList();
+        var attributes = element.Attributes()
+            .Where(a => excludeFields == null || !excludeFields.Contains(a.Name.LocalName))
+            .ToList();
         var children = element.Elements().ToList();
         var hasTextContent = !string.IsNullOrWhiteSpace(element.Value) && !children.Any();
 
@@ -163,7 +192,7 @@ public class XmlDocumentService : IXmlDocumentService
             // Write child elements
             foreach (var child in children)
             {
-                WriteElementWithMultiLineAttributes(sb, child, baseIndent, depth + 1);
+                WriteElementWithMultiLineAttributes(sb, child, baseIndent, excludeFields, depth + 1);
             }
 
             sb.AppendLine($"{indent}</{elementName}>");
@@ -181,11 +210,13 @@ public class XmlDocumentService : IXmlDocumentService
     /// <summary>
     /// Writes an element with all attributes on a single line (compact format).
     /// </summary>
-    private static void WriteElementCompact(StringBuilder sb, XElement element, string baseIndent, int depth = 1)
+    private static void WriteElementCompact(StringBuilder sb, XElement element, string baseIndent, HashSet<string>? excludeFields = null, int depth = 1)
     {
         var indent = string.Concat(Enumerable.Repeat(baseIndent, depth));
         var elementName = element.Name.LocalName;
-        var attributes = element.Attributes().ToList();
+        var attributes = element.Attributes()
+            .Where(a => excludeFields == null || !excludeFields.Contains(a.Name.LocalName))
+            .ToList();
         var children = element.Elements().ToList();
         var hasTextContent = !string.IsNullOrWhiteSpace(element.Value) && !children.Any();
 
@@ -206,7 +237,7 @@ public class XmlDocumentService : IXmlDocumentService
             // Write child elements (also compact)
             foreach (var child in children)
             {
-                WriteElementCompact(sb, child, baseIndent, depth + 1);
+                WriteElementCompact(sb, child, baseIndent, excludeFields, depth + 1);
             }
 
             sb.AppendLine($"{indent}</{elementName}>");
@@ -218,6 +249,123 @@ public class XmlDocumentService : IXmlDocumentService
         else
         {
             sb.AppendLine(" />");
+        }
+    }
+
+    /// <summary>
+    /// Saves entries with category/subcategory grouping from XmlEntry values.
+    /// Groups entries by category, writes comments before each category group.
+    /// Uses " - " separator for subcategory comments.
+    /// </summary>
+    public void SaveWithCategoryComments(
+        XmlDocumentWrapper document,
+        IReadOnlyList<XmlEntry> entries,
+        string filePath,
+        string rootElement,
+        bool compactFormat = true,
+        HashSet<string>? excludeFields = null)
+    {
+        var tempPath = filePath + ".tmp";
+
+        try
+        {
+            var sb = new StringBuilder();
+            var indent = document.IndentString;
+
+            // Write XML declaration
+            var decl = document.Document.Declaration;
+            if (decl != null)
+            {
+                var encodingStr = document.OriginalEncodingString ?? "UTF-8";
+                sb.AppendLine($"<?xml version=\"{decl.Version}\" encoding=\"{encodingStr}\"?>");
+            }
+
+            // Write root element
+            sb.AppendLine($"<{rootElement}>");
+
+            // Group entries by category, maintaining original order within each category
+            var groupedEntries = entries
+                .Select((entry, index) => new { entry, index })
+                .GroupBy(x => x.entry.GetAttributeValue("category") ?? "Uncategorized")
+                .OrderBy(g => g.Min(x => x.index)) // Keep category order based on first occurrence
+                .ToList();
+
+            foreach (var categoryGroup in groupedEntries)
+            {
+                var category = categoryGroup.Key;
+
+                // Group by subcategory within this category
+                var subcategoryGroups = categoryGroup
+                    .GroupBy(x => x.entry.GetAttributeValue("subcategory") ?? "")
+                    .OrderBy(g => g.Min(x => x.index))
+                    .ToList();
+
+                bool categoryCommentWritten = false;
+
+                foreach (var subcatGroup in subcategoryGroups)
+                {
+                    var subcategory = subcatGroup.Key;
+
+                    // Determine the comment to write
+                    if (!string.IsNullOrEmpty(subcategory))
+                    {
+                        // Write combined category - subcategory comment
+                        sb.AppendLine();
+                        sb.AppendLine($"{indent}<!-- {category} - {subcategory} -->");
+                        categoryCommentWritten = true;
+                    }
+                    else if (!categoryCommentWritten)
+                    {
+                        // Write category-only comment
+                        sb.AppendLine();
+                        sb.AppendLine($"{indent}<!-- {category} -->");
+                        categoryCommentWritten = true;
+                    }
+
+                    // Write entries in this subcategory
+                    foreach (var item in subcatGroup.OrderBy(x => x.index))
+                    {
+                        if (compactFormat)
+                            WriteElementCompact(sb, item.entry.OriginalElement, indent, excludeFields);
+                        else
+                            WriteElementWithMultiLineAttributes(sb, item.entry.OriginalElement, indent, excludeFields);
+                    }
+                }
+            }
+
+            sb.Append($"</{rootElement}>");
+
+            var content = sb.ToString();
+
+            // Write with proper encoding and BOM
+            using (var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write))
+            {
+                if (document.HasBom)
+                {
+                    byte[] bom = { 0xEF, 0xBB, 0xBF };
+                    stream.Write(bom, 0, bom.Length);
+                }
+
+                using var writer = new StreamWriter(stream, new UTF8Encoding(false));
+                writer.Write(content);
+            }
+
+            // Atomic replace
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+            }
+            File.Move(tempPath, filePath);
+
+            Console.WriteLine($"[SaveWithCategoryComments] Saved {entries.Count} entries to {filePath}");
+        }
+        catch
+        {
+            if (File.Exists(tempPath))
+            {
+                try { File.Delete(tempPath); } catch { }
+            }
+            throw;
         }
     }
 

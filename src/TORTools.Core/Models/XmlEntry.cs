@@ -68,6 +68,16 @@ public class XmlEntry
     }
 
     /// <summary>
+    /// Refreshes the Children collection from the underlying XElement.
+    /// Call this after programmatically adding/removing child elements.
+    /// </summary>
+    public void RefreshChildren()
+    {
+        Children.Clear();
+        LoadChildren();
+    }
+
+    /// <summary>
     /// Gets an attribute by name.
     /// </summary>
     public XmlAttributeValue? GetAttribute(string name)
@@ -260,6 +270,104 @@ public class XmlEntry
         }
 
         IsModified = true;
+    }
+
+    /// <summary>
+    /// Gets a list of tag values from nested tag elements.
+    /// Returns tags as comma-separated string (e.g., "IsOrcTag, EmpireTag").
+    /// </summary>
+    /// <param name="containerElement">Container element name (e.g., "tags")</param>
+    /// <param name="itemElement">Item element name (e.g., "tag")</param>
+    /// <param name="nameAttribute">Attribute containing tag name (e.g., "tag_name")</param>
+    /// <param name="weightAttribute">Optional attribute for weight (e.g., "weight")</param>
+    public string? GetTagList(string containerElement, string itemElement, string nameAttribute, string? weightAttribute = null)
+    {
+        var container = OriginalElement.Element(containerElement);
+        if (container == null) return null;
+
+        var tags = new List<string>();
+        foreach (var tagElement in container.Elements(itemElement))
+        {
+            var tagName = tagElement.Attribute(nameAttribute)?.Value;
+            if (string.IsNullOrEmpty(tagName)) continue;
+
+            if (!string.IsNullOrEmpty(weightAttribute))
+            {
+                var weight = tagElement.Attribute(weightAttribute)?.Value;
+                if (!string.IsNullOrEmpty(weight) && weight != "0")
+                {
+                    tagName += $"({weight})";
+                }
+            }
+            tags.Add(tagName);
+        }
+
+        return tags.Count > 0 ? string.Join(", ", tags) : null;
+    }
+
+    /// <summary>
+    /// Sets tag values from a comma-separated string.
+    /// Creates or updates the nested tag structure.
+    /// </summary>
+    /// <param name="value">Comma-separated tags (e.g., "IsOrcTag, EmpireTag") or tags with weights (e.g., "HonorTag(1)")</param>
+    /// <param name="containerElement">Container element name (e.g., "tags")</param>
+    /// <param name="itemElement">Item element name (e.g., "tag")</param>
+    /// <param name="nameAttribute">Attribute containing tag name (e.g., "tag_name")</param>
+    /// <param name="weightAttribute">Optional attribute for weight (e.g., "weight")</param>
+    public void SetTagList(string? value, string containerElement, string itemElement, string nameAttribute, string? weightAttribute = null)
+    {
+        // Remove existing container
+        var existingContainer = OriginalElement.Element(containerElement);
+        existingContainer?.Remove();
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            IsModified = true;
+            return;
+        }
+
+        // Parse tags
+        var tagValues = value.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(t => t.Trim())
+            .Where(t => !string.IsNullOrEmpty(t))
+            .ToList();
+
+        if (tagValues.Count == 0)
+        {
+            IsModified = true;
+            return;
+        }
+
+        // Create container element
+        var newContainer = new XElement(containerElement);
+
+        foreach (var tagValue in tagValues)
+        {
+            var tagName = tagValue;
+            string? weight = null;
+
+            // Parse weight if present: TagName(1) -> TagName, weight=1
+            var parenIndex = tagValue.IndexOf('(');
+            if (parenIndex > 0 && tagValue.EndsWith(')'))
+            {
+                tagName = tagValue.Substring(0, parenIndex);
+                weight = tagValue.Substring(parenIndex + 1, tagValue.Length - parenIndex - 2);
+            }
+
+            var tagElement = new XElement(itemElement);
+            tagElement.SetAttributeValue(nameAttribute, tagName);
+
+            if (!string.IsNullOrEmpty(weightAttribute) && !string.IsNullOrEmpty(weight))
+            {
+                tagElement.SetAttributeValue(weightAttribute, weight);
+            }
+
+            newContainer.Add(tagElement);
+        }
+
+        OriginalElement.Add(newContainer);
+        IsModified = true;
+        RefreshChildren();
     }
 
     /// <summary>
