@@ -360,10 +360,11 @@ public partial class FileTabView : UserControl
             var isBannerField = fieldDef?.Type == "banner";
             var isColorField = fieldDef?.Type == "color";
             var isTupleListField = fieldDef?.Type == "tupleList" && fieldDef?.TupleList != null;
+            var isTagListField = fieldDef?.Type == "tagList" && fieldDef?.TagList != null;
 
             // Use schema width if defined (non-default), otherwise fall back to display mappings
             var columnWidth = (fieldDef?.Width > 0 && fieldDef.Width != 120) ? fieldDef.Width : displayInfo.Width;
-            Console.WriteLine($"[FileTabView] Adding column: {displayInfo.DisplayName} ({displayInfo.AttributeName}) - Width: {columnWidth}, Enum: {isEnumField}, CrossRef: {isCrossRefField}, Icon: {isIconField}, Banner: {isBannerField}, Color: {isColorField}, TupleList: {isTupleListField}");
+            Console.WriteLine($"[FileTabView] Adding column: {displayInfo.DisplayName} ({displayInfo.AttributeName}) - Width: {columnWidth}, Enum: {isEnumField}, CrossRef: {isCrossRefField}, Icon: {isIconField}, Banner: {isBannerField}, Color: {isColorField}, TupleList: {isTupleListField}, TagList: {isTagListField}");
 
             // Check if this is the ID column - if so, add lock toggle to header
             var isIdColumn = displayInfo.AttributeName.Equals("id", StringComparison.OrdinalIgnoreCase);
@@ -476,6 +477,17 @@ public partial class FileTabView : UserControl
                     Width = new DataGridLength(columnWidth),
                     IsReadOnly = true, // Editing happens via popup
                     CellTemplate = CreateTupleListCellTemplate(displayInfo.AttributeName, fieldDef!, vm)
+                };
+            }
+            else if (isTagListField)
+            {
+                // Tag list field (e.g., Tags on tor_strings)
+                column = new DataGridTemplateColumn
+                {
+                    Header = CreateColumnHeader(displayInfo, fieldDef),
+                    Width = new DataGridLength(columnWidth),
+                    IsReadOnly = true, // Editing happens via popup
+                    CellTemplate = CreateTagListCellTemplate(displayInfo.AttributeName, fieldDef!, vm)
                 };
             }
             else if (isEnumField)
@@ -2577,6 +2589,181 @@ public partial class FileTabView : UserControl
             border.Child = grid;
             return border;
         });
+    }
+
+    /// <summary>
+    /// Creates a cell template for tag list fields (e.g., conversation tags on strings).
+    /// Displays tags as comma-separated text with an edit button to open TagEditorPopup.
+    /// </summary>
+    private static IDataTemplate CreateTagListCellTemplate(string attributeName, FieldDefinition fieldDef, FileTabViewModel vm)
+    {
+        return new FuncDataTemplate<EntryRowViewModel>((rowVm, _) =>
+        {
+            var border = new Border();
+            border.Classes.Add("dataCell");
+
+            var grid = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitions("Auto,*")
+            };
+
+            // Edit button on the left
+            var editButton = new Button
+            {
+                Content = "...",
+                Padding = new Thickness(6, 2),
+                MinWidth = 28,
+                FontSize = 11,
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Background = new SolidColorBrush(Color.FromRgb(70, 70, 70)),
+                Foreground = Brushes.White,
+                IsVisible = rowVm != null && !rowVm.IsRemoved
+            };
+            Grid.SetColumn(editButton, 0);
+            grid.Children.Add(editButton);
+
+            var text = new TextBlock
+            {
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(4, 0),
+                FontSize = 12,
+                TextTrimming = TextTrimming.CharacterEllipsis
+            };
+            Grid.SetColumn(text, 1);
+            grid.Children.Add(text);
+
+            if (rowVm != null)
+            {
+                // Get the entry ID for context
+                var entryId = rowVm["id"] ?? "";
+
+                // Get current tags value (comma-separated)
+                var currentTags = rowVm[attributeName] ?? "";
+                text.Text = string.IsNullOrEmpty(currentTags) ? "-" : currentTags;
+
+                // Set tooltip
+                if (!string.IsNullOrEmpty(currentTags))
+                {
+                    ToolTip.SetTip(text, currentTags);
+                }
+
+                // Edit button click handler - opens TagEditorPopup
+                editButton.Click += async (s, e) =>
+                {
+                    var currentValue = rowVm[attributeName] ?? "";
+
+                    // Load available tag definitions
+                    var availableTags = LoadTagDefinitions(fieldDef, vm);
+
+                    // Create and show the tag editor popup
+                    var popup = new TagEditorPopup(entryId, attributeName, currentValue, availableTags, vm);
+                    var topLevel = TopLevel.GetTopLevel(editButton);
+                    if (topLevel is Window window)
+                    {
+                        var result = await popup.ShowDialog<bool>(window);
+                        if (result)
+                        {
+                            // Refresh the display text after edit
+                            var newValue = rowVm[attributeName] ?? "";
+                            text.Text = string.IsNullOrEmpty(newValue) ? "-" : newValue;
+                            if (!string.IsNullOrEmpty(newValue))
+                            {
+                                ToolTip.SetTip(text, newValue);
+                            }
+                        }
+                    }
+                };
+
+                // Subscribe to cell refresh events
+                vm.CellRefreshRequested += (s, args) =>
+                {
+                    var newValue = rowVm[attributeName] ?? "";
+                    text.Text = string.IsNullOrEmpty(newValue) ? "-" : newValue;
+                    if (!string.IsNullOrEmpty(newValue))
+                    {
+                        ToolTip.SetTip(text, newValue);
+                    }
+                    // Update visibility for removed rows
+                    editButton.IsVisible = !rowVm.IsRemoved;
+                };
+            }
+            else
+            {
+                text.Text = "-";
+                editButton.IsEnabled = false;
+            }
+
+            border.Child = grid;
+            return border;
+        });
+    }
+
+    /// <summary>
+    /// Loads tag definitions from tor_tags.xml or schema's knownTags.
+    /// </summary>
+    private static List<TagDefinition> LoadTagDefinitions(FieldDefinition fieldDef, FileTabViewModel vm)
+    {
+        var tags = new List<TagDefinition>();
+
+        // Try to load from tor_tags.xml in the data directory
+        try
+        {
+            var dataDir = TORTools.Core.Services.FilePathResolver.GetDataDirectory();
+            if (!string.IsNullOrEmpty(dataDir))
+            {
+                var tagsFilePath = Path.Combine(dataDir, "tor_tags.xml");
+                if (File.Exists(tagsFilePath))
+                {
+                    var doc = System.Xml.Linq.XDocument.Load(tagsFilePath);
+                    var tagElements = doc.Root?.Elements("Tag");
+                    if (tagElements != null)
+                    {
+                        foreach (var element in tagElements)
+                        {
+                            var id = element.Attribute("id")?.Value;
+                            if (!string.IsNullOrEmpty(id))
+                            {
+                                tags.Add(new TagDefinition
+                                {
+                                    Id = id,
+                                    Category = element.Attribute("category")?.Value ?? "",
+                                    Description = element.Attribute("description")?.Value ?? ""
+                                });
+                            }
+                        }
+                    }
+
+                    if (tags.Count > 0)
+                    {
+                        Console.WriteLine($"[TagList] Loaded {tags.Count} tag definitions from tor_tags.xml");
+                        return tags;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[TagList] Error loading tor_tags.xml: {ex.Message}");
+        }
+
+        // Fallback: use knownTags from schema
+        var knownTags = fieldDef.TagList?.KnownTags;
+        if (knownTags != null && knownTags.Count > 0)
+        {
+            Console.WriteLine($"[TagList] Using {knownTags.Count} known tags from schema");
+            foreach (var tagName in knownTags)
+            {
+                tags.Add(new TagDefinition
+                {
+                    Id = tagName,
+                    Category = "",
+                    Description = ""
+                });
+            }
+        }
+
+        return tags;
     }
 
     /// <summary>

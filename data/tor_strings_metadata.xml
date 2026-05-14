@@ -1530,20 +1530,20 @@
   <String id="tor_enchanter_start_p.khuzait" category="EMPIRE (empire) - Imperial Alchemist dialogs" />
   <String id="tor_enchanter_start_p.mousillon" category="EMPIRE (empire) - Imperial Alchemist dialogs" />
   <String id="tor_enchanter_start_p.vlandia" category="EMPIRE (empire) - Imperial Alchemist dialogs" />
-  <String id="tor_backstory_a.tor_wanderer_empire_0" category="Empire 0 - Bright Wizard" />
-  <String id="tor_backstory_b.tor_wanderer_empire_0" category="Empire 0 - Bright Wizard" />
-  <String id="tor_backstory_c.tor_wanderer_empire_0" category="Empire 0 - Bright Wizard" />
+  <String id="tor_backstory_a.tor_wanderer_empire_0" category="Companion" />
+  <String id="tor_backstory_b.tor_wanderer_empire_0" category="Companion" />
+  <String id="tor_backstory_c.tor_wanderer_empire_0" category="Companion" />
   <String id="tor_backstory_d.tor_wanderer_empire_0" category="Empire 0 - Bright Wizard" />
   <String id="tor_companion_leave_p.tor_wanderer_empire_0" category="Empire 0 - Bright Wizard" />
   <String id="tor_hire_accept_p.tor_wanderer_empire_0" category="Empire 0 - Bright Wizard" />
-  <String id="tor_hire_companion_begone.tor_wanderer_empire_0" category="Empire 0 - Bright Wizard" />
+  <String id="tor_hire_companion_begone.tor_wanderer_empire_0" category="Companion" subcategory="Empire 0 - Bright Wizard" />
   <String id="tor_hire_companion_p.tor_wanderer_empire_0" category="Empire 0 - Bright Wizard" />
   <String id="tor_hire_companion_payment.tor_wanderer_empire_0" category="Empire 0 - Bright Wizard" />
-  <String id="tor_hire_companion_skip_p.tor_wanderer_empire_0" category="Empire 0 - Bright Wizard" />
-  <String id="tor_hire_companion_tell_me_p.tor_wanderer_empire_0" category="Empire 0 - Bright Wizard" />
+  <String id="tor_hire_companion_skip_p.tor_wanderer_empire_0" category="Companion" />
+  <String id="tor_hire_companion_tell_me_p.tor_wanderer_empire_0" category="Companion" />
   <String id="tor_hire_decline_p.tor_wanderer_empire_0" category="Empire 0 - Bright Wizard" />
-  <String id="tor_introduction.tor_wanderer_empire_0" category="Empire 0 - Bright Wizard" />
-  <String id="tor_prebackstory.tor_wanderer_empire_0" category="Empire 0 - Bright Wizard" />
+  <String id="tor_introduction.tor_wanderer_empire_0" category="Companion" />
+  <String id="tor_prebackstory.tor_wanderer_empire_0" category="Companion" />
   <String id="tor_response_1.tor_wanderer_empire_0" category="Empire 0 - Bright Wizard" />
   <String id="tor_response_2.tor_wanderer_empire_0" category="Empire 0 - Bright Wizard" />
   <String id="tor_backstory_a.tor_wanderer_empire_1" category="Empire 1 - Warrior Priest of Sigmar" />
@@ -1552,7 +1552,7 @@
   <String id="tor_backstory_d.tor_wanderer_empire_1" category="Empire 1 - Warrior Priest of Sigmar" />
   <String id="tor_companion_leave_p.tor_wanderer_empire_1" category="Empire 1 - Warrior Priest of Sigmar" />
   <String id="tor_hire_accept_p.tor_wanderer_empire_1" category="Empire 1 - Warrior Priest of Sigmar" />
-  <String id="tor_hire_companion_begone.tor_wanderer_empire_1" category="Empire 1 - Warrior Priest of Sigmar" />
+  <String id="tor_hire_companion_begone.tor_wanderer_empire_1" category="Empire 1 - Warrior Priest of Sigmar" subcategory="Empire 1 - Warrior Priest of Sigmar" />
   <String id="tor_hire_companion_p.tor_wanderer_empire_1" category="Empire 1 - Warrior Priest of Sigmar" />
   <String id="tor_hire_companion_payment.tor_wanderer_empire_1" category="Empire 1 - Warrior Priest of Sigmar" />
   <String id="tor_hire_companion_skip_p.tor_wanderer_empire_1" category="Empire 1 - Warrior Priest of Sigmar" />
@@ -1632,7 +1632,7 @@
   <String id="tor_backstory_d.tor_wanderer_empire_2" category="Empire 2 - Witch Hunter" />
   <String id="tor_companion_leave_p.tor_wanderer_empire_2" category="Empire 2 - Witch Hunter" />
   <String id="tor_hire_accept_p.tor_wanderer_empire_2" category="Empire 2 - Witch Hunter" />
-  <String id="tor_hire_companion_begone.tor_wanderer_empire_2" category="Empire 2 - Witch Hunter" />
+  <String id="tor_hire_companion_begone.tor_wanderer_empire_2" category="Empire 2 - Witch Hunter" subcategory="Empire 2 - Witch Hunter" />
   <String id="tor_hire_companion_p.tor_wanderer_empire_2" category="Empire 2 - Witch Hunter" />
   <String id="tor_hire_companion_payment.tor_wanderer_empire_2" category="Empire 2 - Witch Hunter" />
   <String id="tor_hire_companion_skip_p.tor_wanderer_empire_2" category="Empire 2 - Witch Hunter" />

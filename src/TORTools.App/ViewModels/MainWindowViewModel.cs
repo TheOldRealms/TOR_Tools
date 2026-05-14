@@ -17,6 +17,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly AbilityCatalogService _abilityCatalogService;
     private readonly ItemTraitCatalogService _itemTraitCatalogService;
     private readonly BannerImageService? _bannerImageService;
+    private readonly IXmlDocumentService _xmlDocumentService;
     private WorkspaceConfig _config;
 
     [ObservableProperty]
@@ -58,6 +59,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _config = _workspaceService.LoadConfig();
         _itemCatalogService = new ItemCatalogService();
         _factionCatalogService = new FactionCatalogService();
+        _xmlDocumentService = new XmlDocumentService();
         _abilityCatalogService = new AbilityCatalogService("");
         _itemTraitCatalogService = new ItemTraitCatalogService("");
 
@@ -173,6 +175,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
         // Assign faction catalog service for kingdom color inheritance
         newTab.FactionCatalogService = _factionCatalogService;
+
+        // Assign XML document service for file path resolution
+        newTab.XmlDocumentService = _xmlDocumentService;
 
         // Subscribe to cross-reference navigation events
         newTab.NavigateToCrossReference += OnNavigateToCrossReference;

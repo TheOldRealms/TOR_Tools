@@ -313,6 +313,11 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     public FactionCatalogService? FactionCatalogService { get; set; }
 
     /// <summary>
+    /// XML document service for file path resolution. Set after construction by MainWindowViewModel.
+    /// </summary>
+    public IXmlDocumentService? XmlDocumentService { get; set; }
+
+    /// <summary>
     /// The schema definition for this file type - now accessed through Context.
     /// </summary>
     public SchemaDefinition? Schema => Context.Schema;
