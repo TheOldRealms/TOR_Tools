@@ -240,8 +240,9 @@ public partial class TranslationService
                 seenTranslationIds.Add(locId);
                 entry.TranslatedText = translatedText;
 
-                // Check if it's a TODO entry
-                if (translatedText.StartsWith("TODO", StringComparison.OrdinalIgnoreCase))
+                // Check if it's a TODO entry (format: "TODO [english text]")
+                // Must match exact format to avoid false positives (e.g., Spanish "todo" meaning "all")
+                if (translatedText.StartsWith("TODO [", StringComparison.Ordinal))
                 {
                     entry.Status = TranslationStatus.Todo;
                 }
@@ -550,42 +551,59 @@ public partial class TranslationService
     }
 
     /// <summary>
-    /// Scans TOR modules for files with localization IDs that aren't in the language config.
+    /// Finds missing translation files by comparing against the master template.
     /// </summary>
     public List<string> FindMissingTranslationFiles(LanguageConfig config)
     {
         var missing = new List<string>();
         var existingFiles = new HashSet<string>(config.TranslationFiles, StringComparer.OrdinalIgnoreCase);
 
-        // Scan each TOR module
-        var modules = new[] { "TOR_Core", "TOR_Armory", "TOR_Environment" };
+        // Load required files from template
+        var templateFiles = LoadTemplateFiles(config.LanguageCode);
 
-        foreach (var module in modules)
+        foreach (var templatePath in templateFiles)
         {
-            var moduleDataPath = Path.Combine(_modulesBasePath, module, "ModuleData");
-            if (!Directory.Exists(moduleDataPath))
-                continue;
-
-            // Find all XML files
-            foreach (var xmlFile in Directory.GetFiles(moduleDataPath, "*.xml", SearchOption.AllDirectories))
+            if (!existingFiles.Contains(templatePath))
             {
-                // Check if this file has localization IDs
-                var locIds = ExtractLocalizationIds(xmlFile);
-                if (locIds.Count == 0)
-                    continue;
-
-                // Build the relative path for the translation config
-                var relativePath = Path.GetRelativePath(Path.Combine(_modulesBasePath, module), xmlFile);
-                var translationPath = $"{config.LanguageCode}/{module}/{relativePath.Replace(Path.DirectorySeparatorChar, '/')}";
-
-                if (!existingFiles.Contains(translationPath))
-                {
-                    missing.Add(translationPath);
-                }
+                missing.Add(templatePath);
             }
         }
 
         return missing;
+    }
+
+    /// <summary>
+    /// Loads the list of required translation files from the template.
+    /// </summary>
+    private List<string> LoadTemplateFiles(string languageCode)
+    {
+        var results = new List<string>();
+
+        // Look for template in TORTools/templates/
+        var templatePath = Path.Combine(_modulesBasePath, "TORTools", "templates", "language_data_template.xml");
+
+        if (!File.Exists(templatePath))
+        {
+            Console.WriteLine($"[TranslationService] Template not found: {templatePath}");
+            return results;
+        }
+
+        try
+        {
+            var doc = XDocument.Load(templatePath);
+            var files = doc.Descendants("LanguageFile")
+                .Select(e => e.Attribute("xml_path")?.Value)
+                .Where(p => !string.IsNullOrEmpty(p))
+                .Select(p => p!.Replace("{LANG}", languageCode))
+                .ToList();
+
+            return files;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[TranslationService] Failed to load template: {ex.Message}");
+            return results;
+        }
     }
 }
 
