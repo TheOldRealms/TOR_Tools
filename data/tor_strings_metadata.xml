@@ -155,7 +155,7 @@
   <String id="tor_bloodkiss_necrach_answer_line2" category="Blood Kiss Texts" />
   <String id="tor_bloodkiss_necrach_answer_line3" category="Blood Kiss Texts" />
   <String id="tor_bloodkiss_player_receive_end_carstein" category="Blood Kiss Texts" />
-  <String id="tor_bloodkiss_player_receive_end_necrarch" category="Blood Kiss Texts" />
+  <String id="tor_bloodkiss_player_receive_end_necrarch" category="Blood Kiss" subcategory="Necrarch" />
   <String id="tor_careerunlock_level_1.BloodKnight" category="Blood Knight" />
   <String id="tor_careerunlock_level_2.BloodKnight" category="Blood Knight" />
   <String id="tor_careerunlock_level_3.BloodKnight" category="Blood Knight" />
@@ -399,14 +399,14 @@
   <String id="tor_became_blood_knight_vampire_text" category="Career Transformation Notifications" />
   <String id="tor_became_necrarch_text" category="Career Transformation Notifications" />
   <String id="tor_became_vampire_text" category="Career Transformation Notifications" />
-  <String id="tor_cc_growth.aserai" category="Character Creation" />
-  <String id="tor_cc_growth.battania" category="Character Creation" />
-  <String id="tor_cc_growth.sturgia" category="Character Creation" />
-  <String id="tor_cc_origin.aserai" category="Character Creation" />
-  <String id="tor_cc_origin.sturgia" category="Character Creation" />
-  <String id="tor_cc_profession.aserai" category="Character Creation" />
-  <String id="tor_cc_profession.battania" category="Character Creation" />
-  <String id="tor_cc_profession.sturgia" category="Character Creation" />
+  <String id="tor_cc_growth.aserai" category="Character Creation" subcategory="greenskin" />
+  <String id="tor_cc_growth.battania" category="Character Creation" subcategory="asrai" />
+  <String id="tor_cc_growth.sturgia" category="Character Creation" subcategory="dwarf" />
+  <String id="tor_cc_origin.aserai" category="Character Creation" subcategory="greenskin" />
+  <String id="tor_cc_origin.sturgia" category="Character Creation" subcategory="dwarf" />
+  <String id="tor_cc_profession.aserai" category="Character Creation" subcategory="greenskin" />
+  <String id="tor_cc_profession.battania" category="Character Creation" subcategory="asrai" />
+  <String id="tor_cc_profession.sturgia" category="Character Creation" subcategory="dwarf" />
   <String id="tor_backstory_a.tor_wanderer_chaos_0" category="Chaos 0 - Chosen" />
   <String id="tor_backstory_b.tor_wanderer_chaos_0" category="Chaos 0 - Chosen" />
   <String id="tor_backstory_c.tor_wanderer_chaos_0" category="Chaos 0 - Chosen" />
@@ -2435,7 +2435,7 @@
   <String id="tor_hirelingactivity0.KnightOldWorld" category="Hireling Activities" />
   <String id="tor_hirelingactivity0.Mercenary" category="Hireling Activities" />
   <String id="tor_hirelingactivity0.MinorVampire" category="Hireling Activities" />
-  <String id="tor_hirelingactivity0.Necrarch" category="Hireling Activities" />
+  <String id="tor_hirelingactivity0.Necrarch" category="Hireling Activities" subcategory="Necrarch" />
   <String id="tor_hirelingactivity0.Necromancer" category="Hireling Activities" />
   <String id="tor_hirelingactivity0.OrcBoss" category="Hireling Activities" />
   <String id="tor_hirelingactivity0.OrcShaman" category="Hireling Activities" />
@@ -2457,7 +2457,7 @@
   <String id="tor_hirelingactivity1.KnightOldWorld" category="Hireling Activities" />
   <String id="tor_hirelingactivity1.Mercenary" category="Hireling Activities" />
   <String id="tor_hirelingactivity1.MinorVampire" category="Hireling Activities" />
-  <String id="tor_hirelingactivity1.Necrarch" category="Hireling Activities" />
+  <String id="tor_hirelingactivity1.Necrarch" category="Hireling Activities" subcategory="Necrarch" />
   <String id="tor_hirelingactivity1.Necromancer" category="Hireling Activities" />
   <String id="tor_hirelingactivity1.OrcBoss" category="Hireling Activities" />
   <String id="tor_hirelingactivity1.OrcShaman" category="Hireling Activities" />
@@ -2479,7 +2479,7 @@
   <String id="tor_hirelingactivity2.KnightOldWorld" category="Hireling Activities" />
   <String id="tor_hirelingactivity2.Mercenary" category="Hireling Activities" />
   <String id="tor_hirelingactivity2.MinorVampire" category="Hireling Activities" />
-  <String id="tor_hirelingactivity2.Necrarch" category="Hireling Activities" />
+  <String id="tor_hirelingactivity2.Necrarch" category="Hireling Activities" subcategory="Necrarch" />
   <String id="tor_hirelingactivity2.Necromancer" category="Hireling Activities" />
   <String id="tor_hirelingactivity2.OrcBoss" category="Hireling Activities" />
   <String id="tor_hirelingactivity2.OrcShaman" category="Hireling Activities" />
@@ -2501,7 +2501,7 @@
   <String id="tor_hirelingactivity3.KnightOldWorld" category="Hireling Activities" />
   <String id="tor_hirelingactivity3.Mercenary" category="Hireling Activities" />
   <String id="tor_hirelingactivity3.MinorVampire" category="Hireling Activities" />
-  <String id="tor_hirelingactivity3.Necrarch" category="Hireling Activities" />
+  <String id="tor_hirelingactivity3.Necrarch" category="Hireling Activities" subcategory="Necrarch" />
   <String id="tor_hirelingactivity3.Necromancer" category="Hireling Activities" />
   <String id="tor_hirelingactivity3.OrcBoss" category="Hireling Activities" />
   <String id="tor_hirelingactivity3.OrcShaman" category="Hireling Activities" />
@@ -2523,7 +2523,7 @@
   <String id="tor_hirelingactivity4.KnightOldWorld" category="Hireling Activities" />
   <String id="tor_hirelingactivity4.Mercenary" category="Hireling Activities" />
   <String id="tor_hirelingactivity4.MinorVampire" category="Hireling Activities" />
-  <String id="tor_hirelingactivity4.Necrarch" category="Hireling Activities" />
+  <String id="tor_hirelingactivity4.Necrarch" category="Hireling Activities" subcategory="Necrarch" />
   <String id="tor_hirelingactivity4.Necromancer" category="Hireling Activities" />
   <String id="tor_hirelingactivity4.OrcBoss" category="Hireling Activities" />
   <String id="tor_hirelingactivity4.OrcShaman" category="Hireling Activities" />
@@ -2921,11 +2921,11 @@
   <String id="tor_prebackstory.tor_wanderer_mousillon_4" category="Mousillon 4 - Fledgling Vampire" />
   <String id="tor_response_1.tor_wanderer_mousillon_4" category="Mousillon 4 - Fledgling Vampire" />
   <String id="tor_response_2.tor_wanderer_mousillon_4" category="Mousillon 4 - Fledgling Vampire" />
-  <String id="tor_careerunlock_level_1.Necrarch" category="Necrarch" />
-  <String id="tor_careerunlock_level_2.Necrarch" category="Necrarch" />
-  <String id="tor_careerunlock_level_3.Necrarch" category="Necrarch" />
-  <String id="tor_careerunlock_reward_2.Necrarch" category="Necrarch" />
-  <String id="tor_careerunlock_reward_3.Necrarch" category="Necrarch" />
+  <String id="tor_careerunlock_level_1.Necrarch" category="Career Unlock" subcategory="Necrarch" />
+  <String id="tor_careerunlock_level_2.Necrarch" category="Career Unlock" subcategory="Necrarch" />
+  <String id="tor_careerunlock_level_3.Necrarch" category="Necrarch" subcategory="Necrarch" />
+  <String id="tor_careerunlock_reward_2.Necrarch" category="Necrarch" subcategory="Necrarch" />
+  <String id="tor_careerunlock_reward_3.Necrarch" category="Necrarch" subcategory="Necrarch" />
   <String id="tor_careerchoice_description.DarkVisionKeystone" category="Career Choice Description" subcategory="Necrarch" />
   <String id="tor_careerchoice_description.DarkVisionPassive1" category="Career Choice Description" subcategory="Necrarch" />
   <String id="tor_careerchoice_description.DarkVisionPassive2" category="Career Choice Description" subcategory="Necrarch" />
@@ -2969,7 +2969,7 @@
   <String id="tor_career_choicegroup_name.UnhallowedSoul" category="Necrarch Choice Group Names" />
   <String id="tor_career_choicegroup_name.WellspringOfDhar" category="Necrarch Choice Group Names" />
   <String id="tor_career_choicegroup_name.WitchSight" category="Necrarch Choice Group Names" />
-  <String id="tor_bloodkiss_necrach_request" category="Necrarch Dialogs" />
+  <String id="tor_bloodkiss_necrach_request" category="Blood Kiss" subcategory="Necrarch" />
   <String id="tor_necrarch_lore_choice_description" category="Necrarch lore choice popup" />
   <String id="tor_spelltrainer_vampire_tier_limit" category="Necrarch tier limit dialog" />
   <String id="tor_careerunlock_level_1.Necromancer" category="Necromancer" />
@@ -3212,7 +3212,7 @@
   <String id="tor_career_rank1_name.KnightOldWorld" category="Career Choice Description" subcategory="OrcShaman" />
   <String id="tor_career_rank1_name.Mercenary" category="Career Choice Description" subcategory="OrcShaman" />
   <String id="tor_career_rank1_name.MinorVampire" category="Career Choice Description" subcategory="OrcShaman" />
-  <String id="tor_career_rank1_name.Necrarch" category="Career Choice Description" subcategory="OrcShaman" />
+  <String id="tor_career_rank1_name.Necrarch" category="Career Rank Label" subcategory="Necrarch" />
   <String id="tor_career_rank1_name.Necromancer" category="Career Choice Description" subcategory="OrcShaman" />
   <String id="tor_career_rank1_name.OrcBoss" category="Career Choice Description" subcategory="OrcShaman" />
   <String id="tor_career_rank1_name.OrcShaman" category="Career Choice Description" subcategory="OrcShaman" />
@@ -3231,7 +3231,7 @@
   <String id="tor_career_rank2_name.KnightOldWorld" category="Career Choice Description" subcategory="OrcShaman" />
   <String id="tor_career_rank2_name.Mercenary" category="Career Choice Description" subcategory="OrcShaman" />
   <String id="tor_career_rank2_name.MinorVampire" category="Career Choice Description" subcategory="OrcShaman" />
-  <String id="tor_career_rank2_name.Necrarch" category="Career Choice Description" subcategory="OrcShaman" />
+  <String id="tor_career_rank2_name.Necrarch" category="Career Rank Label" subcategory="Necrarch" />
   <String id="tor_career_rank2_name.Necromancer" category="Career Choice Description" subcategory="OrcShaman" />
   <String id="tor_career_rank2_name.OrcBoss" category="Career Choice Description" subcategory="OrcShaman" />
   <String id="tor_career_rank2_name.OrcShaman" category="Career Choice Description" subcategory="OrcShaman" />
@@ -3250,7 +3250,7 @@
   <String id="tor_career_rank3_name.KnightOldWorld" category="Career Choice Description" subcategory="OrcShaman" />
   <String id="tor_career_rank3_name.Mercenary" category="Career Choice Description" subcategory="OrcShaman" />
   <String id="tor_career_rank3_name.MinorVampire" category="Career Choice Description" subcategory="OrcShaman" />
-  <String id="tor_career_rank3_name.Necrarch" category="Career Choice Description" subcategory="OrcShaman" />
+  <String id="tor_career_rank3_name.Necrarch" category="Career Rank Label" subcategory="Necrarch" />
   <String id="tor_career_rank3_name.Necromancer" category="Career Choice Description" subcategory="OrcShaman" />
   <String id="tor_career_rank3_name.OrcBoss" category="Career Choice Description" subcategory="OrcShaman" />
   <String id="tor_career_rank3_name.OrcShaman" category="Career Choice Description" subcategory="OrcShaman" />
@@ -4360,7 +4360,7 @@
   <String id="tor_ui_winds_of_magic_maximum" category="UI Strings" />
   <String id="tor_ui_winds_of_magic_recharge_rate" category="UI Strings" />
   <String id="tor_ui_winds_of_magic_title" category="UI Strings" />
-  <String id="tor_cc_review_description" category="Uncategorized" />
+  <String id="tor_cc_review_description" category="Character Creation" />
   <String id="tor_inquiry_cancel_text" category="Career Button" subcategory="UI" />
   <String id="tor_inquiry_confirm_text" category="Career Button" subcategory="UI" />
   <String id="tor_unit_rune_active_display" category="Career Button" />
