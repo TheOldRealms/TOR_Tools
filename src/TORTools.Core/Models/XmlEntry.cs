@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Xml;
 using System.Xml.Linq;
 
 namespace TORTools.Core.Models;
@@ -275,6 +276,7 @@ public class XmlEntry
     /// <summary>
     /// Gets a list of tag values from nested tag elements.
     /// Returns tags as comma-separated string (e.g., "IsOrcTag, EmpireTag").
+    /// Prefers nested elements, falls back to attribute only if no nested elements exist.
     /// </summary>
     /// <param name="containerElement">Container element name (e.g., "tags")</param>
     /// <param name="itemElement">Item element name (e.g., "tag")</param>
@@ -282,27 +284,37 @@ public class XmlEntry
     /// <param name="weightAttribute">Optional attribute for weight (e.g., "weight")</param>
     public string? GetTagList(string containerElement, string itemElement, string nameAttribute, string? weightAttribute = null)
     {
+        // Check for nested element format first (preferred)
         var container = OriginalElement.Element(containerElement);
-        if (container == null) return null;
-
-        var tags = new List<string>();
-        foreach (var tagElement in container.Elements(itemElement))
+        if (container != null)
         {
-            var tagName = tagElement.Attribute(nameAttribute)?.Value;
-            if (string.IsNullOrEmpty(tagName)) continue;
-
-            if (!string.IsNullOrEmpty(weightAttribute))
+            var tags = new List<string>();
+            foreach (var tagElement in container.Elements(itemElement))
             {
-                var weight = tagElement.Attribute(weightAttribute)?.Value;
-                if (!string.IsNullOrEmpty(weight) && weight != "0")
+                var tagName = tagElement.Attribute(nameAttribute)?.Value;
+                if (string.IsNullOrEmpty(tagName)) continue;
+
+                if (!string.IsNullOrEmpty(weightAttribute))
                 {
-                    tagName += $"({weight})";
+                    var weight = tagElement.Attribute(weightAttribute)?.Value;
+                    if (!string.IsNullOrEmpty(weight) && weight != "0")
+                    {
+                        tagName += $"({weight})";
+                    }
                 }
+                tags.Add(tagName);
             }
-            tags.Add(tagName);
+
+            if (tags.Count > 0)
+                return string.Join(", ", tags);
         }
 
-        return tags.Count > 0 ? string.Join(", ", tags) : null;
+        // Fall back to attribute format (for backwards compatibility)
+        var attrValue = OriginalElement.Attribute(containerElement)?.Value;
+        if (!string.IsNullOrWhiteSpace(attrValue))
+            return attrValue;
+
+        return null;
     }
 
     /// <summary>
@@ -316,9 +328,17 @@ public class XmlEntry
     /// <param name="weightAttribute">Optional attribute for weight (e.g., "weight")</param>
     public void SetTagList(string? value, string containerElement, string itemElement, string nameAttribute, string? weightAttribute = null)
     {
-        // Remove existing container
+        // Remove any existing container element
         var existingContainer = OriginalElement.Element(containerElement);
         existingContainer?.Remove();
+
+        // Also remove any duplicate attribute with the same name
+        OriginalElement.SetAttributeValue(containerElement, null);
+        var existingAttr = Attributes.FirstOrDefault(a => a.Name == containerElement);
+        if (existingAttr != null)
+        {
+            Attributes.Remove(existingAttr);
+        }
 
         if (string.IsNullOrWhiteSpace(value))
         {
@@ -367,7 +387,6 @@ public class XmlEntry
 
         OriginalElement.Add(newContainer);
         IsModified = true;
-        RefreshChildren();
     }
 
     /// <summary>
