@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Translation Template for The Old Realms
+
+  This file defines all translatable files that should be present in each language.
+  Use {LANG} as placeholder for the language code (e.g., DE, FR, SP).
+
+  The translation_repair tool compares this template against a language's
+  language_data.xml to find missing entries.
+-->
+<LanguageData id="{LANGUAGE_NAME}">
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════
+       TOR_Core - Root ModuleData
+       ═══════════════════════════════════════════════════════════════════════════ -->
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/banner_icons.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_clans.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_concept_strings.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_cultures.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_heroes.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_kingdoms.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_lords.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_religions.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_settlements.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_string_overrides.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_strings.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_troopdefinitions.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_voiced_strings.xml" />
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════
+       TOR_Core - Custom XMLs (Abilities, Config, etc.)
+       ═══════════════════════════════════════════════════════════════════════════ -->
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_custom_xmls/tor_abilitytemplates.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_custom_xmls/tor_cc_options.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_custom_xmls/tor_extendeditemproperties.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_custom_xmls/tor_itemtraits.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_custom_xmls/tor_ror_settlement_templates.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_custom_xmls/tor_specialization_options.xml" />
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════
+       TOR_Core - NPC Characters
+       ═══════════════════════════════════════════════════════════════════════════ -->
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_npccharacters/tor_campaign_lords.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_npccharacters/tor_charactertemplates.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_npccharacters/tor_dummyNPCs.xml" />
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════
+       TOR_Core - Townspeople (by culture)
+       ═══════════════════════════════════════════════════════════════════════════ -->
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_townspeople/tor_townspeople_asrai.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_townspeople/tor_townspeople_blooddragons.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_townspeople/tor_townspeople_bretonnia.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_townspeople/tor_townspeople_chaos.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_townspeople/tor_townspeople_dawi.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_townspeople/tor_townspeople_empire.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_townspeople/tor_townspeople_eonir.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_townspeople/tor_townspeople_greenskins.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_townspeople/tor_townspeople_mousillon.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Core/ModuleData/tor_townspeople/tor_townspeople_sylvania.xml" />
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════
+       TOR_Armory - Root ModuleData
+       ═══════════════════════════════════════════════════════════════════════════ -->
+  <LanguageFile xml_path="{LANG}/TOR_Armory/ModuleData/banner_icons.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Armory/ModuleData/tor_crafting_pieces.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Armory/ModuleData/xslt_changes.xml" />
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════
+       TOR_Armory - Items
+       ═══════════════════════════════════════════════════════════════════════════ -->
+  <LanguageFile xml_path="{LANG}/TOR_Armory/ModuleData/tor_items/tor_armors.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Armory/ModuleData/tor_items/tor_horseandharness.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Armory/ModuleData/tor_items/tor_meleeweapons.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Armory/ModuleData/tor_items/tor_other_items.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Armory/ModuleData/tor_items/tor_projectiles.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Armory/ModuleData/tor_items/tor_rangedweapons.xml" />
+  <LanguageFile xml_path="{LANG}/TOR_Armory/ModuleData/tor_items/tor_shields.xml" />
+
+</LanguageData>
