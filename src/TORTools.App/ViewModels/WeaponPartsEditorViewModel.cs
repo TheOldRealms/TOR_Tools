@@ -718,4 +718,102 @@ public partial class WeaponPartsEditorViewModel : ObservableObject
             PommelScale
         );
     }
+
+    /// <summary>
+    /// Gets piece offsets that have been modified from their original values.
+    /// Only returns pieces where at least one offset value changed.
+    /// </summary>
+    public List<PieceOffsets> GetModifiedOffsets()
+    {
+        var modified = new List<PieceOffsets>();
+
+        // Check blade
+        if (SelectedBlade != null && HasOffsetChanged(SelectedBlade,
+            (float)BladePieceOffset, (float)BladePrevOffset, (float)BladeNextOffset))
+        {
+            modified.Add(new PieceOffsets
+            {
+                PieceId = SelectedBlade.Id,
+                PieceOffset = (float)BladePieceOffset,
+                PreviousPieceOffset = (float)BladePrevOffset,
+                NextPieceOffset = (float)BladeNextOffset
+            });
+        }
+
+        // Check handle
+        if (SelectedHandle != null && HasOffsetChanged(SelectedHandle,
+            (float)HandlePieceOffset, (float)HandlePrevOffset, (float)HandleNextOffset))
+        {
+            modified.Add(new PieceOffsets
+            {
+                PieceId = SelectedHandle.Id,
+                PieceOffset = (float)HandlePieceOffset,
+                PreviousPieceOffset = (float)HandlePrevOffset,
+                NextPieceOffset = (float)HandleNextOffset
+            });
+        }
+
+        // Check guard
+        if (SelectedGuard != null && HasOffsetChanged(SelectedGuard,
+            (float)GuardPieceOffset, (float)GuardPrevOffset, (float)GuardNextOffset))
+        {
+            modified.Add(new PieceOffsets
+            {
+                PieceId = SelectedGuard.Id,
+                PieceOffset = (float)GuardPieceOffset,
+                PreviousPieceOffset = (float)GuardPrevOffset,
+                NextPieceOffset = (float)GuardNextOffset
+            });
+        }
+
+        // Check pommel
+        if (SelectedPommel != null && HasOffsetChanged(SelectedPommel,
+            (float)PommelPieceOffset, (float)PommelPrevOffset, (float)PommelNextOffset))
+        {
+            modified.Add(new PieceOffsets
+            {
+                PieceId = SelectedPommel.Id,
+                PieceOffset = (float)PommelPieceOffset,
+                PreviousPieceOffset = (float)PommelPrevOffset,
+                NextPieceOffset = (float)PommelNextOffset
+            });
+        }
+
+        return modified;
+    }
+
+    /// <summary>
+    /// Checks if any offset value has changed from the original piece values.
+    /// </summary>
+    private bool HasOffsetChanged(CraftingPieceInfo piece, float pieceOffset, float prevOffset, float nextOffset)
+    {
+        const float tolerance = 0.001f;
+        return Math.Abs(piece.PieceOffset - pieceOffset) > tolerance ||
+               Math.Abs(piece.PreviousPieceOffset - prevOffset) > tolerance ||
+               Math.Abs(piece.NextPieceOffset - nextOffset) > tolerance;
+    }
+
+    /// <summary>
+    /// Saves modified piece offsets to the XML file.
+    /// </summary>
+    /// <returns>Number of pieces updated, or -1 if an error occurred.</returns>
+    public int SaveModifiedOffsets()
+    {
+        try
+        {
+            var modified = GetModifiedOffsets();
+            if (modified.Count == 0)
+            {
+                Console.WriteLine("[WeaponPartsEditor] No offset changes to save.");
+                return 0;
+            }
+
+            return _catalogService.SavePieceOffsets(modified);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[WeaponPartsEditor] Error saving offsets: {ex.Message}");
+            return -1;
+        }
+    }
 }

@@ -54,12 +54,24 @@ public class CraftingTemplateInfo
 }
 
 /// <summary>
+/// Represents offset values for a crafting piece's BuildData.
+/// </summary>
+public class PieceOffsets
+{
+    public string PieceId { get; set; } = string.Empty;
+    public float PieceOffset { get; set; }
+    public float NextPieceOffset { get; set; }
+    public float PreviousPieceOffset { get; set; }
+}
+
+/// <summary>
 /// Service for loading and querying crafting pieces and templates.
 /// </summary>
 public class CraftingPieceCatalogService
 {
     private readonly Dictionary<string, CraftingPieceInfo> _pieces = new();
     private readonly Dictionary<string, CraftingTemplateInfo> _templates = new();
+    private string? _piecesFilePath;
     private bool _loaded;
 
     /// <summary>
@@ -76,6 +88,7 @@ public class CraftingPieceCatalogService
 
         if (File.Exists(piecesPath))
         {
+            _piecesFilePath = piecesPath;
             LoadPieces(piecesPath);
         }
 
@@ -401,4 +414,140 @@ public class CraftingPieceCatalogService
     /// Gets the total number of loaded templates.
     /// </summary>
     public int TemplateCount => _templates.Count;
+
+    /// <summary>
+    /// Gets the file path for the crafting pieces XML.
+    /// </summary>
+    public string? PiecesFilePath => _piecesFilePath;
+
+    /// <summary>
+    /// Saves modified piece offsets back to the crafting pieces XML file.
+    /// Only updates pieces that have changed offsets.
+    /// </summary>
+    /// <param name="modifiedOffsets">List of pieces with their new offset values.</param>
+    /// <returns>Number of pieces updated.</returns>
+    public int SavePieceOffsets(IEnumerable<PieceOffsets> modifiedOffsets)
+    {
+        if (string.IsNullOrEmpty(_piecesFilePath) || !File.Exists(_piecesFilePath))
+        {
+            throw new InvalidOperationException("Crafting pieces file path not set or file doesn't exist.");
+        }
+
+        var doc = XDocument.Load(_piecesFilePath, LoadOptions.PreserveWhitespace);
+        var root = doc.Root;
+        if (root == null) return 0;
+
+        int updatedCount = 0;
+
+        foreach (var offsets in modifiedOffsets)
+        {
+            // Find the piece element by ID
+            var pieceElement = root.Elements("CraftingPiece")
+                .FirstOrDefault(e => e.Attribute("id")?.Value == offsets.PieceId);
+
+            if (pieceElement == null)
+            {
+                Console.WriteLine($"[SavePieceOffsets] Piece not found: {offsets.PieceId}");
+                continue;
+            }
+
+            // Get or create BuildData element
+            var buildData = pieceElement.Element("BuildData");
+            if (buildData == null)
+            {
+                // Insert BuildData after the CraftingPiece opening tag attributes
+                // Try to insert before other child elements, or as first child
+                var firstChild = pieceElement.Elements().FirstOrDefault();
+                buildData = new XElement("BuildData");
+                if (firstChild != null)
+                {
+                    firstChild.AddBeforeSelf(buildData);
+                }
+                else
+                {
+                    pieceElement.Add(buildData);
+                }
+            }
+
+            // Update offset attributes
+            var pieceOffsetStr = offsets.PieceOffset.ToString("0.##", CultureInfo.InvariantCulture);
+            var nextOffsetStr = offsets.NextPieceOffset.ToString("0.##", CultureInfo.InvariantCulture);
+            var prevOffsetStr = offsets.PreviousPieceOffset.ToString("0.##", CultureInfo.InvariantCulture);
+
+            // Check if any values actually changed
+            var currentPieceOffset = buildData.Attribute("piece_offset")?.Value;
+            var currentNextOffset = buildData.Attribute("next_piece_offset")?.Value;
+            var currentPrevOffset = buildData.Attribute("previous_piece_offset")?.Value;
+
+            bool changed = false;
+
+            if (currentPieceOffset != pieceOffsetStr && offsets.PieceOffset != 0)
+            {
+                buildData.SetAttributeValue("piece_offset", pieceOffsetStr);
+                changed = true;
+            }
+            else if (offsets.PieceOffset == 0 && currentPieceOffset != null)
+            {
+                buildData.Attribute("piece_offset")?.Remove();
+                changed = true;
+            }
+
+            if (currentNextOffset != nextOffsetStr && offsets.NextPieceOffset != 0)
+            {
+                buildData.SetAttributeValue("next_piece_offset", nextOffsetStr);
+                changed = true;
+            }
+            else if (offsets.NextPieceOffset == 0 && currentNextOffset != null)
+            {
+                buildData.Attribute("next_piece_offset")?.Remove();
+                changed = true;
+            }
+
+            if (currentPrevOffset != prevOffsetStr && offsets.PreviousPieceOffset != 0)
+            {
+                buildData.SetAttributeValue("previous_piece_offset", prevOffsetStr);
+                changed = true;
+            }
+            else if (offsets.PreviousPieceOffset == 0 && currentPrevOffset != null)
+            {
+                buildData.Attribute("previous_piece_offset")?.Remove();
+                changed = true;
+            }
+
+            // Remove BuildData element if it has no attributes
+            if (!buildData.HasAttributes)
+            {
+                buildData.Remove();
+            }
+
+            if (changed)
+            {
+                // Also update the in-memory piece info
+                if (_pieces.TryGetValue(offsets.PieceId, out var pieceInfo))
+                {
+                    pieceInfo.PieceOffset = offsets.PieceOffset;
+                    pieceInfo.NextPieceOffset = offsets.NextPieceOffset;
+                    pieceInfo.PreviousPieceOffset = offsets.PreviousPieceOffset;
+                }
+
+                updatedCount++;
+                Console.WriteLine($"[SavePieceOffsets] Updated {offsets.PieceId}: offset={pieceOffsetStr}, next={nextOffsetStr}, prev={prevOffsetStr}");
+            }
+        }
+
+        if (updatedCount > 0)
+        {
+            // Save with atomic write (temp file + rename)
+            var tempPath = _piecesFilePath + ".tmp";
+            using (var writer = new StreamWriter(tempPath, false, System.Text.Encoding.UTF8))
+            {
+                doc.Save(writer);
+            }
+            File.Delete(_piecesFilePath);
+            File.Move(tempPath, _piecesFilePath);
+            Console.WriteLine($"[SavePieceOffsets] Saved {updatedCount} piece(s) to {_piecesFilePath}");
+        }
+
+        return updatedCount;
+    }
 }

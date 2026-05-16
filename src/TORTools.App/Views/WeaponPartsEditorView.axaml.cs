@@ -173,6 +173,17 @@ public partial class WeaponPartsEditorView : Window
     {
         if (_viewModel != null)
         {
+            // Save modified offsets to XML
+            var savedCount = _viewModel.SaveModifiedOffsets();
+            if (savedCount > 0)
+            {
+                Console.WriteLine($"[WeaponPartsEditor] Saved {savedCount} piece offset(s) to XML.");
+            }
+            else if (savedCount < 0)
+            {
+                Console.WriteLine("[WeaponPartsEditor] Error saving offsets.");
+            }
+
             Selection = _viewModel.GetSelection();
         }
         DialogResult = true;
