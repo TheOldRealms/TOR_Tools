@@ -28,6 +28,14 @@
       "order": 10,
       "width": 180
     },
+    "OpenPartsEditor": {
+      "displayName": "Parts",
+      "description": "Open the visual 3D weapon parts editor.",
+      "type": "action",
+      "actionType": "openWeaponPartsEditor",
+      "order": 11,
+      "width": 60
+    },
     "culture": {
       "displayName": "Culture",
       "description": "Cultural origin of this weapon. Click to navigate to culture definition.",
@@ -122,6 +130,86 @@
         "targetKeyField": "ItemTraitStringId",
         "localKeyField": "id"
       }
+    },
+    "blade_id": {
+      "displayName": "Blade ID",
+      "description": "Crafting piece ID for the blade component.",
+      "type": "string",
+      "nested": true,
+      "nestedPath": "Pieces/Piece[@Type='Blade']/@id",
+      "order": 30,
+      "width": 200,
+      "group": "Parts"
+    },
+    "blade_scale": {
+      "displayName": "Blade Scale",
+      "description": "Scale factor for the blade piece (default 100).",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "Pieces/Piece[@Type='Blade']/@scale_factor",
+      "order": 31,
+      "width": 60,
+      "group": "Parts"
+    },
+    "handle_id": {
+      "displayName": "Handle ID",
+      "description": "Crafting piece ID for the handle component.",
+      "type": "string",
+      "nested": true,
+      "nestedPath": "Pieces/Piece[@Type='Handle']/@id",
+      "order": 32,
+      "width": 200,
+      "group": "Parts"
+    },
+    "handle_scale": {
+      "displayName": "Handle Scale",
+      "description": "Scale factor for the handle piece (default 100).",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "Pieces/Piece[@Type='Handle']/@scale_factor",
+      "order": 33,
+      "width": 60,
+      "group": "Parts"
+    },
+    "guard_id": {
+      "displayName": "Guard ID",
+      "description": "Crafting piece ID for the guard component.",
+      "type": "string",
+      "nested": true,
+      "nestedPath": "Pieces/Piece[@Type='Guard']/@id",
+      "order": 34,
+      "width": 200,
+      "group": "Parts"
+    },
+    "guard_scale": {
+      "displayName": "Guard Scale",
+      "description": "Scale factor for the guard piece (default 100).",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "Pieces/Piece[@Type='Guard']/@scale_factor",
+      "order": 35,
+      "width": 60,
+      "group": "Parts"
+    },
+    "pommel_id": {
+      "displayName": "Pommel ID",
+      "description": "Crafting piece ID for the pommel component.",
+      "type": "string",
+      "nested": true,
+      "nestedPath": "Pieces/Piece[@Type='Pommel']/@id",
+      "order": 36,
+      "width": 200,
+      "group": "Parts"
+    },
+    "pommel_scale": {
+      "displayName": "Pommel Scale",
+      "description": "Scale factor for the pommel piece (default 100).",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "Pieces/Piece[@Type='Pommel']/@scale_factor",
+      "order": 37,
+      "width": 60,
+      "group": "Parts"
     }
   }
 }

@@ -502,6 +502,17 @@ public partial class FileTabView : UserControl
                     CellEditingTemplate = CreateEnumEditingTemplate(displayInfo.AttributeName, fieldDef!)
                 };
             }
+            else if (fieldDef?.Type == "action")
+            {
+                // Action button field (e.g., Open Parts Editor)
+                column = new DataGridTemplateColumn
+                {
+                    Header = CreateColumnHeader(displayInfo, fieldDef),
+                    Width = new DataGridLength(displayInfo.Width),
+                    IsReadOnly = true,
+                    CellTemplate = CreateActionButtonTemplate(displayInfo.AttributeName, fieldDef, vm)
+                };
+            }
             else if (fieldDef?.Multiline == true)
             {
                 // Multiline text field with edit button (but also allows inline editing)
@@ -3616,6 +3627,140 @@ public partial class FileTabView : UserControl
 
             return border;
         });
+    }
+
+    /// <summary>
+    /// Creates a template for action button fields (e.g., Open Parts Editor).
+    /// </summary>
+    private static IDataTemplate CreateActionButtonTemplate(string attributeName, FieldDefinition fieldDef, FileTabViewModel vm)
+    {
+        return new FuncDataTemplate<EntryRowViewModel>((rowVm, _) =>
+        {
+            var border = new Border();
+            border.Classes.Add("dataCell");
+
+            if (rowVm == null)
+            {
+                return border;
+            }
+
+            var button = new Button
+            {
+                Content = fieldDef.DisplayName ?? "Edit",
+                Padding = new Thickness(8, 2),
+                FontSize = 11,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            var actionType = fieldDef.ActionType;
+
+            button.Click += async (s, e) =>
+            {
+                if (actionType == "openWeaponPartsEditor")
+                {
+                    await OpenWeaponPartsEditorAsync(rowVm, vm, button);
+                }
+            };
+
+            border.Child = button;
+            return border;
+        });
+    }
+
+    /// <summary>
+    /// Opens the weapon parts editor for the specified row.
+    /// </summary>
+    private static async Task OpenWeaponPartsEditorAsync(EntryRowViewModel rowVm, FileTabViewModel vm, Control anchor)
+    {
+        // Get current values from the row
+        var templateId = rowVm["crafting_template"];
+        var bladeId = rowVm["blade_id"];
+        var handleId = rowVm["handle_id"];
+        var guardId = rowVm["guard_id"];
+        var pommelId = rowVm["pommel_id"];
+
+        var bladeScale = int.TryParse(rowVm["blade_scale"], out var bs) ? bs : 100;
+        var handleScale = int.TryParse(rowVm["handle_scale"], out var hs) ? hs : 100;
+        var guardScale = int.TryParse(rowVm["guard_scale"], out var gs) ? gs : 100;
+        var pommelScale = int.TryParse(rowVm["pommel_scale"], out var ps) ? ps : 100;
+
+        // Create services
+        var catalogService = new CraftingPieceCatalogService();
+        var fbxLoaderService = new FbxLoaderService();
+
+        // Derive paths from the file path
+        // FilePath is like: C:\...\TOR_Armory\ModuleData\tor_items\tor_meleeweapons.xml
+        // We need to find the ModuleData folder (may be parent or grandparent depending on file location)
+        // AssetSources is at the same level as ModuleData (sibling folder in module root)
+        var fileDir = Path.GetDirectoryName(vm.FilePath) ?? "";
+
+        // Find the ModuleData folder by walking up the path
+        var moduleDataPath = fileDir;
+        while (!string.IsNullOrEmpty(moduleDataPath) && !moduleDataPath.EndsWith("ModuleData", StringComparison.OrdinalIgnoreCase))
+        {
+            var parent = Path.GetDirectoryName(moduleDataPath);
+            if (parent == moduleDataPath) break; // Reached root
+            moduleDataPath = parent ?? "";
+        }
+
+        // If we couldn't find ModuleData, fall back to the file's directory
+        if (string.IsNullOrEmpty(moduleDataPath) || !moduleDataPath.EndsWith("ModuleData", StringComparison.OrdinalIgnoreCase))
+        {
+            moduleDataPath = fileDir;
+        }
+
+        var moduleRootPath = Path.GetDirectoryName(moduleDataPath) ?? "";
+        var assetSourcesPath = Path.Combine(moduleRootPath, "AssetSources");
+
+        // Create and show editor
+        Console.WriteLine($"[WeaponPartsEditor] Creating editor window...");
+        var editor = new WeaponPartsEditorView();
+        editor.Initialize(catalogService, fbxLoaderService, moduleDataPath, assetSourcesPath);
+        editor.SetInitialSelection(templateId, bladeId, handleId, guardId, pommelId,
+            bladeScale, handleScale, guardScale, pommelScale);
+
+        // Get the parent window from the anchor control
+        var parentWindow = TopLevel.GetTopLevel(anchor) as Window;
+        Console.WriteLine($"[WeaponPartsEditor] Parent window found: {parentWindow != null}");
+
+        if (parentWindow != null)
+        {
+            Console.WriteLine($"[WeaponPartsEditor] Showing dialog...");
+            await editor.ShowDialog(parentWindow);
+            Console.WriteLine($"[WeaponPartsEditor] Dialog closed");
+        }
+        else
+        {
+            Console.WriteLine($"[WeaponPartsEditor] No parent window, showing as regular window");
+            editor.Show();
+            return;
+        }
+
+        // If user applied changes, update the row
+        if (editor.DialogResult && editor.Selection.HasValue)
+        {
+            var selection = editor.Selection.Value;
+
+            // Update piece IDs
+            if (selection.bladeId != null)
+                rowVm["blade_id"] = selection.bladeId;
+            if (selection.handleId != null)
+                rowVm["handle_id"] = selection.handleId;
+            if (selection.guardId != null)
+                rowVm["guard_id"] = selection.guardId;
+            if (selection.pommelId != null)
+                rowVm["pommel_id"] = selection.pommelId;
+
+            // Update scales
+            rowVm["blade_scale"] = selection.bladeScale.ToString();
+            rowVm["handle_scale"] = selection.handleScale.ToString();
+            rowVm["guard_scale"] = selection.guardScale.ToString();
+            rowVm["pommel_scale"] = selection.pommelScale.ToString();
+        }
+
+        // Clean up
+        fbxLoaderService.Dispose();
     }
 
     /// <summary>
