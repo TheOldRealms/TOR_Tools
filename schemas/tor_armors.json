@@ -144,6 +144,226 @@
         "targetKeyField": "ItemTraitStringId",
         "localKeyField": "id"
       }
+    },
+    "head_armor": {
+      "displayName": "Head",
+      "description": "Head armor protection value.",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "ItemComponent/Armor/@head_armor",
+      "order": 30,
+      "width": 50,
+      "group": "Protection"
+    },
+    "body_armor": {
+      "displayName": "Body",
+      "description": "Body armor protection value.",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "ItemComponent/Armor/@body_armor",
+      "order": 31,
+      "width": 50,
+      "group": "Protection"
+    },
+    "arm_armor": {
+      "displayName": "Arms",
+      "description": "Arm armor protection value.",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "ItemComponent/Armor/@arm_armor",
+      "order": 32,
+      "width": 50,
+      "group": "Protection"
+    },
+    "leg_armor": {
+      "displayName": "Legs",
+      "description": "Leg armor protection value.",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "ItemComponent/Armor/@leg_armor",
+      "order": 33,
+      "width": 50,
+      "group": "Protection"
+    },
+    "material_type": {
+      "displayName": "Material",
+      "description": "Armor material type affecting damage resistance.",
+      "type": "enum",
+      "nested": true,
+      "nestedPath": "ItemComponent/Armor/@material_type",
+      "order": 40,
+      "width": 80,
+      "enumValues": [
+        { "value": "Cloth", "displayName": "Cloth" },
+        { "value": "Leather", "displayName": "Leather" },
+        { "value": "Chainmail", "displayName": "Chainmail" },
+        { "value": "Plate", "displayName": "Plate" }
+      ]
+    },
+    "modifier_group": {
+      "displayName": "Modifier",
+      "description": "Modifier group for item quality variations.",
+      "type": "enum",
+      "nested": true,
+      "nestedPath": "ItemComponent/Armor/@modifier_group",
+      "order": 41,
+      "width": 80,
+      "enumValues": [
+        { "value": "cloth", "displayName": "Cloth" },
+        { "value": "leather", "displayName": "Leather" },
+        { "value": "chainmail", "displayName": "Chainmail" },
+        { "value": "plate", "displayName": "Plate" }
+      ]
+    },
+    "hair_cover_type": {
+      "displayName": "Hair Cover",
+      "description": "How the armor covers character hair.",
+      "type": "enum",
+      "nested": true,
+      "nestedPath": "ItemComponent/Armor/@hair_cover_type",
+      "order": 42,
+      "width": 80,
+      "enumValues": [
+        { "value": "None", "displayName": "None" },
+        { "value": "Type1", "displayName": "Type 1" },
+        { "value": "Type2", "displayName": "Type 2" },
+        { "value": "Type3", "displayName": "Type 3" },
+        { "value": "All", "displayName": "All" }
+      ]
+    },
+    "beard_cover_type": {
+      "displayName": "Beard Cover",
+      "description": "How the armor covers character beard.",
+      "type": "enum",
+      "nested": true,
+      "nestedPath": "ItemComponent/Armor/@beard_cover_type",
+      "order": 43,
+      "width": 80,
+      "enumValues": [
+        { "value": "None", "displayName": "None" },
+        { "value": "Type1", "displayName": "Type 1" },
+        { "value": "Type2", "displayName": "Type 2" },
+        { "value": "Type3", "displayName": "Type 3" },
+        { "value": "All", "displayName": "All" }
+      ]
+    },
+    "covers_head": {
+      "displayName": "Covers Head",
+      "description": "Whether this armor visually covers the head.",
+      "type": "enum",
+      "nested": true,
+      "nestedPath": "ItemComponent/Armor/@covers_head",
+      "order": 44,
+      "width": 60,
+      "enumValues": [
+        { "value": "true", "displayName": "Yes" },
+        { "value": "false", "displayName": "No" }
+      ]
+    },
+    "covers_body": {
+      "displayName": "Covers Body",
+      "description": "Whether this armor visually covers the body.",
+      "type": "enum",
+      "nested": true,
+      "nestedPath": "ItemComponent/Armor/@covers_body",
+      "order": 45,
+      "width": 60,
+      "enumValues": [
+        { "value": "true", "displayName": "Yes" },
+        { "value": "false", "displayName": "No" }
+      ]
+    },
+    "covers_hands": {
+      "displayName": "Covers Hands",
+      "description": "Whether this armor visually covers the hands.",
+      "type": "enum",
+      "nested": true,
+      "nestedPath": "ItemComponent/Armor/@covers_hands",
+      "order": 46,
+      "width": 60,
+      "enumValues": [
+        { "value": "true", "displayName": "Yes" },
+        { "value": "false", "displayName": "No" }
+      ]
+    },
+    "covers_legs": {
+      "displayName": "Covers Legs",
+      "description": "Whether this armor visually covers the legs.",
+      "type": "enum",
+      "nested": true,
+      "nestedPath": "ItemComponent/Armor/@covers_legs",
+      "order": 47,
+      "width": 60,
+      "enumValues": [
+        { "value": "true", "displayName": "Yes" },
+        { "value": "false", "displayName": "No" }
+      ]
+    },
+    "has_gender_variations": {
+      "displayName": "Gender Var",
+      "description": "Whether this armor has male/female mesh variants.",
+      "type": "enum",
+      "nested": true,
+      "nestedPath": "ItemComponent/Armor/@has_gender_variations",
+      "order": 48,
+      "width": 60,
+      "enumValues": [
+        { "value": "true", "displayName": "Yes" },
+        { "value": "false", "displayName": "No" }
+      ]
+    },
+    "UseTeamColor": {
+      "displayName": "Team Color",
+      "description": "Whether this armor uses team/faction colors.",
+      "type": "enum",
+      "nested": true,
+      "nestedPath": "Flags/@UseTeamColor",
+      "order": 80,
+      "width": 60,
+      "group": "Flags",
+      "enumValues": [
+        { "value": "true", "displayName": "Yes" },
+        { "value": "false", "displayName": "No" }
+      ]
+    },
+    "Civilian": {
+      "displayName": "Civilian",
+      "description": "Whether this is civilian clothing (non-combat).",
+      "type": "enum",
+      "nested": true,
+      "nestedPath": "Flags/@Civilian",
+      "order": 81,
+      "width": 60,
+      "group": "Flags",
+      "enumValues": [
+        { "value": "true", "displayName": "Yes" },
+        { "value": "false", "displayName": "No" }
+      ]
+    },
+    "Stealth": {
+      "displayName": "Stealth",
+      "description": "Whether this armor provides stealth bonus.",
+      "type": "enum",
+      "nested": true,
+      "nestedPath": "Flags/@Stealth",
+      "order": 82,
+      "width": 60,
+      "group": "Flags",
+      "enumValues": [
+        { "value": "true", "displayName": "Yes" },
+        { "value": "false", "displayName": "No" }
+      ]
+    },
+    "using_tableau": {
+      "displayName": "Tableau",
+      "description": "Whether this armor uses tableau textures.",
+      "type": "enum",
+      "order": 83,
+      "width": 60,
+      "enumValues": [
+        { "value": "true", "displayName": "Yes" },
+        { "value": "false", "displayName": "No" }
+      ]
     }
   }
 }

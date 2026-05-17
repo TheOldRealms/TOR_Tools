@@ -1,0 +1,819 @@
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Numerics;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using TORTools.Core.Services;
+
+namespace TORTools.App.ViewModels;
+
+/// <summary>
+/// ViewModel for the 3D weapon parts editor.
+/// </summary>
+public partial class WeaponPartsEditorViewModel : ObservableObject
+{
+    private readonly CraftingPieceCatalogService _catalogService;
+    private readonly FbxLoaderService _fbxLoaderService;
+    private bool _isUpdatingOffsets; // Flag to prevent recursive updates when populating offset fields
+
+    [ObservableProperty]
+    private bool _isLoaded;
+
+    [ObservableProperty]
+    private string _statusMessage = "Not loaded";
+
+    // Template selection
+    [ObservableProperty]
+    private ObservableCollection<CraftingTemplateInfo> _availableTemplates = new();
+
+    [ObservableProperty]
+    private CraftingTemplateInfo? _selectedTemplate;
+
+    // Piece lists by type (filtered views)
+    [ObservableProperty]
+    private ObservableCollection<CraftingPieceInfo> _availableBlades = new();
+
+    [ObservableProperty]
+    private ObservableCollection<CraftingPieceInfo> _availableHandles = new();
+
+    [ObservableProperty]
+    private ObservableCollection<CraftingPieceInfo> _availableGuards = new();
+
+    [ObservableProperty]
+    private ObservableCollection<CraftingPieceInfo> _availablePommels = new();
+
+    // Full unfiltered lists
+    private List<CraftingPieceInfo> _allBlades = new();
+    private List<CraftingPieceInfo> _allHandles = new();
+    private List<CraftingPieceInfo> _allGuards = new();
+    private List<CraftingPieceInfo> _allPommels = new();
+
+    // Filter text for each piece type
+    [ObservableProperty]
+    private string _bladeFilter = string.Empty;
+
+    [ObservableProperty]
+    private string _handleFilter = string.Empty;
+
+    [ObservableProperty]
+    private string _guardFilter = string.Empty;
+
+    [ObservableProperty]
+    private string _pommelFilter = string.Empty;
+
+    // Selected pieces
+    [ObservableProperty]
+    private CraftingPieceInfo? _selectedBlade;
+
+    [ObservableProperty]
+    private CraftingPieceInfo? _selectedHandle;
+
+    [ObservableProperty]
+    private CraftingPieceInfo? _selectedGuard;
+
+    [ObservableProperty]
+    private CraftingPieceInfo? _selectedPommel;
+
+    // Scale factors (100 = 1.0x)
+    [ObservableProperty]
+    private int _bladeScale = 100;
+
+    [ObservableProperty]
+    private int _handleScale = 100;
+
+    [ObservableProperty]
+    private int _guardScale = 100;
+
+    [ObservableProperty]
+    private int _pommelScale = 100;
+
+    // Editable offset values for each piece type
+    [ObservableProperty]
+    private decimal _bladePieceOffset;
+
+    [ObservableProperty]
+    private decimal _bladePrevOffset;
+
+    [ObservableProperty]
+    private decimal _bladeNextOffset;
+
+    [ObservableProperty]
+    private decimal _handlePieceOffset;
+
+    [ObservableProperty]
+    private decimal _handlePrevOffset;
+
+    [ObservableProperty]
+    private decimal _handleNextOffset;
+
+    [ObservableProperty]
+    private decimal _guardPieceOffset;
+
+    [ObservableProperty]
+    private decimal _guardPrevOffset;
+
+    [ObservableProperty]
+    private decimal _guardNextOffset;
+
+    [ObservableProperty]
+    private decimal _pommelPieceOffset;
+
+    [ObservableProperty]
+    private decimal _pommelPrevOffset;
+
+    [ObservableProperty]
+    private decimal _pommelNextOffset;
+
+    // Calculated weapon stats
+    [ObservableProperty]
+    private string _totalLength = "0 cm";
+
+    [ObservableProperty]
+    private string _totalWeight = "0 kg";
+
+    // Mesh data for viewport (mesh, offset in cm, scale factor)
+    public ObservableCollection<(MeshData mesh, Vector3 offset, float scale)> LoadedMeshes { get; } = new();
+
+    // Events for view to subscribe to
+    /// <summary>
+    /// Event raised when meshes change. Boolean parameter indicates if camera should fit to content.
+    /// True = piece selection changed (fit camera), False = offset/scale changed (keep camera position).
+    /// </summary>
+    public event Action<bool>? MeshesChanged;
+    public event Action<CraftingPieceInfo?>? PieceHighlighted;
+
+    public WeaponPartsEditorViewModel(CraftingPieceCatalogService catalogService, FbxLoaderService fbxLoaderService)
+    {
+        _catalogService = catalogService;
+        _fbxLoaderService = fbxLoaderService;
+    }
+
+    /// <summary>
+    /// Initializes the editor with paths to the module data.
+    /// </summary>
+    public void Initialize(string moduleDataPath, string assetSourcesPath)
+    {
+        try
+        {
+            Console.WriteLine($"[WeaponPartsEditor] Initialize called");
+            Console.WriteLine($"[WeaponPartsEditor] moduleDataPath: {moduleDataPath}");
+            Console.WriteLine($"[WeaponPartsEditor] assetSourcesPath: {assetSourcesPath}");
+
+            StatusMessage = "Loading crafting data...";
+
+            // Check if paths exist
+            var piecesPath = Path.Combine(moduleDataPath, "tor_crafting_pieces.xml");
+            var templatesPath = Path.Combine(moduleDataPath, "tor_crafting_templates.xml");
+            Console.WriteLine($"[WeaponPartsEditor] Looking for pieces at: {piecesPath}");
+            Console.WriteLine($"[WeaponPartsEditor] Pieces file exists: {File.Exists(piecesPath)}");
+            Console.WriteLine($"[WeaponPartsEditor] Looking for templates at: {templatesPath}");
+            Console.WriteLine($"[WeaponPartsEditor] Templates file exists: {File.Exists(templatesPath)}");
+
+            // Load crafting catalog
+            _catalogService.Load(moduleDataPath);
+
+            Console.WriteLine($"[WeaponPartsEditor] Catalog loaded: {_catalogService.PieceCount} pieces, {_catalogService.TemplateCount} templates");
+
+            // Initialize FBX loader
+            _fbxLoaderService.Initialize(assetSourcesPath);
+
+            // Populate templates
+            AvailableTemplates.Clear();
+            foreach (var template in _catalogService.GetAllTemplates()
+                .OrderBy(t => t.Id))
+            {
+                AvailableTemplates.Add(template);
+            }
+
+            Console.WriteLine($"[WeaponPartsEditor] Added {AvailableTemplates.Count} templates to dropdown");
+
+            IsLoaded = true;
+            StatusMessage = $"Loaded {_catalogService.PieceCount} pieces, {_catalogService.TemplateCount} templates";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[WeaponPartsEditor] ERROR: {ex}");
+            StatusMessage = $"Load error: {ex.Message}";
+        }
+    }
+
+    /// <summary>
+    /// Sets initial piece selections (for editing existing weapon).
+    /// If a piece is hidden but part of the weapon, it will be added to the available list.
+    /// </summary>
+    public void SetInitialPieces(string? bladeId, string? handleId, string? guardId, string? pommelId,
+        int bladeScale = 100, int handleScale = 100, int guardScale = 100, int pommelScale = 100)
+    {
+        Console.WriteLine($"[WeaponPartsEditor] SetInitialPieces: blade={bladeId}, handle={handleId}, guard={guardId}, pommel={pommelId}");
+
+        // Helper to find or add a piece (handles hidden pieces that are part of the weapon)
+        CraftingPieceInfo? FindOrAddPiece(string? pieceId, ObservableCollection<CraftingPieceInfo> availableList, List<CraftingPieceInfo> allList)
+        {
+            if (string.IsNullOrEmpty(pieceId)) return null;
+
+            // First try the available list
+            var piece = availableList.FirstOrDefault(p => p.Id == pieceId);
+            if (piece != null)
+            {
+                Console.WriteLine($"[WeaponPartsEditor] Found {pieceId} in available list");
+                return piece;
+            }
+
+            // Try the full list (includes all non-hidden pieces for current template)
+            piece = allList.FirstOrDefault(p => p.Id == pieceId);
+            if (piece != null)
+            {
+                Console.WriteLine($"[WeaponPartsEditor] Found {pieceId} in full list, adding to available");
+                availableList.Add(piece);
+                return piece;
+            }
+
+            // Not in template's pieces - try to get from catalog (handles hidden pieces)
+            piece = _catalogService.GetPiece(pieceId);
+            if (piece != null)
+            {
+                Console.WriteLine($"[WeaponPartsEditor] Found {pieceId} in catalog (hidden={piece.IsHidden}), adding to available");
+                allList.Add(piece);
+                availableList.Add(piece);
+                return piece;
+            }
+
+            Console.WriteLine($"[WeaponPartsEditor] Could not find {pieceId} anywhere");
+            return null;
+        }
+
+        SelectedBlade = FindOrAddPiece(bladeId, AvailableBlades, _allBlades);
+        SelectedHandle = FindOrAddPiece(handleId, AvailableHandles, _allHandles);
+        SelectedGuard = FindOrAddPiece(guardId, AvailableGuards, _allGuards);
+        SelectedPommel = FindOrAddPiece(pommelId, AvailablePommels, _allPommels);
+
+        BladeScale = bladeScale;
+        HandleScale = handleScale;
+        GuardScale = guardScale;
+        PommelScale = pommelScale;
+
+        UpdateAssembly();
+    }
+
+    partial void OnSelectedTemplateChanged(CraftingTemplateInfo? value)
+    {
+        if (value == null)
+        {
+            ClearPieceLists();
+            return;
+        }
+
+        // Populate piece lists based on template
+        PopulatePieceLists(value);
+    }
+
+    private void ClearPieceLists()
+    {
+        _allBlades.Clear();
+        _allHandles.Clear();
+        _allGuards.Clear();
+        _allPommels.Clear();
+        AvailableBlades.Clear();
+        AvailableHandles.Clear();
+        AvailableGuards.Clear();
+        AvailablePommels.Clear();
+        BladeFilter = string.Empty;
+        HandleFilter = string.Empty;
+        GuardFilter = string.Empty;
+        PommelFilter = string.Empty;
+        SelectedBlade = null;
+        SelectedHandle = null;
+        SelectedGuard = null;
+        SelectedPommel = null;
+    }
+
+    private void PopulatePieceLists(CraftingTemplateInfo template)
+    {
+        Console.WriteLine($"[WeaponPartsEditor] PopulatePieceLists called for template: {template.Id}");
+        Console.WriteLine($"[WeaponPartsEditor] Template has {template.UsablePieceIds.Count} usable piece IDs");
+
+        ClearPieceLists();
+
+        var pieces = _catalogService.GetPiecesForTemplate(template.Id).ToList();
+        Console.WriteLine($"[WeaponPartsEditor] Found {pieces.Count} pieces for template");
+
+        // Note: is_hidden is for in-game smithing UI, not for dev tools - show all pieces
+        foreach (var piece in pieces)
+        {
+            switch (piece.PieceType)
+            {
+                case "Blade":
+                    _allBlades.Add(piece);
+                    break;
+                case "Handle":
+                    _allHandles.Add(piece);
+                    break;
+                case "Guard":
+                    _allGuards.Add(piece);
+                    break;
+                case "Pommel":
+                    _allPommels.Add(piece);
+                    break;
+            }
+        }
+
+        // Sort by ID
+        _allBlades = _allBlades.OrderBy(p => p.Id).ToList();
+        _allHandles = _allHandles.OrderBy(p => p.Id).ToList();
+        _allGuards = _allGuards.OrderBy(p => p.Id).ToList();
+        _allPommels = _allPommels.OrderBy(p => p.Id).ToList();
+
+        Console.WriteLine($"[WeaponPartsEditor] After populate: Blades={_allBlades.Count}, Handles={_allHandles.Count}, Guards={_allGuards.Count}, Pommels={_allPommels.Count}");
+
+        // Apply filters (initially empty, so shows all)
+        ApplyBladeFilter();
+        ApplyHandleFilter();
+        ApplyGuardFilter();
+        ApplyPommelFilter();
+    }
+
+    // Filter change handlers
+    partial void OnBladeFilterChanged(string value) => ApplyBladeFilter();
+    partial void OnHandleFilterChanged(string value) => ApplyHandleFilter();
+    partial void OnGuardFilterChanged(string value) => ApplyGuardFilter();
+    partial void OnPommelFilterChanged(string value) => ApplyPommelFilter();
+
+    private void ApplyBladeFilter()
+    {
+        var selected = SelectedBlade;
+        AvailableBlades.Clear();
+        var filtered = string.IsNullOrWhiteSpace(BladeFilter)
+            ? _allBlades
+            : _allBlades.Where(p => p.Id.Contains(BladeFilter, StringComparison.OrdinalIgnoreCase));
+        foreach (var item in filtered)
+            AvailableBlades.Add(item);
+        // Restore selection if still in filtered list
+        if (selected != null && AvailableBlades.Contains(selected))
+            SelectedBlade = selected;
+    }
+
+    private void ApplyHandleFilter()
+    {
+        var selected = SelectedHandle;
+        AvailableHandles.Clear();
+        var filtered = string.IsNullOrWhiteSpace(HandleFilter)
+            ? _allHandles
+            : _allHandles.Where(p => p.Id.Contains(HandleFilter, StringComparison.OrdinalIgnoreCase));
+        foreach (var item in filtered)
+            AvailableHandles.Add(item);
+        if (selected != null && AvailableHandles.Contains(selected))
+            SelectedHandle = selected;
+    }
+
+    private void ApplyGuardFilter()
+    {
+        var selected = SelectedGuard;
+        AvailableGuards.Clear();
+        var filtered = string.IsNullOrWhiteSpace(GuardFilter)
+            ? _allGuards
+            : _allGuards.Where(p => p.Id.Contains(GuardFilter, StringComparison.OrdinalIgnoreCase));
+        foreach (var item in filtered)
+            AvailableGuards.Add(item);
+        if (selected != null && AvailableGuards.Contains(selected))
+            SelectedGuard = selected;
+    }
+
+    private void ApplyPommelFilter()
+    {
+        var selected = SelectedPommel;
+        AvailablePommels.Clear();
+        var filtered = string.IsNullOrWhiteSpace(PommelFilter)
+            ? _allPommels
+            : _allPommels.Where(p => p.Id.Contains(PommelFilter, StringComparison.OrdinalIgnoreCase));
+        foreach (var item in filtered)
+            AvailablePommels.Add(item);
+        if (selected != null && AvailablePommels.Contains(selected))
+            SelectedPommel = selected;
+    }
+
+    partial void OnSelectedBladeChanged(CraftingPieceInfo? value)
+    {
+        // Populate offset values from the selected piece
+        if (value != null)
+        {
+            Console.WriteLine($"[WeaponPartsEditor] Blade selected: {value.Id} - Offset={value.PieceOffset}, Prev={value.PreviousPieceOffset}, Next={value.NextPieceOffset}");
+            _isUpdatingOffsets = true;
+            BladePieceOffset = (decimal)value.PieceOffset;
+            BladePrevOffset = (decimal)value.PreviousPieceOffset;
+            BladeNextOffset = (decimal)value.NextPieceOffset;
+            _isUpdatingOffsets = false;
+        }
+        UpdateAssembly();
+    }
+
+    partial void OnSelectedHandleChanged(CraftingPieceInfo? value)
+    {
+        if (value != null)
+        {
+            Console.WriteLine($"[WeaponPartsEditor] Handle selected: {value.Id} - Offset={value.PieceOffset}, Prev={value.PreviousPieceOffset}, Next={value.NextPieceOffset}");
+            _isUpdatingOffsets = true;
+            HandlePieceOffset = (decimal)value.PieceOffset;
+            HandlePrevOffset = (decimal)value.PreviousPieceOffset;
+            HandleNextOffset = (decimal)value.NextPieceOffset;
+            _isUpdatingOffsets = false;
+        }
+        UpdateAssembly();
+    }
+
+    partial void OnSelectedGuardChanged(CraftingPieceInfo? value)
+    {
+        if (value != null)
+        {
+            _isUpdatingOffsets = true;
+            GuardPieceOffset = (decimal)value.PieceOffset;
+            GuardPrevOffset = (decimal)value.PreviousPieceOffset;
+            GuardNextOffset = (decimal)value.NextPieceOffset;
+            _isUpdatingOffsets = false;
+        }
+        UpdateAssembly();
+    }
+
+    partial void OnSelectedPommelChanged(CraftingPieceInfo? value)
+    {
+        if (value != null)
+        {
+            _isUpdatingOffsets = true;
+            PommelPieceOffset = (decimal)value.PieceOffset;
+            PommelPrevOffset = (decimal)value.PreviousPieceOffset;
+            PommelNextOffset = (decimal)value.NextPieceOffset;
+            _isUpdatingOffsets = false;
+        }
+        UpdateAssembly();
+    }
+
+    // Scale change handlers - don't refit camera for scale tweaks
+    partial void OnBladeScaleChanged(int value) => UpdateAssembly(fitCamera: false);
+    partial void OnHandleScaleChanged(int value) => UpdateAssembly(fitCamera: false);
+    partial void OnGuardScaleChanged(int value) => UpdateAssembly(fitCamera: false);
+    partial void OnPommelScaleChanged(int value) => UpdateAssembly(fitCamera: false);
+
+    // Offset change handlers - don't refit camera for offset tweaks
+    partial void OnBladePieceOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(fitCamera: false); }
+    partial void OnBladePrevOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(fitCamera: false); }
+    partial void OnBladeNextOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(fitCamera: false); }
+    partial void OnHandlePieceOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(fitCamera: false); }
+    partial void OnHandlePrevOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(fitCamera: false); }
+    partial void OnHandleNextOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(fitCamera: false); }
+    partial void OnGuardPieceOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(fitCamera: false); }
+    partial void OnGuardPrevOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(fitCamera: false); }
+    partial void OnGuardNextOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(fitCamera: false); }
+    partial void OnPommelPieceOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(fitCamera: false); }
+    partial void OnPommelPrevOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(fitCamera: false); }
+    partial void OnPommelNextOffsetChanged(decimal value) { if (!_isUpdatingOffsets) UpdateAssembly(fitCamera: false); }
+
+    /// <summary>
+    /// Updates the assembly with current piece selections and offset values.
+    /// </summary>
+    /// <param name="fitCamera">If true, camera will fit to content. Use true for piece changes, false for offset/scale tweaks.</param>
+    private void UpdateAssembly(bool fitCamera = true)
+    {
+        if (SelectedTemplate == null) return;
+
+        LoadedMeshes.Clear();
+
+        // Build selected pieces with their scales
+        var selectedPieces = new Dictionary<string, (CraftingPieceInfo piece, float scale)>();
+        if (SelectedHandle != null) selectedPieces["Handle"] = (SelectedHandle, HandleScale / 100f);
+        if (SelectedGuard != null) selectedPieces["Guard"] = (SelectedGuard, GuardScale / 100f);
+        if (SelectedBlade != null) selectedPieces["Blade"] = (SelectedBlade, BladeScale / 100f);
+        if (SelectedPommel != null) selectedPieces["Pommel"] = (SelectedPommel, PommelScale / 100f);
+
+        if (selectedPieces.Count == 0)
+        {
+            MeshesChanged?.Invoke(fitCamera);
+            UpdateStats();
+            return;
+        }
+
+        // Calculate positions accounting for scale factors
+        var positions = CalculateAssemblyPositionsWithScale(SelectedTemplate, selectedPieces);
+
+        // Load meshes with their positions and scales
+        foreach (var (pieceType, position, scale) in positions)
+        {
+            if (!selectedPieces.TryGetValue(pieceType, out var pieceData))
+                continue;
+
+            var piece = pieceData.piece;
+            if (string.IsNullOrEmpty(piece.MeshName))
+                continue;
+
+            var mesh = _fbxLoaderService.LoadMesh(piece.MeshName);
+            if (mesh != null)
+            {
+                LoadedMeshes.Add((mesh, position, scale));
+            }
+        }
+
+        MeshesChanged?.Invoke(fitCamera);
+        UpdateStats();
+    }
+
+    /// <summary>
+    /// Calculates positions for all pieces accounting for individual scale factors.
+    /// Uses the editable offset values from the UI instead of original piece values.
+    ///
+    /// Assembly model based on Bannerlord documentation:
+    /// - Each mesh is centered at its local origin, extending along Z axis (becomes Y after rotation)
+    /// - Handle (build_order=0) is the anchor point at Y=0
+    /// - Guard (build_order=1) stacks above handle
+    /// - Blade (build_order=2) stacks above guard
+    /// - Pommel (build_order=-1) attaches below handle
+    ///
+    /// Offset meanings (in centimeters):
+    /// - piece_offset: Visual offset for THIS piece only (doesn't affect next piece's position)
+    /// - next_piece_offset: Positive = pull next piece closer
+    /// - previous_piece_offset: Positive = pull toward previous piece
+    /// </summary>
+    private List<(string pieceType, Vector3 position, float scale)> CalculateAssemblyPositionsWithScale(
+        CraftingTemplateInfo template,
+        Dictionary<string, (CraftingPieceInfo piece, float scale)> selectedPieces)
+    {
+        var result = new List<(string pieceType, Vector3 position, float scale)>();
+
+        // Sort by build order
+        var orderedTypes = template.PieceDatas
+            .Where(pd => pd.BuildOrder >= 0)
+            .OrderBy(pd => pd.BuildOrder)
+            .ToList();
+
+        var negativeTypes = template.PieceDatas
+            .Where(pd => pd.BuildOrder < 0)
+            .OrderByDescending(pd => pd.BuildOrder)
+            .ToList();
+
+        // Track the connection point (top edge of previous piece's LOGICAL position)
+        // piece_offset is visual only - doesn't affect connection points
+        float connectionPoint = 0;
+
+        // Process positive build order pieces (Handle -> Guard -> Blade)
+        string? previousPieceType = null;
+
+        foreach (var pieceTypeData in orderedTypes)
+        {
+            var pieceType = pieceTypeData.PieceType;
+            if (!selectedPieces.TryGetValue(pieceType, out var pieceData))
+                continue;
+
+            var piece = pieceData.piece;
+            var scale = pieceData.scale;
+            var scaledHalfLength = (piece.Length * scale) / 2f;
+
+            // Get editable offset values for this piece type
+            var (pieceOffset, prevOffset, nextOffset) = GetEditableOffsets(pieceType);
+
+            float logicalPositionY; // Position without piece_offset (used for connection point)
+            float visualPositionY;  // Actual rendered position (includes piece_offset)
+
+            if (previousPieceType == null)
+            {
+                // Handle (first piece): Center at origin
+                logicalPositionY = 0;
+                visualPositionY = pieceOffset; // piece_offset is visual only
+                // Connection point for next piece is top edge of handle's LOGICAL position
+                connectionPoint = logicalPositionY + scaledHalfLength;
+            }
+            else
+            {
+                // Get previous piece's next_offset
+                var (_, _, prevNextOffset) = GetEditableOffsets(previousPieceType);
+
+                // Gap adjustment: positive offsets bring pieces closer together
+                var gapAdjustment = prevNextOffset + prevOffset;
+
+                // Logical position: where piece would be without piece_offset
+                logicalPositionY = connectionPoint + scaledHalfLength - gapAdjustment;
+                // Visual position: add piece_offset for rendering
+                visualPositionY = logicalPositionY + pieceOffset;
+
+                // Update connection point to top edge of this piece's LOGICAL position
+                connectionPoint = logicalPositionY + scaledHalfLength;
+            }
+
+            Console.WriteLine($"[Assembly] {pieceType}: length={piece.Length}, scale={scale}, logical={logicalPositionY:F2}, visual={visualPositionY:F2}, offset={pieceOffset}");
+            result.Add((pieceType, new Vector3(0, visualPositionY, 0), scale));
+
+            previousPieceType = pieceType;
+        }
+
+        // Process negative build order pieces (Pommel attaches to back of Handle)
+        if (selectedPieces.TryGetValue("Handle", out var handleData))
+        {
+            var handlePiece = handleData.piece;
+            var handleScale = handleData.scale;
+            var handleHalfLength = (handlePiece.Length * handleScale) / 2f;
+            // Use logical position (Y=0) for handle, not the visual position
+            var handleLogicalY = 0f;
+            var (_, handlePrevOffset, _) = GetEditableOffsets("Handle");
+
+            // Bottom edge of handle's LOGICAL position
+            var handleBottomEdge = handleLogicalY - handleHalfLength;
+
+            foreach (var pieceTypeData in negativeTypes)
+            {
+                var pieceType = pieceTypeData.PieceType;
+                if (!selectedPieces.TryGetValue(pieceType, out var pieceData))
+                    continue;
+
+                var piece = pieceData.piece;
+                var scale = pieceData.scale;
+                var scaledHalfLength = (piece.Length * scale) / 2f;
+                var (pommelPieceOffset, _, pommelNextOffset) = GetEditableOffsets(pieceType);
+
+                // Gap adjustment for pommel connecting to handle
+                var gapAdjustment = handlePrevOffset + pommelNextOffset;
+
+                // Logical position: where pommel would be without piece_offset
+                var logicalPositionY = handleBottomEdge - scaledHalfLength + gapAdjustment;
+                // Visual position: add piece_offset for rendering
+                var visualPositionY = logicalPositionY + pommelPieceOffset;
+
+                Console.WriteLine($"[Assembly] {pieceType}: length={piece.Length}, scale={scale}, logical={logicalPositionY:F2}, visual={visualPositionY:F2}, offset={pommelPieceOffset}");
+                result.Add((pieceType, new Vector3(0, visualPositionY, 0), scale));
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Gets the editable offset values for a given piece type.
+    /// </summary>
+    private (float pieceOffset, float prevOffset, float nextOffset) GetEditableOffsets(string pieceType)
+    {
+        return pieceType switch
+        {
+            "Blade" => ((float)BladePieceOffset, (float)BladePrevOffset, (float)BladeNextOffset),
+            "Handle" => ((float)HandlePieceOffset, (float)HandlePrevOffset, (float)HandleNextOffset),
+            "Guard" => ((float)GuardPieceOffset, (float)GuardPrevOffset, (float)GuardNextOffset),
+            "Pommel" => ((float)PommelPieceOffset, (float)PommelPrevOffset, (float)PommelNextOffset),
+            _ => (0f, 0f, 0f)
+        };
+    }
+
+    private void UpdateStats()
+    {
+        float totalLength = 0;
+        float totalWeight = 0;
+
+        if (SelectedBlade != null)
+        {
+            totalLength += SelectedBlade.Length * (BladeScale / 100f);
+            totalWeight += SelectedBlade.Weight;
+        }
+        if (SelectedHandle != null)
+        {
+            totalLength += SelectedHandle.Length * (HandleScale / 100f);
+            totalWeight += SelectedHandle.Weight;
+        }
+        if (SelectedGuard != null)
+        {
+            totalLength += SelectedGuard.Length * (GuardScale / 100f);
+            totalWeight += SelectedGuard.Weight;
+        }
+        if (SelectedPommel != null)
+        {
+            totalLength += SelectedPommel.Length * (PommelScale / 100f);
+            totalWeight += SelectedPommel.Weight;
+        }
+
+        TotalLength = $"{totalLength:F1} cm";
+        TotalWeight = $"{totalWeight:F2} kg";
+    }
+
+    [RelayCommand]
+    private void HighlightPiece(CraftingPieceInfo? piece)
+    {
+        PieceHighlighted?.Invoke(piece);
+    }
+
+    [RelayCommand]
+    private void ResetScales()
+    {
+        BladeScale = 100;
+        HandleScale = 100;
+        GuardScale = 100;
+        PommelScale = 100;
+    }
+
+    /// <summary>
+    /// Gets the current selection as piece IDs and scales.
+    /// </summary>
+    public (string? bladeId, string? handleId, string? guardId, string? pommelId,
+        int bladeScale, int handleScale, int guardScale, int pommelScale) GetSelection()
+    {
+        return (
+            SelectedBlade?.Id,
+            SelectedHandle?.Id,
+            SelectedGuard?.Id,
+            SelectedPommel?.Id,
+            BladeScale,
+            HandleScale,
+            GuardScale,
+            PommelScale
+        );
+    }
+
+    /// <summary>
+    /// Gets piece offsets that have been modified from their original values.
+    /// Only returns pieces where at least one offset value changed.
+    /// </summary>
+    public List<PieceOffsets> GetModifiedOffsets()
+    {
+        var modified = new List<PieceOffsets>();
+
+        // Check blade
+        if (SelectedBlade != null && HasOffsetChanged(SelectedBlade,
+            (float)BladePieceOffset, (float)BladePrevOffset, (float)BladeNextOffset))
+        {
+            modified.Add(new PieceOffsets
+            {
+                PieceId = SelectedBlade.Id,
+                PieceOffset = (float)BladePieceOffset,
+                PreviousPieceOffset = (float)BladePrevOffset,
+                NextPieceOffset = (float)BladeNextOffset
+            });
+        }
+
+        // Check handle
+        if (SelectedHandle != null && HasOffsetChanged(SelectedHandle,
+            (float)HandlePieceOffset, (float)HandlePrevOffset, (float)HandleNextOffset))
+        {
+            modified.Add(new PieceOffsets
+            {
+                PieceId = SelectedHandle.Id,
+                PieceOffset = (float)HandlePieceOffset,
+                PreviousPieceOffset = (float)HandlePrevOffset,
+                NextPieceOffset = (float)HandleNextOffset
+            });
+        }
+
+        // Check guard
+        if (SelectedGuard != null && HasOffsetChanged(SelectedGuard,
+            (float)GuardPieceOffset, (float)GuardPrevOffset, (float)GuardNextOffset))
+        {
+            modified.Add(new PieceOffsets
+            {
+                PieceId = SelectedGuard.Id,
+                PieceOffset = (float)GuardPieceOffset,
+                PreviousPieceOffset = (float)GuardPrevOffset,
+                NextPieceOffset = (float)GuardNextOffset
+            });
+        }
+
+        // Check pommel
+        if (SelectedPommel != null && HasOffsetChanged(SelectedPommel,
+            (float)PommelPieceOffset, (float)PommelPrevOffset, (float)PommelNextOffset))
+        {
+            modified.Add(new PieceOffsets
+            {
+                PieceId = SelectedPommel.Id,
+                PieceOffset = (float)PommelPieceOffset,
+                PreviousPieceOffset = (float)PommelPrevOffset,
+                NextPieceOffset = (float)PommelNextOffset
+            });
+        }
+
+        return modified;
+    }
+
+    /// <summary>
+    /// Checks if any offset value has changed from the original piece values.
+    /// </summary>
+    private bool HasOffsetChanged(CraftingPieceInfo piece, float pieceOffset, float prevOffset, float nextOffset)
+    {
+        const float tolerance = 0.001f;
+        return Math.Abs(piece.PieceOffset - pieceOffset) > tolerance ||
+               Math.Abs(piece.PreviousPieceOffset - prevOffset) > tolerance ||
+               Math.Abs(piece.NextPieceOffset - nextOffset) > tolerance;
+    }
+
+    /// <summary>
+    /// Saves modified piece offsets to the XML file.
+    /// </summary>
+    /// <returns>Number of pieces updated, or -1 if an error occurred.</returns>
+    public int SaveModifiedOffsets()
+    {
+        try
+        {
+            var modified = GetModifiedOffsets();
+            if (modified.Count == 0)
+            {
+                Console.WriteLine("[WeaponPartsEditor] No offset changes to save.");
+                return 0;
+            }
+
+            return _catalogService.SavePieceOffsets(modified);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[WeaponPartsEditor] Error saving offsets: {ex.Message}");
+            return -1;
+        }
+    }
+}

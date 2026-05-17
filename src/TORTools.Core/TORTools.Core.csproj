@@ -5,7 +5,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>TORTools.Core</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- 3D Model Loading for Weapon Parts Editor -->
+    <PackageReference Include="Silk.NET.Assimp" Version="2.23.0" />
+  </ItemGroup>
 
 </Project>

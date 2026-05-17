@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using ModelContextProtocol.Server;
 using TORTools.Core.DocumentStore;
 using TORTools.Core.Models;
+using TORTools.Core.Services;
 
 using static TORTools.Core.DocumentStore.StandaloneDocumentStore;
 
@@ -241,8 +242,8 @@ public class StringsTools(IDocumentStore documentStore)
         }
 
         // Generate localization key from ID
-        var locKey = id.StartsWith("str_") ? id : $"str_{id}";
-        var wrappedText = $"{{={locKey}}}{text}";
+        var locKey = id.StartsWith("str_") ? id : LocalizationHelper.GenerateKey(id);
+        var wrappedText = LocalizationHelper.Wrap(locKey, text);
 
         // Update the entry with all attributes including category/subcategory
         var attrs = new Dictionary<string, string?>
@@ -307,8 +308,8 @@ public class StringsTools(IDocumentStore documentStore)
         {
             // Preserve or generate localization key
             var existingAttr = entry.GetAttribute("text");
-            var locKey = existingAttr?.LocalizationKey ?? $"str_{id}";
-            var wrappedText = $"{{={locKey}}}{text}";
+            var locKey = existingAttr?.LocalizationKey ?? LocalizationHelper.GenerateKey(id);
+            var wrappedText = LocalizationHelper.Wrap(locKey, text);
 
             var attrs = new Dictionary<string, string?> { ["text"] = wrappedText };
             documentStore.UpdateEntry(StringsFile, id, attrs);

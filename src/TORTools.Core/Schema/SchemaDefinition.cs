@@ -325,6 +325,13 @@ public class FieldDefinition
     /// </summary>
     [JsonPropertyName("renderAs")]
     public string? RenderAs { get; set; }
+
+    /// <summary>
+    /// For "action" type fields: specifies the action to perform.
+    /// - "openWeaponPartsEditor": Opens the 3D weapon parts editor
+    /// </summary>
+    [JsonPropertyName("actionType")]
+    public string? ActionType { get; set; }
 }
 
 /// <summary>
