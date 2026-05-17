@@ -1197,7 +1197,20 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         // Equipment slot columns
         var equipmentSlots = Schema?.EquipmentSlots?.Select(s => s.Slot).ToHashSet() ?? new HashSet<string>();
 
-        if (columnName == "culture")
+        if (columnName == "id")
+        {
+            // Update roster-level id attribute
+            var oldId = roster.Id;
+            roster.SetAttributeValue("id", newValue);
+
+            // Update RosterId on all variation rows belonging to this roster
+            foreach (var row in Rows.Where(r => r.RosterId == oldId))
+            {
+                row.RosterId = newValue;
+            }
+            Console.WriteLine($"[EquipmentSet] Renamed roster from '{oldId}' to: {newValue}");
+        }
+        else if (columnName == "culture")
         {
             // Update roster-level culture attribute
             roster.SetAttributeValue("culture", newValue);
@@ -1957,6 +1970,7 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         row.VariationIndex = variationIndex;
         row.RosterId = roster.Id;
         row.IsNew = true;
+        row.IsIdLocked = false; // Equipment set roster IDs should be editable
 
         // Set roster-level values
         row.SetValueWithoutNotify("id", roster.Id ?? "");

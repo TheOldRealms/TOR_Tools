@@ -454,6 +454,7 @@ public class FileLoaderService
         row.VariationEntry = variation;
         row.VariationIndex = variationIndex;
         row.RosterId = rosterId;
+        row.IsIdLocked = false; // Equipment set roster IDs should be editable
 
         // Set roster-level values
         row.SetValueWithoutNotify("id", rosterId);
