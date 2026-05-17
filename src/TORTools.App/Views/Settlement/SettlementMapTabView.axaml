@@ -1,0 +1,131 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:TORTools.App.ViewModels.Settlement"
+             xmlns:controls="using:TORTools.App.Controls"
+             mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+             x:Class="TORTools.App.Views.Settlement.SettlementMapTabView"
+             x:DataType="vm:SettlementMapTabViewModel">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- Filter Bar -->
+        <Border Grid.Row="0" Background="#2d2d2d" Padding="10" BorderThickness="0,0,0,1" BorderBrush="#3d3d3d">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+
+                <!-- Filters -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="15">
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <TextBlock Text="Name:" VerticalAlignment="Center" Foreground="#aaa"/>
+                        <TextBox Width="150"
+                                 Text="{Binding Context.FilterName, Mode=TwoWay}"
+                                 Classes="compact"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <TextBlock Text="Type:" VerticalAlignment="Center" Foreground="#aaa"/>
+                        <ComboBox Width="120"
+                                  SelectedItem="{Binding Context.FilterComponentType}"
+                                  Classes="compact">
+                            <ComboBoxItem Content="All Types" Tag="{x:Null}"/>
+                            <ComboBoxItem Content="Shrine"/>
+                            <ComboBoxItem Content="HerdStone"/>
+                            <ComboBoxItem Content="OakOfAges"/>
+                            <ComboBoxItem Content="WorldRoots"/>
+                            <ComboBoxItem Content="ChaosPortal"/>
+                            <ComboBoxItem Content="SlaverCamp"/>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <Button Content="Clear Filters"
+                            Command="{Binding ClearFiltersCommand}"
+                            IsVisible="{Binding Context.HasFilters}"
+                            Classes="compact"/>
+                </StackPanel>
+
+                <!-- Spacer -->
+                <Panel Grid.Column="1"/>
+
+                <!-- Point Marker Tool -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10">
+                    <Border Background="#3d3d3d" CornerRadius="3" Padding="8,4">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Point Marker:" Foreground="#aaa" VerticalAlignment="Center"/>
+                            <ToggleButton Content="{Binding PointMarkerModeText}"
+                                          IsChecked="{Binding IsPlacingPointMarker}"
+                                          Classes="compact"/>
+                            <TextBlock Text="{Binding PointMarkerText}"
+                                       Foreground="#ff9800"
+                                       VerticalAlignment="Center"
+                                       IsVisible="{Binding HasPointMarker}"/>
+                            <Button Content="Copy"
+                                    Command="{Binding CopyPointMarkerCoordsCommand}"
+                                    IsEnabled="{Binding HasPointMarker}"
+                                    Classes="compact"/>
+                            <Button Content="Clear"
+                                    Command="{Binding ClearPointMarkerCommand}"
+                                    IsEnabled="{Binding HasPointMarker}"
+                                    Classes="compact"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Map Canvas - MapBounds uses default (0-3000, 0-3000) for TOR world -->
+        <controls:SettlementMapControl Grid.Row="1"
+                                        x:Name="MapControl"
+                                        Settlements="{Binding Context.FilteredSettlements}"
+                                        SelectedIds="{Binding Context.SelectedIds}"
+                                        HoveredSettlement="{Binding Context.HoveredSettlement}"
+                                        ZoomLevel="{Binding ZoomLevel, Mode=TwoWay}"
+                                        PanOffsetX="{Binding PanOffsetX, Mode=TwoWay}"
+                                        PanOffsetY="{Binding PanOffsetY, Mode=TwoWay}"
+                                        PointMarkerPosition="{Binding PointMarkerPosition}"
+                                        IsPlacingPointMarker="{Binding IsPlacingPointMarker}"/>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="2" Background="#252525" Padding="10,6" BorderThickness="0,1,0,0" BorderBrush="#3d3d3d">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+
+                <!-- Settlement Stats -->
+                <TextBlock Grid.Column="0"
+                           Text="{Binding StatusText}"
+                           Foreground="#aaa"/>
+
+                <!-- Zoom Controls -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="20,0">
+                    <Button Content="-" Command="{Binding ZoomOutCommand}" Width="24" Height="24" Padding="0"/>
+                    <TextBlock Text="{Binding ZoomPercentage}"
+                               VerticalAlignment="Center"
+                               Width="50"
+                               TextAlignment="Center"
+                               Foreground="#ccc"/>
+                    <Button Content="+" Command="{Binding ZoomInCommand}" Width="24" Height="24" Padding="0"/>
+                    <Button Content="Fit" Command="{Binding FitMapToContentCommand}" Margin="5,0,0,0" Classes="compact"/>
+                </StackPanel>
+
+                <!-- Mouse Coordinates -->
+                <TextBlock Grid.Column="2"
+                           Text="{Binding MouseCoordsText}"
+                           Foreground="#888"
+                           Width="150"
+                           TextAlignment="Right"/>
+
+                <!-- Save Status -->
+                <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="10" Margin="20,0,0,0">
+                    <TextBlock Text="*"
+                               Foreground="#ff9800"
+                               FontSize="16"
+                               IsVisible="{Binding HasUnsavedChanges}"/>
+                    <Button Content="Save"
+                            Command="{Binding SaveCommand}"
+                            IsEnabled="{Binding HasUnsavedChanges}"
+                            Classes="compact primary"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+
+</UserControl>

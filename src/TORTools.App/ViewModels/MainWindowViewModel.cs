@@ -2,10 +2,12 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using TORTools.App.Services;
+using TORTools.App.ViewModels.Settlement;
 using TORTools.App.ViewModels.Translation;
 using TORTools.Core.Models;
 using TORTools.Core.Models.Translation;
 using TORTools.Core.Services;
+using TORTools.Core.Services.Settlement;
 using TORTools.Core.Services.Translation;
 using TORTools.Core.Workspace;
 
@@ -39,6 +41,27 @@ public partial class MainWindowViewModel : ViewModelBase
     /// </summary>
     [ObservableProperty]
     private TranslationSheetTabViewModel? _activeTranslationTab;
+
+    /// <summary>
+    /// Settlement Editor catalog node in sidebar.
+    /// </summary>
+    private SettlementCatalogNode? _settlementCatalog;
+
+    /// <summary>
+    /// Shared settlement edit context for Map and Table views.
+    /// </summary>
+    private SettlementEditContext? _settlementContext;
+
+    /// <summary>
+    /// Open settlement editor tabs.
+    /// </summary>
+    public ObservableCollection<SettlementMapTabViewModel> SettlementTabs { get; } = new();
+
+    /// <summary>
+    /// The active settlement editor tab (if any).
+    /// </summary>
+    [ObservableProperty]
+    private SettlementMapTabViewModel? _activeSettlementTab;
 
     [ObservableProperty]
     private string _statusMessage = "Ready";
@@ -121,24 +144,24 @@ public partial class MainWindowViewModel : ViewModelBase
     public bool HasOpenTabs => OpenTabs.Count > 0;
 
     /// <summary>
-    /// Whether any tab (file or translation) is open.
+    /// Whether any tab (file, translation, or settlement) is open.
     /// </summary>
-    public bool HasAnyOpenTab => ActiveTab != null || ActiveTranslationTab != null;
+    public bool HasAnyOpenTab => ActiveTab != null || ActiveTranslationTab != null || ActiveSettlementTab != null;
 
     /// <summary>
-    /// The current tab content (either file or translation tab).
+    /// The current tab content (file, translation, or settlement tab).
     /// </summary>
-    public object? CurrentTabContent => (object?)ActiveTranslationTab ?? ActiveTab;
+    public object? CurrentTabContent => (object?)ActiveSettlementTab ?? (object?)ActiveTranslationTab ?? ActiveTab;
 
     /// <summary>
     /// The current tab title.
     /// </summary>
-    public string CurrentTabTitle => ActiveTranslationTab?.FullTitle ?? ActiveTab?.Title ?? "";
+    public string CurrentTabTitle => ActiveSettlementTab?.FullTitle ?? ActiveTranslationTab?.FullTitle ?? ActiveTab?.Title ?? "";
 
     /// <summary>
     /// Whether the current tab has unsaved changes.
     /// </summary>
-    public bool CurrentTabHasUnsavedChanges => ActiveTranslationTab?.HasUnsavedChanges ?? ActiveTab?.HasUnsavedChanges ?? false;
+    public bool CurrentTabHasUnsavedChanges => ActiveSettlementTab?.HasUnsavedChanges ?? ActiveTranslationTab?.HasUnsavedChanges ?? ActiveTab?.HasUnsavedChanges ?? false;
 
     /// <summary>
     /// Event raised when focus should be given to the search box.
@@ -253,6 +276,18 @@ public partial class MainWindowViewModel : ViewModelBase
             Catalogs.Add(catalogNode);
         }
 
+        // Add Settlement Editor catalog
+        if (!string.IsNullOrEmpty(_config.TorCorePath))
+        {
+            var settlementPath = Path.Combine(_config.TorCorePath, "ModuleData", "tor_settlements.xml");
+            if (File.Exists(settlementPath))
+            {
+                _settlementCatalog = new SettlementCatalogNode(settlementPath);
+                _settlementCatalog.ViewOpened += OnSettlementViewOpened;
+                Catalogs.Add(_settlementCatalog);
+            }
+        }
+
         // Add Translations catalog at the end
         if (TranslationsSidebar != null)
         {
@@ -261,6 +296,43 @@ public partial class MainWindowViewModel : ViewModelBase
 
         var totalFiles = catalogGroups.Sum(c => c.Files.Count);
         StatusMessage = $"Loaded {totalFiles} XML files in {catalogGroups.Count} catalogs";
+    }
+
+    private async void OnSettlementViewOpened(object? sender, SettlementViewNode viewNode)
+    {
+        // Create shared context if not exists
+        if (_settlementContext == null)
+        {
+            var service = new SettlementService();
+            _settlementContext = new SettlementEditContext(service);
+            await _settlementContext.LoadAsync(viewNode.SettlementFilePath);
+        }
+
+        // Check if tab already exists
+        var existingTab = SettlementTabs.FirstOrDefault(t => t.Title == "Settlement Map");
+        if (existingTab != null)
+        {
+            ActiveSettlementTab = existingTab;
+            ActiveTab = null;
+            ActiveTranslationTab = null;
+            return;
+        }
+
+        // Create new tab based on view type
+        if (viewNode.ViewType == SettlementViewType.MapView)
+        {
+            var newTab = new SettlementMapTabViewModel(_settlementContext);
+            SettlementTabs.Add(newTab);
+            ActiveSettlementTab = newTab;
+            ActiveTab = null;
+            ActiveTranslationTab = null;
+
+            StatusMessage = $"Opened Settlement Map View - {_settlementContext.TotalCount} settlements";
+
+            OnPropertyChanged(nameof(HasAnyOpenTab));
+            OnPropertyChanged(nameof(CurrentTabContent));
+        }
+        // TODO: Add TableView support in future iteration
     }
 
     private void OnFileNodeOpened(object? sender, string filePath)
@@ -721,6 +793,23 @@ public partial class MainWindowViewModel : ViewModelBase
             // Deselect file tab when selecting translation tab
             ActiveTab = null;
             RowCountText = $"{value.TotalEntries} entries";
+        }
+
+        // Notify computed properties
+        OnPropertyChanged(nameof(HasAnyOpenTab));
+        OnPropertyChanged(nameof(CurrentTabContent));
+        OnPropertyChanged(nameof(CurrentTabTitle));
+        OnPropertyChanged(nameof(CurrentTabHasUnsavedChanges));
+    }
+
+    partial void OnActiveSettlementTabChanged(SettlementMapTabViewModel? value)
+    {
+        if (value != null)
+        {
+            // Deselect other tab types when selecting settlement tab
+            ActiveTab = null;
+            ActiveTranslationTab = null;
+            RowCountText = "";
         }
 
         // Notify computed properties

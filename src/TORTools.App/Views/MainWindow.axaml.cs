@@ -3,6 +3,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using TORTools.App.ViewModels;
+using TORTools.App.ViewModels.Settlement;
 using TORTools.App.ViewModels.Translation;
 
 namespace TORTools.App.Views;
@@ -44,6 +45,13 @@ public partial class MainWindow : Window
         if (treeView.SelectedItem is FileNode fileNode)
         {
             vm.OpenFile(fileNode.FilePath);
+            return;
+        }
+
+        // Handle settlement view node double-click
+        if (treeView.SelectedItem is SettlementViewNode settlementViewNode)
+        {
+            settlementViewNode.Open();
             return;
         }
 

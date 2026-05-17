@@ -2,7 +2,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:TORTools.App.ViewModels"
         xmlns:tvm="using:TORTools.App.ViewModels.Translation"
+        xmlns:svm="using:TORTools.App.ViewModels.Settlement"
         xmlns:views="using:TORTools.App.Views"
+        xmlns:sviews="using:TORTools.App.Views.Settlement"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="700"
@@ -30,6 +32,9 @@
         </DataTemplate>
         <DataTemplate DataType="tvm:TranslationSheetTabViewModel">
             <views:TranslationSheetView/>
+        </DataTemplate>
+        <DataTemplate DataType="svm:SettlementMapTabViewModel">
+            <sviews:SettlementMapTabView/>
         </DataTemplate>
     </Window.DataTemplates>
 
@@ -90,6 +95,16 @@
                         <!-- Template for file nodes inside catalogs -->
                         <DataTemplate DataType="vm:FileNode">
                             <TextBlock Text="{Binding DisplayName}" FontSize="12"/>
+                        </DataTemplate>
+                        <!-- Template for Settlement Editor catalog -->
+                        <TreeDataTemplate DataType="svm:SettlementCatalogNode" ItemsSource="{Binding Views}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"/>
+                            </StackPanel>
+                        </TreeDataTemplate>
+                        <!-- Template for Settlement view nodes (Map View, Table View) -->
+                        <DataTemplate DataType="svm:SettlementViewNode">
+                            <TextBlock Text="{Binding Name}" FontSize="12"/>
                         </DataTemplate>
                         <!-- Template for Translations catalog (TranslationsSidebarViewModel) -->
                         <TreeDataTemplate DataType="tvm:TranslationsSidebarViewModel" ItemsSource="{Binding Languages}">
