@@ -325,8 +325,13 @@
       "width": 100,
       "enumValues": [
         { "value": "", "displayName": "(None)" },
-        { "value": "Prestige", "displayName": "Prestige" },
-        { "value": "OathGold", "displayName": "OathGold" }
+        { "value": "Chivalry", "displayName": "Chivalry", "icon": "chivalry_icon_45" },
+        { "value": "CouncilFavor", "displayName": "Council Favor", "icon": "favor_icon_45" },
+        { "value": "DarkEnergy", "displayName": "Dark Energy", "icon": "darkenergy_icon_45" },
+        { "value": "ForestHarmony", "displayName": "Forest Harmony", "icon": "harmony_icon_45" },
+        { "value": "OathGold", "displayName": "Oath Gold", "icon": "oathgold_icon_45" },
+        { "value": "Prestige", "displayName": "Prestige", "icon": "prestige_icon_45" },
+        { "value": "Teef", "displayName": "Teef", "icon": "teef_icon_45" }
       ],
       "crossReference": {
         "sourceFile": "tor_extendedunitproperties.xml",

@@ -462,6 +462,12 @@ public class EnumValue
     /// </summary>
     [JsonPropertyName("description")]
     public string? Description { get; set; }
+
+    /// <summary>
+    /// Icon name for this value (e.g., "prestige_icon_45" for resource icons).
+    /// </summary>
+    [JsonPropertyName("icon")]
+    public string? Icon { get; set; }
 }
 
 /// <summary>

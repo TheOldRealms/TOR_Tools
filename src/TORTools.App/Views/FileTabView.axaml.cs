@@ -430,7 +430,7 @@ public partial class FileTabView : UserControl
                         Width = new DataGridLength(columnWidth),
                         IsReadOnly = false,
                         CellTemplate = CreateExternalEnumCellTemplate(displayInfo.AttributeName, fieldDef, vm),
-                        CellEditingTemplate = CreateEnumEditingTemplate(displayInfo.AttributeName, fieldDef)
+                        CellEditingTemplate = CreateEnumEditingTemplate(displayInfo.AttributeName, fieldDef, vm)
                     };
                 }
                 else if (valueType == "int" || valueType == "string")
@@ -499,7 +499,7 @@ public partial class FileTabView : UserControl
                     Width = new DataGridLength(columnWidth),
                     IsReadOnly = displayInfo.IsReadOnly,
                     CellTemplate = CreateEnumCellTemplate(displayInfo.AttributeName, fieldDef!, vm),
-                    CellEditingTemplate = CreateEnumEditingTemplate(displayInfo.AttributeName, fieldDef!)
+                    CellEditingTemplate = CreateEnumEditingTemplate(displayInfo.AttributeName, fieldDef!, vm)
                 };
             }
             else if (fieldDef?.Type == "action")
@@ -1693,11 +1693,16 @@ public partial class FileTabView : UserControl
     /// </summary>
     private static IDataTemplate CreateEnumCellTemplate(string attributeName, FieldDefinition fieldDef, FileTabViewModel vm)
     {
-        // Build lookup for value -> displayName
+        // Build lookup for value -> displayName and value -> icon
         var displayNameLookup = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var iconLookup = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var enumValue in fieldDef.EnumValues ?? [])
         {
             displayNameLookup[enumValue.Value] = enumValue.DisplayName ?? enumValue.Value;
+            if (!string.IsNullOrEmpty(enumValue.Icon))
+            {
+                iconLookup[enumValue.Value] = enumValue.Icon;
+            }
         }
 
         // Helper to get display name for a value
@@ -1707,6 +1712,17 @@ public partial class FileTabView : UserControl
             return displayNameLookup.TryGetValue(value, out var displayName) ? displayName : value;
         }
 
+        // Helper to get icon path for a value
+        string? GetIconPath(string? value)
+        {
+            if (string.IsNullOrEmpty(value) || vm.IconService == null) return null;
+            if (iconLookup.TryGetValue(value, out var iconName))
+            {
+                return vm.IconService.GetIconPath(iconName);
+            }
+            return null;
+        }
+
         return new FuncDataTemplate<EntryRowViewModel>((rowVm, _) =>
         {
             var border = new Border();
@@ -1714,19 +1730,53 @@ public partial class FileTabView : UserControl
 
             var grid = new Grid
             {
-                ColumnDefinitions = new ColumnDefinitions("*,Auto")
+                ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto")
             };
+
+            // Optional value icon (resource icon, etc.)
+            var valueIcon = new Image
+            {
+                Width = 18,
+                Height = 18,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 4, 0),
+                IsVisible = false
+            };
+            Grid.SetColumn(valueIcon, 0);
+            grid.Children.Add(valueIcon);
 
             var text = new TextBlock();
             text.Classes.Add("cellText");
-            Grid.SetColumn(text, 0);
+            Grid.SetColumn(text, 1);
             grid.Children.Add(text);
 
             // Warning/error icon (styled via pseudo-classes)
             var icon = new TextBlock();
             icon.Classes.Add("cellIcon");
-            Grid.SetColumn(icon, 1);
+            Grid.SetColumn(icon, 2);
             grid.Children.Add(icon);
+
+            // Helper to update icon visibility
+            void UpdateValueIcon(string? value)
+            {
+                var iconPath = GetIconPath(value);
+                if (!string.IsNullOrEmpty(iconPath) && System.IO.File.Exists(iconPath))
+                {
+                    try
+                    {
+                        valueIcon.Source = new Bitmap(iconPath);
+                        valueIcon.IsVisible = true;
+                    }
+                    catch
+                    {
+                        valueIcon.IsVisible = false;
+                    }
+                }
+                else
+                {
+                    valueIcon.IsVisible = false;
+                }
+            }
 
             if (rowVm != null)
             {
@@ -1735,11 +1785,14 @@ public partial class FileTabView : UserControl
                 if (isRosterLevelField && rowVm.IsEquipmentSetVariation && !rowVm.IsFirstVariation)
                 {
                     text.Text = "";
+                    valueIcon.IsVisible = false;
                 }
                 else
                 {
+                    var currentValue = rowVm[attributeName];
                     // Show display name instead of raw value
-                    text.Text = GetDisplayName(rowVm[attributeName]);
+                    text.Text = GetDisplayName(currentValue);
+                    UpdateValueIcon(currentValue);
                     if (isRosterLevelField && rowVm.IsEquipmentSetVariation && rowVm.IsFirstVariation)
                     {
                         text.FontWeight = FontWeight.SemiBold;
@@ -1764,10 +1817,13 @@ public partial class FileTabView : UserControl
                     if (isRosterLevelField && rowVm.IsEquipmentSetVariation && !rowVm.IsFirstVariation)
                     {
                         text.Text = "";
+                        valueIcon.IsVisible = false;
                     }
                     else
                     {
-                        text.Text = GetDisplayName(rowVm[attributeName]);
+                        var newValue = rowVm[attributeName];
+                        text.Text = GetDisplayName(newValue);
+                        UpdateValueIcon(newValue);
                     }
                     // Update styling
                     CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
@@ -1782,7 +1838,7 @@ public partial class FileTabView : UserControl
     /// <summary>
     /// Creates an editing template for enum cells (ComboBox with enum values).
     /// </summary>
-    private static IDataTemplate CreateEnumEditingTemplate(string attributeName, FieldDefinition fieldDef)
+    private static IDataTemplate CreateEnumEditingTemplate(string attributeName, FieldDefinition fieldDef, FileTabViewModel? vm = null)
     {
         return new FuncDataTemplate<EntryRowViewModel>((rowVm, _) =>
         {
@@ -1802,9 +1858,59 @@ public partial class FileTabView : UserControl
 
             foreach (var enumValue in fieldDef.EnumValues ?? [])
             {
+                object content;
+
+                // Check if enum value has an icon
+                if (!string.IsNullOrEmpty(enumValue.Icon) && vm?.IconService != null)
+                {
+                    var iconPath = vm.IconService.GetIconPath(enumValue.Icon);
+                    if (!string.IsNullOrEmpty(iconPath) && System.IO.File.Exists(iconPath))
+                    {
+                        try
+                        {
+                            var panel = new StackPanel
+                            {
+                                Orientation = Orientation.Horizontal,
+                                Spacing = 6
+                            };
+
+                            var icon = new Image
+                            {
+                                Width = 20,
+                                Height = 20,
+                                Source = new Bitmap(iconPath),
+                                VerticalAlignment = VerticalAlignment.Center
+                            };
+                            panel.Children.Add(icon);
+
+                            var text = new TextBlock
+                            {
+                                Text = enumValue.DisplayName ?? enumValue.Value,
+                                VerticalAlignment = VerticalAlignment.Center
+                            };
+                            panel.Children.Add(text);
+
+                            content = panel;
+                        }
+                        catch
+                        {
+                            // Fall back to text-only if icon loading fails
+                            content = enumValue.DisplayName ?? enumValue.Value;
+                        }
+                    }
+                    else
+                    {
+                        content = enumValue.DisplayName ?? enumValue.Value;
+                    }
+                }
+                else
+                {
+                    content = enumValue.DisplayName ?? enumValue.Value;
+                }
+
                 var item = new ComboBoxItem
                 {
-                    Content = enumValue.DisplayName ?? enumValue.Value,
+                    Content = content,
                     Tag = enumValue.Value
                 };
                 if (!string.IsNullOrEmpty(enumValue.Description))
