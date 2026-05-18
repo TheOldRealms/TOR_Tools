@@ -14,91 +14,171 @@
       "order": 1,
       "width": 240
     },
-    "Athletics": {
-      "displayName": "Athletics",
+    "OneHanded": {
+      "displayName": "OneHanded",
       "type": "string",
       "order": 10,
-      "width": 70,
-      "nested": true,
-      "nestedPath": "skill[@id='Athletics']/@value"
-    },
-    "Riding": {
-      "displayName": "Riding",
-      "type": "string",
-      "order": 11,
-      "width": 70,
-      "nested": true,
-      "nestedPath": "skill[@id='Riding']/@value"
-    },
-    "OneHanded": {
-      "displayName": "1H",
-      "type": "string",
-      "order": 12,
-      "width": 50,
+      "width": 75,
       "nested": true,
       "nestedPath": "skill[@id='OneHanded']/@value"
     },
     "TwoHanded": {
-      "displayName": "2H",
+      "displayName": "TwoHanded",
       "type": "string",
-      "order": 13,
-      "width": 50,
+      "order": 11,
+      "width": 75,
       "nested": true,
       "nestedPath": "skill[@id='TwoHanded']/@value"
     },
     "Polearm": {
       "displayName": "Polearm",
       "type": "string",
-      "order": 14,
-      "width": 60,
+      "order": 12,
+      "width": 75,
       "nested": true,
       "nestedPath": "skill[@id='Polearm']/@value"
     },
     "Bow": {
       "displayName": "Bow",
       "type": "string",
-      "order": 15,
-      "width": 50,
+      "order": 13,
+      "width": 75,
       "nested": true,
       "nestedPath": "skill[@id='Bow']/@value"
     },
     "Crossbow": {
-      "displayName": "Xbow",
+      "displayName": "Crossbow",
       "type": "string",
-      "order": 16,
-      "width": 50,
+      "order": 14,
+      "width": 75,
       "nested": true,
       "nestedPath": "skill[@id='Crossbow']/@value"
     },
-    "Gunpowder": {
-      "displayName": "Gun",
-      "type": "string",
-      "order": 17,
-      "width": 50,
-      "nested": true,
-      "nestedPath": "skill[@id='Gunpowder']/@value"
-    },
     "Throwing": {
-      "displayName": "Throw",
+      "displayName": "Throwing",
       "type": "string",
-      "order": 18,
-      "width": 50,
+      "order": 15,
+      "width": 75,
       "nested": true,
       "nestedPath": "skill[@id='Throwing']/@value"
+    },
+    "Riding": {
+      "displayName": "Riding",
+      "type": "string",
+      "order": 16,
+      "width": 75,
+      "nested": true,
+      "nestedPath": "skill[@id='Riding']/@value"
+    },
+    "Athletics": {
+      "displayName": "Athletics",
+      "type": "string",
+      "order": 17,
+      "width": 75,
+      "nested": true,
+      "nestedPath": "skill[@id='Athletics']/@value"
+    },
+    "Crafting": {
+      "displayName": "Crafting",
+      "type": "string",
+      "order": 18,
+      "width": 75,
+      "nested": true,
+      "nestedPath": "skill[@id='Crafting']/@value"
+    },
+    "Scouting": {
+      "displayName": "Scouting",
+      "type": "string",
+      "order": 19,
+      "width": 75,
+      "nested": true,
+      "nestedPath": "skill[@id='Scouting']/@value"
+    },
+    "Tactics": {
+      "displayName": "Tactics",
+      "type": "string",
+      "order": 20,
+      "width": 75,
+      "nested": true,
+      "nestedPath": "skill[@id='Tactics']/@value"
+    },
+    "Roguery": {
+      "displayName": "Roguery",
+      "type": "string",
+      "order": 21,
+      "width": 75,
+      "nested": true,
+      "nestedPath": "skill[@id='Roguery']/@value"
+    },
+    "Charm": {
+      "displayName": "Charm",
+      "type": "string",
+      "order": 22,
+      "width": 75,
+      "nested": true,
+      "nestedPath": "skill[@id='Charm']/@value"
+    },
+    "Leadership": {
+      "displayName": "Leadership",
+      "type": "string",
+      "order": 23,
+      "width": 75,
+      "nested": true,
+      "nestedPath": "skill[@id='Leadership']/@value"
+    },
+    "Trade": {
+      "displayName": "Trade",
+      "type": "string",
+      "order": 24,
+      "width": 75,
+      "nested": true,
+      "nestedPath": "skill[@id='Trade']/@value"
+    },
+    "Steward": {
+      "displayName": "Steward",
+      "type": "string",
+      "order": 25,
+      "width": 75,
+      "nested": true,
+      "nestedPath": "skill[@id='Steward']/@value"
+    },
+    "Medicine": {
+      "displayName": "Medicine",
+      "type": "string",
+      "order": 26,
+      "width": 75,
+      "nested": true,
+      "nestedPath": "skill[@id='Medicine']/@value"
+    },
+    "Engineering": {
+      "displayName": "Engineering",
+      "type": "string",
+      "order": 27,
+      "width": 75,
+      "nested": true,
+      "nestedPath": "skill[@id='Engineering']/@value"
     },
     "Faith": {
       "displayName": "Faith",
       "type": "string",
-      "order": 20,
-      "width": 50,
+      "order": 28,
+      "width": 75,
       "nested": true,
       "nestedPath": "skill[@id='Faith']/@value"
     },
-    "Spellcraft": {
-      "displayName": "Spell",
+    "Gunpowder": {
+      "displayName": "Gunpowder",
       "type": "string",
-      "order": 21,
-      "width": 50,
+      "order": 29,
+      "width": 75,
+      "nested": true,
+      "nestedPath": "skill[@id='Gunpowder']/@value"
+    },
+    "Spellcraft": {
+      "displayName": "Spellcraft",
+      "type": "string",
+      "order": 30,
+      "width": 75,
       "nested": true,
       "nestedPath": "skill[@id='Spellcraft']/@value"
     },
@@ -106,7 +186,7 @@
       "displayName": "Used By",
       "description": "Units that use this skill template. Click to navigate.",
       "type": "reverseCrossReference",
-      "order": 30,
+      "order": 40,
       "width": 300,
       "crossReference": {
         "sourceFile": "tor_troopdefinitions.xml",
