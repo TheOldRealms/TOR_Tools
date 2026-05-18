@@ -127,7 +127,8 @@
         "targetKeyField": "id",
         "localKeyField": "skill_template",
         "prefixToStrip": "SkillSet.",
-        "prefixToAdd": "SkillSet."
+        "prefixToAdd": "SkillSet.",
+        "singleValue": true
       }
     },
     "face_key_template": {

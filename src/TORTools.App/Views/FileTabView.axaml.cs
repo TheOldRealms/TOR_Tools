@@ -1614,6 +1614,13 @@ public partial class FileTabView : UserControl
                 else
                 {
                     result = textBox?.Text?.Trim() ?? "";
+
+                    // In single-value mode, only take the first value if multiple were entered
+                    if (isSingleValue && result.Contains(','))
+                    {
+                        result = result.Split(',')[0].Trim();
+                        Console.WriteLine($"[TraitEditor] Single-value mode: trimmed to first value: {result}");
+                    }
                 }
 
                 // Add prefix back for skill template if needed
