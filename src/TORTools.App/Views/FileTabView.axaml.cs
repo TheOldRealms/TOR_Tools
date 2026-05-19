@@ -565,7 +565,7 @@ public partial class FileTabView : UserControl
     /// <summary>
     /// Called when a DataGrid row is being loaded. Applies styling based on row state.
     /// </summary>
-    private void OnDataGridLoadingRow(object? sender, DataGridRowEventArgs e)
+    protected void OnDataGridLoadingRow(object? sender, DataGridRowEventArgs e)
     {
         if (e.Row.DataContext is EntryRowViewModel rowVm)
         {
@@ -4181,7 +4181,7 @@ public partial class FileTabView : UserControl
     /// <summary>
     /// Handles click on validation panel header to toggle expansion.
     /// </summary>
-    private void OnValidationHeaderClick(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+    protected void OnValidationHeaderClick(object? sender, Avalonia.Input.PointerPressedEventArgs e)
     {
         if (DataContext is FileTabViewModel vm)
         {
@@ -4192,7 +4192,7 @@ public partial class FileTabView : UserControl
     /// <summary>
     /// Handles click on validation issue to navigate to that row.
     /// </summary>
-    private void OnValidationIssueClick(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+    protected void OnValidationIssueClick(object? sender, Avalonia.Input.PointerPressedEventArgs e)
     {
         if (sender is Border border && border.DataContext is TORTools.Core.Validation.ValidationIssue issue)
         {

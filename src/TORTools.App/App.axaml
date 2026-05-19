@@ -1,9 +1,12 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="using:TORTools.App.Converters"
              x:Class="TORTools.App.App"
              RequestedThemeVariant="Dark">
 
     <Application.Resources>
+        <!-- Shared converters -->
+        <converters:SeverityToColorConverter x:Key="SeverityToColorConverter"/>
         <!-- Custom Thumb ControlTheme - no animations -->
         <ControlTheme x:Key="AlwaysVisibleThumb" TargetType="Thumb">
             <Setter Property="Background" Value="#5a5d63"/>

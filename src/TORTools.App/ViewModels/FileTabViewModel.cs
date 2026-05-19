@@ -30,7 +30,7 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     /// <summary>
     /// Convenience accessor for the file edit context.
     /// </summary>
-    private FileEditContext Context => _fileEditManager.Context;
+    protected FileEditContext Context => _fileEditManager.Context;
 
     /// <summary>
     /// Cross-reference data loaded from other XML files (local to ViewModel, not in Context).
@@ -1041,18 +1041,13 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private void OnCellValueChanged(object? sender, CellValueChangedEventArgs e)
+    /// <summary>
+    /// Handles cell value changes. Override in subclasses for custom behavior.
+    /// </summary>
+    protected virtual void OnCellValueChanged(object? sender, CellValueChangedEventArgs e)
     {
         if (sender is not EntryRowViewModel rowVm) return;
         if (Context.Document == null) return;
-
-        // Handle equipment set variations specially
-        if (rowVm.IsEquipmentSetVariation)
-        {
-            HandleEquipmentSetCellChange(rowVm, e);
-            MarkAsModified();
-            return;
-        }
 
         // Check if this is a nested field
         var fieldDef = GetFieldDefinition(e.ColumnName);
@@ -1073,6 +1068,25 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         ApplyAutoFill(rowVm, e.ColumnName, e.NewValue);
 
         MarkAsModified();
+    }
+
+    /// <summary>
+    /// Protected handler wrapper for subclasses to subscribe to cell changes.
+    /// </summary>
+    protected void OnCellValueChangedHandler(object? sender, CellValueChangedEventArgs e)
+    {
+        OnCellValueChanged(sender, e);
+    }
+
+    /// <summary>
+    /// Virtual method for handling special row deletion logic.
+    /// Override in subclasses for custom behavior (e.g., equipment set variations).
+    /// </summary>
+    /// <returns>True if the deletion was handled, false to use default deletion logic.</returns>
+    protected virtual bool HandleRowDeletion(EntryRowViewModel rowToDelete)
+    {
+        // Base implementation does nothing - override in subclasses
+        return false;
     }
 
     /// <summary>
@@ -1118,103 +1132,6 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         {
             var verify = rowVm.XmlEntry.GetAttributeValue(columnName);
             Console.WriteLine($"[SyncXmlEntry] Verify: {rowVm.XmlEntry.Id}.{columnName} = '{verify}'");
-        }
-    }
-
-    /// <summary>
-    /// Handles cell changes for equipment set variations.
-    /// Updates the nested XML structure accordingly.
-    /// </summary>
-    private void HandleEquipmentSetCellChange(EntryRowViewModel rowVm, CellValueChangedEventArgs e)
-    {
-        var variation = rowVm.VariationEntry;
-        var roster = rowVm.XmlEntry;
-        var columnName = e.ColumnName;
-        var newValue = e.NewValue;
-
-        // Equipment slot columns
-        var equipmentSlots = Schema?.EquipmentSlots?.Select(s => s.Slot).ToHashSet() ?? new HashSet<string>();
-
-        if (columnName == "id")
-        {
-            // Update roster-level id attribute
-            var oldId = roster.Id;
-            roster.SetAttributeValue("id", newValue);
-
-            // Update RosterId on all variation rows belonging to this roster
-            foreach (var row in Rows.Where(r => r.RosterId == oldId))
-            {
-                row.RosterId = newValue;
-            }
-            Console.WriteLine($"[EquipmentSet] Renamed roster from '{oldId}' to: {newValue}");
-        }
-        else if (columnName == "culture")
-        {
-            // Update roster-level culture attribute
-            roster.SetAttributeValue("culture", newValue);
-            Console.WriteLine($"[EquipmentSet] Updated roster culture to: {newValue}");
-        }
-        else if (columnName == "civilian" && variation != null)
-        {
-            // Update variation's civilian attribute
-            if (newValue == "true")
-            {
-                variation.OriginalElement.SetAttributeValue("civilian", "true");
-            }
-            else
-            {
-                // Remove the attribute if false (default)
-                variation.OriginalElement.SetAttributeValue("civilian", null);
-            }
-            Console.WriteLine($"[EquipmentSet] Updated civilian to: {newValue}");
-        }
-        else if (equipmentSlots.Contains(columnName) && variation != null)
-        {
-            // Update equipment slot
-            UpdateEquipmentSlot(variation, columnName, newValue);
-        }
-    }
-
-    /// <summary>
-    /// Updates an equipment slot in a variation element.
-    /// </summary>
-    private void UpdateEquipmentSlot(XmlEntry variation, string slotName, string? itemId)
-    {
-        var equipmentElementName = Schema?.EquipmentItemElement ?? "Equipment";
-
-        // Find existing equipment element for this slot
-        var existingEquip = variation.Children
-            .FirstOrDefault(c => c.ElementName == equipmentElementName &&
-                                 c.GetAttributeValue("slot") == slotName);
-
-        if (string.IsNullOrWhiteSpace(itemId))
-        {
-            // Remove the equipment element if value is cleared
-            if (existingEquip != null)
-            {
-                existingEquip.OriginalElement.Remove();
-                variation.Children.Remove(existingEquip);
-                Console.WriteLine($"[EquipmentSet] Removed {slotName}");
-            }
-        }
-        else
-        {
-            if (existingEquip != null)
-            {
-                // Update existing equipment element
-                existingEquip.SetAttributeValue("id", itemId);
-                Console.WriteLine($"[EquipmentSet] Updated {slotName} = {itemId}");
-            }
-            else
-            {
-                // Create new equipment element
-                var newElement = new XElement(equipmentElementName,
-                    new XAttribute("slot", slotName),
-                    new XAttribute("id", itemId));
-                variation.OriginalElement.Add(newElement);
-                variation.Children.Add(new XmlEntry(newElement));
-                Console.WriteLine($"[EquipmentSet] Added {slotName} = {itemId}");
-            }
         }
     }
 
@@ -1504,10 +1421,9 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         var indexToDelete = SelectedIndex;
         var rowToDelete = Rows[indexToDelete];
 
-        // Handle equipment set variations specially - call the public command
-        if (rowToDelete.IsEquipmentSetVariation && rowToDelete.VariationEntry != null)
+        // Handle special row deletion (virtual, overridden in EquipmentFileTabViewModel)
+        if (HandleRowDeletion(rowToDelete))
         {
-            DeleteSelectedVariation();
             return;
         }
 
@@ -1561,113 +1477,10 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>
-    /// Deletes the currently selected equipment set variation.
-    /// If this is the first variation (index 1) or last variation, deletes the entire roster instead.
-    /// </summary>
-    [RelayCommand]
-    public void DeleteSelectedVariation()
-    {
-        if (!HasNestedVariations || Context.Document == null || SelectedIndex < 0 || SelectedIndex >= Rows.Count)
-            return;
-
-        var rowToDelete = Rows[SelectedIndex];
-        if (rowToDelete.VariationEntry == null)
-        {
-            Console.WriteLine("[DeleteVariation] No variation entry on selected row");
-            return;
-        }
-
-        var rosterEntry = rowToDelete.XmlEntry;
-        var variationEntry = rowToDelete.VariationEntry;
-        var rosterId = rowToDelete.RosterId;
-        var indexToDelete = SelectedIndex;
-
-        // Count how many variations this roster has
-        var variationsInRoster = Rows.Count(r => r.RosterId == rosterId && r.IsEquipmentSetVariation);
-
-        // If this is the first variation (shows roster ID, not └) or last variation, delete the entire roster
-        if (rowToDelete.IsFirstVariation || variationsInRoster <= 1)
-        {
-            Console.WriteLine($"[DeleteVariation] First/last variation in roster '{rosterId}', deleting entire roster");
-            DeleteSelectedRoster();
-            return;
-        }
-
-        // Delete just the variation
-        Console.WriteLine($"[DeleteVariation] Deleting variation {rowToDelete.VariationIndex} from roster '{rosterId}'");
-
-        var deleteCommand = new DeleteVariationCommand(Context.Document, rosterEntry, variationEntry);
-        _undoRedoService.Execute(deleteCommand);
-
-        // Remove the row from UI
-        Rows.RemoveAt(indexToDelete);
-
-        // Update variation indices for remaining rows in this roster
-        UpdateVariationIndicesForRoster(rosterId);
-
-        // Update row numbers
-        UpdateRowNumbers();
-
-        // Notify cells to refresh styling
-        RequestCellRefresh();
-        MarkAsModified();
-    }
-
-    /// <summary>
-    /// Deletes the entire roster (including all its variations).
-    /// </summary>
-    [RelayCommand]
-    public void DeleteSelectedRoster()
-    {
-        Console.WriteLine($"[DeleteRoster] Called! HasNestedVariations={HasNestedVariations}, Document={Context.Document != null}, SelectedIndex={SelectedIndex}, RowsCount={Rows.Count}");
-
-        if (!HasNestedVariations || Context.Document == null || SelectedIndex < 0 || SelectedIndex >= Rows.Count)
-        {
-            Console.WriteLine($"[DeleteRoster] Early return due to precondition");
-            return;
-        }
-
-        var selectedRow = Rows[SelectedIndex];
-        var rosterEntry = selectedRow.XmlEntry;
-        var rosterId = selectedRow.RosterId;
-
-        Console.WriteLine($"[DeleteRoster] Deleting roster '{rosterId}' and all its variations");
-
-        // Find the roster index in XmlEntries
-        var rosterIndex = XmlEntries.IndexOf(rosterEntry);
-        if (rosterIndex < 0)
-        {
-            Console.WriteLine($"[DeleteRoster] Roster not found in XmlEntries");
-            return;
-        }
-
-        // Delete the roster from XML
-        var xmlEntryCollection = new ObservableCollection<XmlEntry>(XmlEntries);
-        var command = new DeleteRowCommand(Context.Document, xmlEntryCollection, rosterEntry);
-        _undoRedoService.Execute(command);
-
-        // Sync collections
-        XmlEntries.Clear();
-        XmlEntries.AddRange(xmlEntryCollection);
-
-        // Remove all rows for this roster from UI
-        var rowsToRemove = Rows.Where(r => r.RosterId == rosterId).ToList();
-        foreach (var row in rowsToRemove)
-        {
-            Rows.Remove(row);
-        }
-
-        UpdateRowNumbers();
-        RequestCellRefresh();
-        MarkAsModified();
-    }
-
-    /// <summary>
     /// Duplicates the currently selected row.
-    /// For equipment sets, this is hidden - use DuplicateRoster or DuplicateVariation instead.
     /// </summary>
     [RelayCommand]
-    public void DuplicateRow()
+    public virtual void DuplicateRow()
     {
         if (Context.Document == null || SelectedIndex < 0 || SelectedIndex >= XmlEntries.Count)
             return;
@@ -1684,322 +1497,9 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>
-    /// Adds a new empty variation to the currently selected roster.
-    /// Only available for files with nested variations (equipment sets).
-    /// </summary>
-    [RelayCommand]
-    public void AddVariation()
-    {
-        if (!HasNestedVariations || Context.Document == null || SelectedIndex < 0 || SelectedIndex >= Rows.Count)
-            return;
-
-        var selectedRow = Rows[SelectedIndex];
-        var rosterEntry = selectedRow.XmlEntry;
-        var variationElementName = Schema?.VariationElement ?? "EquipmentSet";
-
-        // Debug: Log which roster we're adding to
-        var rosterId = rosterEntry.Id ?? "(no id)";
-        var existingVariationCount = rosterEntry.OriginalElement.Elements(variationElementName).Count();
-        Console.WriteLine($"[AddVariation] Adding variation to roster '{rosterId}' (currently has {existingVariationCount} variations in XElement)");
-
-        var command = new AddVariationCommand(Context.Document, rosterEntry, variationElementName);
-        _undoRedoService.Execute(command);
-
-        if (command.AddedVariation != null)
-        {
-            // Debug: Verify the variation was added to the correct roster
-            var newVariationCount = rosterEntry.OriginalElement.Elements(variationElementName).Count();
-            Console.WriteLine($"[AddVariation] After add: roster '{rosterId}' now has {newVariationCount} variations in XElement");
-
-            // Create a new row for the variation
-            var newVariationIndex = rosterEntry.Children
-                .Count(c => c.ElementName == variationElementName &&
-                       c.GetAttributeValue("civilian")?.Equals("true", StringComparison.OrdinalIgnoreCase) != true);
-
-            var newRow = CreateVariationRow(rosterEntry, command.AddedVariation, newVariationIndex);
-
-            // Find the last row for this roster and insert after it
-            var lastRosterRowIndex = FindLastRowIndexForRoster(selectedRow.RosterId);
-            Rows.Insert(lastRosterRowIndex + 1, newRow);
-
-            // Update row numbers
-            UpdateRowNumbers();
-
-            SelectedIndex = lastRosterRowIndex + 1;
-            MarkAsModified();
-
-            Console.WriteLine($"[AddVariation] New row inserted at index {lastRosterRowIndex + 1}, variation index {newVariationIndex}");
-        }
-    }
-
-    /// <summary>
-    /// Duplicates the currently selected variation within the same roster.
-    /// Only available for files with nested variations (equipment sets).
-    /// </summary>
-    [RelayCommand]
-    public void DuplicateVariation()
-    {
-        if (!HasNestedVariations || Context.Document == null || SelectedIndex < 0 || SelectedIndex >= Rows.Count)
-            return;
-
-        var selectedRow = Rows[SelectedIndex];
-        if (selectedRow.VariationEntry == null)
-            return;
-
-        var rosterEntry = selectedRow.XmlEntry;
-        var variationEntry = selectedRow.VariationEntry;
-        var variationElementName = Schema?.VariationElement ?? "EquipmentSet";
-
-        var command = new DuplicateVariationCommand(Context.Document, rosterEntry, variationEntry);
-        _undoRedoService.Execute(command);
-
-        if (command.DuplicatedVariation != null)
-        {
-            // Calculate the new variation index
-            var newVariationIndex = selectedRow.VariationIndex + 1;
-
-            var newRow = CreateVariationRow(rosterEntry, command.DuplicatedVariation, newVariationIndex);
-
-            // Copy equipment values from the source row
-            CopyEquipmentValues(selectedRow, newRow);
-
-            // Insert after the current row
-            Rows.Insert(SelectedIndex + 1, newRow);
-
-            // Update variation indices for all rows in this roster after the insertion
-            UpdateVariationIndicesForRoster(selectedRow.RosterId);
-
-            // Update row numbers
-            UpdateRowNumbers();
-
-            SelectedIndex = SelectedIndex + 1;
-            MarkAsModified();
-        }
-    }
-
-    /// <summary>
-    /// Duplicates the entire roster including all its variations.
-    /// Only available for files with nested variations (equipment sets).
-    /// </summary>
-    [RelayCommand]
-    public void DuplicateRoster()
-    {
-        if (!HasNestedVariations || Context.Document == null || SelectedIndex < 0 || SelectedIndex >= Rows.Count)
-            return;
-
-        var selectedRow = Rows[SelectedIndex];
-        var rosterEntry = selectedRow.XmlEntry;
-
-        var xmlEntryCollection = new ObservableCollection<XmlEntry>(XmlEntries);
-        var rosterIndex = xmlEntryCollection.IndexOf(rosterEntry);
-        if (rosterIndex < 0) return;
-
-        var command = new DuplicateRowCommand(Context.Document, xmlEntryCollection, rosterEntry);
-        _undoRedoService.Execute(command);
-
-        // Sync XmlEntries
-        XmlEntries.Clear();
-        foreach (var entry in xmlEntryCollection)
-        {
-            XmlEntries.Add(entry);
-        }
-
-        // Find the duplicated roster (it's inserted after the original)
-        var duplicatedRoster = xmlEntryCollection[rosterIndex + 1];
-        var variationElementName = Schema?.VariationElement ?? "EquipmentSet";
-
-        // Find the last row for the original roster
-        var lastRosterRowIndex = FindLastRowIndexForRoster(selectedRow.RosterId);
-
-        // Create rows for all variations in the duplicated roster
-        var variations = duplicatedRoster.Children
-            .Where(c => c.ElementName == variationElementName &&
-                   c.GetAttributeValue("civilian")?.Equals("true", StringComparison.OrdinalIgnoreCase) != true)
-            .ToList();
-
-        var insertIndex = lastRosterRowIndex + 1;
-        var variationIndex = 1;
-        foreach (var variation in variations)
-        {
-            var newRow = CreateVariationRow(duplicatedRoster, variation, variationIndex);
-            CopyRosterValuesFromEntry(duplicatedRoster, newRow);
-            CopyEquipmentValuesFromVariation(variation, newRow);
-            Rows.Insert(insertIndex, newRow);
-            insertIndex++;
-            variationIndex++;
-        }
-
-        // If roster has no variations, create an empty row
-        if (variations.Count == 0)
-        {
-            var emptyRow = CreateVariationRow(duplicatedRoster, null, 1);
-            CopyRosterValuesFromEntry(duplicatedRoster, emptyRow);
-            Rows.Insert(insertIndex, emptyRow);
-        }
-
-        UpdateRowNumbers();
-        SelectedIndex = lastRosterRowIndex + 1;
-        MarkAsModified();
-    }
-
-    /// <summary>
-    /// Adds a new empty roster with one empty variation.
-    /// Only available for files with nested variations (equipment sets).
-    /// </summary>
-    [RelayCommand]
-    public void AddRoster()
-    {
-        if (!HasNestedVariations || Context.Document == null)
-            return;
-
-        var xmlEntryCollection = new ObservableCollection<XmlEntry>(XmlEntries);
-
-        // Determine insert position - after the last row of current roster, or at the end
-        int xmlInsertIndex = xmlEntryCollection.Count;
-        int rowInsertIndex = Rows.Count;
-
-        if (SelectedIndex >= 0 && SelectedIndex < Rows.Count)
-        {
-            var selectedRow = Rows[SelectedIndex];
-            var rosterEntry = selectedRow.XmlEntry;
-            var rosterIndex = xmlEntryCollection.IndexOf(rosterEntry);
-            if (rosterIndex >= 0)
-            {
-                xmlInsertIndex = rosterIndex + 1;
-                rowInsertIndex = FindLastRowIndexForRoster(selectedRow.RosterId) + 1;
-            }
-        }
-
-        // Use AddRowCommand to create the new roster
-        var command = new AddRowCommand(Context.Document, xmlEntryCollection, xmlInsertIndex);
-        _undoRedoService.Execute(command);
-
-        // Sync XmlEntries
-        XmlEntries.Clear();
-        foreach (var entry in xmlEntryCollection)
-        {
-            XmlEntries.Add(entry);
-        }
-
-        // Get the newly created roster
-        var newRoster = xmlEntryCollection[xmlInsertIndex];
-        var variationElementName = Schema?.VariationElement ?? "EquipmentSet";
-
-        // Add one empty variation to the new roster
-        var addVariationCmd = new AddVariationCommand(Context.Document, newRoster, variationElementName);
-        _undoRedoService.Execute(addVariationCmd);
-
-        // Create row for the new roster with its variation
-        var newRow = CreateVariationRow(newRoster, addVariationCmd.AddedVariation, 1);
-        Rows.Insert(rowInsertIndex, newRow);
-
-        UpdateRowNumbers();
-        SelectedIndex = rowInsertIndex;
-        MarkAsModified();
-    }
-
-    /// <summary>
-    /// Creates a row for an equipment set variation.
-    /// </summary>
-    private EntryRowViewModel CreateVariationRow(XmlEntry roster, XmlEntry? variation, int variationIndex)
-    {
-        var row = new EntryRowViewModel(roster, ColumnNames.ToList(), null);
-        row.VariationEntry = variation;
-        row.VariationIndex = variationIndex;
-        row.RosterId = roster.Id;
-        row.IsNew = true;
-        row.IsIdLocked = false; // Equipment set roster IDs should be editable
-
-        // Set roster-level values
-        row.SetValueWithoutNotify("id", roster.Id ?? "");
-        row.SetValueWithoutNotify("culture", roster.GetAttributeValue("culture") ?? "");
-        row.SetValueWithoutNotify("_variation", variationIndex.ToString());
-
-        // Subscribe to cell changes
-        row.CellValueChanged += OnCellValueChanged;
-
-        return row;
-    }
-
-    /// <summary>
-    /// Copies equipment values from a source row to a target row.
-    /// </summary>
-    private void CopyEquipmentValues(EntryRowViewModel source, EntryRowViewModel target)
-    {
-        var equipmentSlots = Schema?.EquipmentSlots?.Select(s => s.Slot).ToHashSet() ?? new HashSet<string>();
-        foreach (var slot in equipmentSlots)
-        {
-            var value = source[slot];
-            if (!string.IsNullOrEmpty(value))
-            {
-                target.SetValueWithoutNotify(slot, value);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Copies roster-level values from an entry to a row.
-    /// </summary>
-    private void CopyRosterValuesFromEntry(XmlEntry roster, EntryRowViewModel row)
-    {
-        row.SetValueWithoutNotify("id", roster.Id ?? "");
-        row.SetValueWithoutNotify("culture", roster.GetAttributeValue("culture") ?? "");
-    }
-
-    /// <summary>
-    /// Copies equipment values from a variation entry to a row.
-    /// </summary>
-    private void CopyEquipmentValuesFromVariation(XmlEntry variation, EntryRowViewModel row)
-    {
-        var equipmentItemElementName = Schema?.EquipmentItemElement ?? "Equipment";
-        var equipmentSlots = Schema?.EquipmentSlots?.Select(s => s.Slot).ToHashSet() ?? new HashSet<string>();
-
-        foreach (var equipItem in variation.Children.Where(c => c.ElementName == equipmentItemElementName))
-        {
-            var slot = equipItem.GetAttributeValue("slot");
-            var itemId = equipItem.GetAttributeValue("id");
-            if (!string.IsNullOrEmpty(slot) && equipmentSlots.Contains(slot) && !string.IsNullOrEmpty(itemId))
-            {
-                row.SetValueWithoutNotify(slot, itemId);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Finds the last row index for a given roster ID.
-    /// </summary>
-    private int FindLastRowIndexForRoster(string? rosterId)
-    {
-        if (string.IsNullOrEmpty(rosterId)) return Rows.Count - 1;
-
-        for (int i = Rows.Count - 1; i >= 0; i--)
-        {
-            if (Rows[i].RosterId == rosterId)
-                return i;
-        }
-        return Rows.Count - 1;
-    }
-
-    /// <summary>
-    /// Updates variation indices for all rows in a roster.
-    /// </summary>
-    private void UpdateVariationIndicesForRoster(string? rosterId)
-    {
-        if (string.IsNullOrEmpty(rosterId)) return;
-
-        var variationIndex = 1;
-        foreach (var row in Rows.Where(r => r.RosterId == rosterId))
-        {
-            row.VariationIndex = variationIndex;
-            row.SetValueWithoutNotify("_variation", variationIndex.ToString());
-            variationIndex++;
-        }
-    }
-
-    /// <summary>
     /// Updates row numbers for all rows after modifications.
     /// </summary>
-    private void UpdateRowNumbers()
+    protected void UpdateRowNumbers()
     {
         for (int i = 0; i < Rows.Count; i++)
         {
@@ -2132,16 +1632,10 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     /// <summary>
     /// Syncs the Rows collection with XmlEntries incrementally.
     /// Only adds/removes rows that changed, preserving scroll position.
+    /// Override in subclasses for specialized sync (e.g., equipment sets).
     /// </summary>
-    private void SyncRowsWithEntries()
+    protected virtual void SyncRowsWithEntries()
     {
-        // For equipment sets with nested variations, use specialized sync
-        if (HasNestedVariations)
-        {
-            SyncEquipmentSetRows();
-            return;
-        }
-
         // Build a set of current entry elements for fast lookup
         var entryElements = new HashSet<XElement>(XmlEntries.Select(e => e.OriginalElement));
 
@@ -2210,115 +1704,6 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         for (int i = 0; i < Rows.Count; i++)
         {
             Rows[i].RowNumber = i + 1;
-        }
-
-        RequestCellRefresh();
-    }
-
-    /// <summary>
-    /// Syncs rows for equipment sets with nested variations.
-    /// Handles add/remove of individual variations, not just entire rosters.
-    /// </summary>
-    private void SyncEquipmentSetRows()
-    {
-        var variationElementName = Schema?.VariationElement ?? "EquipmentSet";
-
-        // Build set of current variation elements from XML
-        var currentVariationElements = new HashSet<XElement>();
-        foreach (var roster in XmlEntries)
-        {
-            roster.RefreshChildren(); // Ensure children are up-to-date
-            foreach (var variation in roster.Children.Where(c => c.ElementName == variationElementName))
-            {
-                // Skip civilian variations
-                if (variation.GetAttributeValue("civilian")?.Equals("true", StringComparison.OrdinalIgnoreCase) == true)
-                    continue;
-                currentVariationElements.Add(variation.OriginalElement);
-            }
-        }
-
-        // Remove rows whose variations no longer exist
-        for (int i = Rows.Count - 1; i >= 0; i--)
-        {
-            var row = Rows[i];
-            if (row.IsRemoved) continue;
-
-            // Check if the variation element still exists
-            if (row.VariationEntry != null)
-            {
-                if (!currentVariationElements.Contains(row.VariationEntry.OriginalElement))
-                {
-                    Console.WriteLine($"[SyncEquipmentSetRows] Removing row for deleted variation in roster {row.RosterId}");
-                    Rows.RemoveAt(i);
-                }
-            }
-        }
-
-        // Build set of variation elements that have rows
-        var rowVariationElements = new HashSet<XElement>(
-            Rows.Where(r => !r.IsRemoved && r.VariationEntry != null)
-                .Select(r => r.VariationEntry!.OriginalElement));
-
-        // Add rows for variations that don't have rows yet
-        int insertIndex = 0;
-        foreach (var roster in XmlEntries)
-        {
-            var rosterId = roster.GetAttributeValue("id") ?? "";
-            var rosterCulture = roster.GetAttributeValue("culture") ?? "";
-
-            var variations = roster.Children
-                .Where(c => c.ElementName == variationElementName &&
-                       c.GetAttributeValue("civilian")?.Equals("true", StringComparison.OrdinalIgnoreCase) != true)
-                .ToList();
-
-            int variationIndex = 1;
-            foreach (var variation in variations)
-            {
-                if (!rowVariationElements.Contains(variation.OriginalElement))
-                {
-                    // Create new row for this variation
-                    Console.WriteLine($"[SyncEquipmentSetRows] Creating row for restored variation {variationIndex} in roster {rosterId}");
-                    var newRow = CreateVariationRow(roster, variation, variationIndex);
-
-                    // Populate equipment values from the variation XML
-                    CopyEquipmentValuesFromVariation(variation, newRow);
-
-                    // Find correct insert position (after other variations of this roster)
-                    var lastRosterRowIndex = FindLastRowIndexForRoster(rosterId);
-                    if (lastRosterRowIndex >= 0)
-                    {
-                        Rows.Insert(lastRosterRowIndex + 1, newRow);
-                    }
-                    else
-                    {
-                        // No rows for this roster yet, insert at current position
-                        Rows.Insert(Math.Min(insertIndex, Rows.Count), newRow);
-                    }
-                }
-                variationIndex++;
-                insertIndex++;
-            }
-        }
-
-        // Update row numbers and variation indices
-        int rowNum = 1;
-        string? currentRosterId = null;
-        int currentVariationIndex = 0;
-
-        for (int i = 0; i < Rows.Count; i++)
-        {
-            var row = Rows[i];
-            row.RowNumber = rowNum++;
-
-            // Update variation indices within each roster
-            if (row.RosterId != currentRosterId)
-            {
-                currentRosterId = row.RosterId;
-                currentVariationIndex = 1;
-            }
-            row.VariationIndex = currentVariationIndex;
-            row.SetValueWithoutNotify("_variation", currentVariationIndex.ToString());
-            currentVariationIndex++;
         }
 
         RequestCellRefresh();

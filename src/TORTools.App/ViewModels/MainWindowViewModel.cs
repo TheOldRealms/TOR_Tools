@@ -7,6 +7,7 @@ using TORTools.Core.Models;
 using TORTools.Core.Models.Translation;
 using TORTools.Core.Services;
 using TORTools.Core.Services.Translation;
+using TORTools.Core.Schema;
 using TORTools.Core.Workspace;
 
 namespace TORTools.App.ViewModels;
@@ -15,6 +16,7 @@ public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly IWorkspaceService _workspaceService;
     private readonly IIconService? _iconService;
+    private readonly SchemaService _schemaService;
     private readonly ItemCatalogService _itemCatalogService;
     private readonly FactionCatalogService _factionCatalogService;
     private readonly AbilityCatalogService _abilityCatalogService;
@@ -153,6 +155,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         _workspaceService = workspaceService;
         _config = _workspaceService.LoadConfig();
+        _schemaService = new SchemaService();
         _itemCatalogService = new ItemCatalogService();
         _factionCatalogService = new FactionCatalogService();
         _xmlDocumentService = new XmlDocumentService();
@@ -278,8 +281,12 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        // Open new tab
-        var newTab = new FileTabViewModel(filePath);
+        // Open new tab - use EquipmentFileTabViewModel for files with nested variations
+        var fileName = Path.GetFileName(filePath);
+        var schema = _schemaService.GetSchema(fileName);
+        FileTabViewModel newTab = schema?.HasNestedVariations == true
+            ? new EquipmentFileTabViewModel(filePath)
+            : new FileTabViewModel(filePath);
 
         // Assign icon service if available
         newTab.IconService = _iconService;

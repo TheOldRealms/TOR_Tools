@@ -25,6 +25,10 @@
     </Window.KeyBindings>
 
     <Window.DataTemplates>
+        <!-- EquipmentFileTabViewModel must come before FileTabViewModel (more specific first) -->
+        <DataTemplate DataType="vm:EquipmentFileTabViewModel">
+            <views:EquipmentFileTabView/>
+        </DataTemplate>
         <DataTemplate DataType="vm:FileTabViewModel">
             <views:FileTabView/>
         </DataTemplate>
