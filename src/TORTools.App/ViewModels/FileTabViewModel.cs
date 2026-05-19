@@ -714,8 +714,23 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
 
         if (!_crossRefSourcePaths.TryGetValue(fieldName, out var sourceFilePath))
         {
-            Console.WriteLine($"[CrossRef] No source file path cached for field: {fieldName}");
-            return false;
+            // Try to find the source file dynamically if not cached
+            var baseDir = Path.GetDirectoryName(FilePath);
+            if (!string.IsNullOrEmpty(baseDir) && !string.IsNullOrEmpty(fieldDef.CrossReference.SourceFile))
+            {
+                sourceFilePath = _filePathResolver.FindSourceFile(baseDir, fieldDef.CrossReference.SourceFile);
+                if (sourceFilePath != null)
+                {
+                    _crossRefSourcePaths[fieldName] = sourceFilePath;
+                    Console.WriteLine($"[CrossRef] Dynamically resolved source file for {fieldName}: {sourceFilePath}");
+                }
+            }
+
+            if (sourceFilePath == null)
+            {
+                Console.WriteLine($"[CrossRef] No source file path cached or found for field: {fieldName}");
+                return false;
+            }
         }
 
         // Parse the comma-separated values
@@ -739,6 +754,12 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         if (success)
         {
             // Update the in-memory cache
+            // Ensure the field entry exists in the cache
+            if (!_crossRefData.ContainsKey(fieldName))
+            {
+                _crossRefData[fieldName] = new Dictionary<string, List<string>>();
+            }
+
             if (valueList.Count > 0)
             {
                 _crossRefData[fieldName][localKey] = valueList;

@@ -129,11 +129,27 @@ public class FileSaverService
 
             var xmlEntry = rowVm.XmlEntry;
 
+            // Clean up any ext_ attributes that shouldn't be on the main XML element
+            // These are cross-reference fields stored in tor_extendedunitproperties.xml
+            var extAttrsToRemove = xmlEntry.OriginalElement.Attributes()
+                .Where(a => a.Name.LocalName.StartsWith("ext_", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            foreach (var attr in extAttrsToRemove)
+            {
+                attr.Remove();
+                context.Document!.HasUnsavedChanges = true;
+                Console.WriteLine($"[FileSaver] Removed invalid ext_ attribute: {attr.Name}");
+            }
+
             foreach (var columnName in context.ColumnNames)
             {
                 // Skip cross-reference columns - they're virtual and stored in other files
                 var fieldDef = context.Schema?.GetField(columnName);
                 if (fieldDef?.CrossReference != null)
+                    continue;
+
+                // Skip ext_ prefixed fields - these are always stored in external files (tor_extendedunitproperties.xml)
+                if (columnName.StartsWith("ext_", StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 var currentValue = rowVm[columnName];
