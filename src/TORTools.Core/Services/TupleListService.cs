@@ -4,6 +4,22 @@ using TORTools.Core.Schema;
 namespace TORTools.Core.Services;
 
 /// <summary>
+/// Result of loading all tuple list data for a schema.
+/// </summary>
+public class TupleListLoadResult
+{
+    /// <summary>
+    /// Tuple list data: field name -> local key -> list of tuple dictionaries.
+    /// </summary>
+    public Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>> TupleData { get; } = new();
+
+    /// <summary>
+    /// Source file paths: field name -> resolved file path.
+    /// </summary>
+    public Dictionary<string, string> SourcePaths { get; } = new();
+}
+
+/// <summary>
 /// Service for loading and managing tuple list data from external XML files.
 /// </summary>
 public class TupleListService
@@ -250,5 +266,51 @@ public class TupleListService
         {
             _cache.Clear();
         }
+    }
+
+    /// <summary>
+    /// Orchestrates loading all tuple list data for a schema.
+    /// Iterates through schema fields, resolves file paths, and loads all tuple data.
+    /// </summary>
+    /// <param name="filePath">The path to the current file being edited</param>
+    /// <param name="schema">The schema definition for the file</param>
+    /// <param name="filePathResolver">Resolver for finding source files</param>
+    /// <returns>A result object containing all tuple list data</returns>
+    public TupleListLoadResult LoadAllTupleData(
+        string filePath,
+        SchemaDefinition? schema,
+        FilePathResolver filePathResolver)
+    {
+        var result = new TupleListLoadResult();
+
+        if (schema == null) return result;
+
+        var baseDir = Path.GetDirectoryName(filePath);
+        if (string.IsNullOrEmpty(baseDir)) return result;
+
+        foreach (var kvp in schema.Fields)
+        {
+            var fieldName = kvp.Key;
+            var fieldDef = kvp.Value;
+
+            if (fieldDef.TupleList == null) continue;
+
+            var config = fieldDef.TupleList;
+            var sourceFilePath = filePathResolver.FindSourceFile(baseDir, config.SourceFile);
+
+            if (sourceFilePath != null)
+            {
+                var tupleData = LoadTupleData(sourceFilePath, config);
+                result.TupleData[fieldName] = tupleData;
+                result.SourcePaths[fieldName] = sourceFilePath;
+                Console.WriteLine($"[TupleList] Loaded {tupleData.Count} entries for {fieldName} from {config.SourceFile}");
+            }
+            else
+            {
+                Console.WriteLine($"[TupleList] Source file not found: {config.SourceFile}");
+            }
+        }
+
+        return result;
     }
 }

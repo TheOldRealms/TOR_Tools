@@ -473,97 +473,23 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     /// </summary>
     private void LoadCrossReferences()
     {
-        if (Schema == null) return;
+        var result = _crossRefService.LoadAllCrossReferences(FilePath, Schema, _filePathResolver);
 
-        var baseDir = Path.GetDirectoryName(FilePath);
-        if (string.IsNullOrEmpty(baseDir)) return;
+        // Copy results to local storage and context
+        foreach (var kvp in result.CrossRefData)
+            _crossRefData[kvp.Key] = kvp.Value;
 
-        // Find all fields with crossReference configuration
-        foreach (var kvp in Schema.Fields)
-        {
-            var fieldName = kvp.Key;
-            var fieldDef = kvp.Value;
+        foreach (var kvp in result.SourcePaths)
+            _crossRefSourcePaths[kvp.Key] = kvp.Value;
 
-            if (fieldDef.CrossReference != null)
-            {
-                var config = fieldDef.CrossReference;
+        foreach (var kvp in result.AvailableIds)
+            Context.AvailableIds[kvp.Key] = kvp.Value;
 
-                // Check if this is a "direct" cross-reference (value stored on entry, no source file)
-                // vs "indirect" cross-reference (values in a separate mapping file)
-                if (string.IsNullOrEmpty(config.SourceFile))
-                {
-                    // Direct cross-reference: load available IDs from target file for validation/autocomplete
-                    var targetFilePath = _filePathResolver.FindSourceFile(baseDir, config.TargetFile);
-                    if (targetFilePath != null && !string.IsNullOrEmpty(config.TargetKeyField))
-                    {
-                        var availableIds = _crossRefService.LoadTargetKeys(targetFilePath, config.TargetKeyField);
-                        Context.AvailableIds[fieldName] = availableIds;
-                        Console.WriteLine($"[CrossRef] Loaded {availableIds.Count} available IDs for direct crossref {fieldName} from {config.TargetFile}");
+        foreach (var kvp in result.DisplayNames)
+            Context.CrossRefDisplayNames[kvp.Key] = kvp.Value;
 
-                        // Load display names if configured
-                        if (!string.IsNullOrEmpty(config.TargetDisplayField))
-                        {
-                            var displayNames = _crossRefService.LoadTargetDisplayNames(targetFilePath, config.TargetKeyField, config.TargetDisplayField);
-                            if (displayNames.Count > 0)
-                            {
-                                Context.CrossRefDisplayNames[fieldName] = displayNames;
-                                Console.WriteLine($"[CrossRef] Loaded {displayNames.Count} display names for {fieldName}");
-                            }
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine($"[CrossRef] Target file not found for direct crossref: {config.TargetFile}");
-                    }
-                }
-                else
-                {
-                    // Indirect cross-reference: load from mapping file
-                    var sourceFilePath = _filePathResolver.FindSourceFile(baseDir, config.SourceFile);
-                    if (sourceFilePath != null)
-                    {
-                        Dictionary<string, List<string>> crossRefData;
-
-                        if (fieldDef.Type == "reverseCrossReference")
-                        {
-                            // Reverse lookup: trait ID -> list of item IDs that use it
-                            crossRefData = _crossRefService.LoadReverseCrossReferences(sourceFilePath, config);
-                            Console.WriteLine($"[CrossRef] Loaded {crossRefData.Count} reverse references for {fieldName} from {config.SourceFile}");
-                        }
-                        else
-                        {
-                            // Forward lookup: item ID -> list of trait IDs
-                            crossRefData = _crossRefService.LoadCrossReferences(sourceFilePath, config);
-                            Console.WriteLine($"[CrossRef] Loaded {crossRefData.Count} references for {fieldName} from {config.SourceFile}");
-
-                            // For editable cross-references, load available target IDs for autocomplete
-                            var targetFilePath = _filePathResolver.FindSourceFile(baseDir, config.TargetFile);
-                            if (targetFilePath != null && !string.IsNullOrEmpty(config.TargetKeyField))
-                            {
-                                var availableIds = _crossRefService.LoadTargetKeys(targetFilePath, config.TargetKeyField);
-                                Context.AvailableIds[fieldName] = availableIds;
-                                Console.WriteLine($"[CrossRef] Loaded {availableIds.Count} available IDs for {fieldName} autocomplete");
-
-                                // Also load descriptions from the target file if available
-                                var descriptions = _crossRefService.LoadTargetDescriptions(targetFilePath, config.TargetKeyField);
-                                if (descriptions.Count > 0)
-                                {
-                                    Context.CrossRefDescriptions[fieldName] = descriptions;
-                                    Console.WriteLine($"[CrossRef] Loaded {descriptions.Count} descriptions for {fieldName}");
-                                }
-                            }
-                        }
-
-                        _crossRefData[fieldName] = crossRefData;
-                        _crossRefSourcePaths[fieldName] = sourceFilePath;
-                    }
-                    else
-                    {
-                        Console.WriteLine($"[CrossRef] Source file not found: {config.SourceFile}");
-                    }
-                }
-            }
-        }
+        foreach (var kvp in result.Descriptions)
+            Context.CrossRefDescriptions[kvp.Key] = kvp.Value;
     }
 
     /// <summary>
@@ -573,18 +499,31 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     /// </summary>
     public void RefreshCrossReferences()
     {
-        // Clear the CrossReferenceService cache so it reloads from disk
-        _crossRefService.ClearCache();
-
-        // Clear existing cross-reference data
+        // Clear existing data
         Context.AvailableIds.Clear();
         Context.CrossRefDisplayNames.Clear();
         Context.CrossRefDescriptions.Clear();
         _crossRefData.Clear();
         _crossRefSourcePaths.Clear();
 
-        // Reload from disk
-        LoadCrossReferences();
+        // Use service to refresh (clears cache and reloads)
+        var result = _crossRefService.RefreshAllCrossReferences(FilePath, Schema, _filePathResolver);
+
+        // Copy results
+        foreach (var kvp in result.CrossRefData)
+            _crossRefData[kvp.Key] = kvp.Value;
+
+        foreach (var kvp in result.SourcePaths)
+            _crossRefSourcePaths[kvp.Key] = kvp.Value;
+
+        foreach (var kvp in result.AvailableIds)
+            Context.AvailableIds[kvp.Key] = kvp.Value;
+
+        foreach (var kvp in result.DisplayNames)
+            Context.CrossRefDisplayNames[kvp.Key] = kvp.Value;
+
+        foreach (var kvp in result.Descriptions)
+            Context.CrossRefDescriptions[kvp.Key] = kvp.Value;
 
         Console.WriteLine($"[CrossRef] Refreshed cross-references for {Title}");
     }
@@ -594,36 +533,14 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     /// </summary>
     private void LoadTupleListData()
     {
-        if (Schema == null) return;
+        var result = _tupleListService.LoadAllTupleData(FilePath, Schema, _filePathResolver);
 
-        var baseDir = Path.GetDirectoryName(FilePath);
-        if (string.IsNullOrEmpty(baseDir)) return;
+        // Copy results to local storage
+        foreach (var kvp in result.TupleData)
+            _tupleListData[kvp.Key] = kvp.Value;
 
-        // Find all fields with tupleList configuration
-        foreach (var kvp in Schema.Fields)
-        {
-            var fieldName = kvp.Key;
-            var fieldDef = kvp.Value;
-
-            if (fieldDef.TupleList != null)
-            {
-                var config = fieldDef.TupleList;
-
-                // Find the source file
-                var sourceFilePath = _filePathResolver.FindSourceFile(baseDir, config.SourceFile);
-                if (sourceFilePath != null)
-                {
-                    var tupleData = _tupleListService.LoadTupleData(sourceFilePath, config);
-                    _tupleListData[fieldName] = tupleData;
-                    _tupleListSourcePaths[fieldName] = sourceFilePath;
-                    Console.WriteLine($"[TupleList] Loaded {tupleData.Count} entries for {fieldName} from {config.SourceFile}");
-                }
-                else
-                {
-                    Console.WriteLine($"[TupleList] Source file not found: {config.SourceFile}");
-                }
-            }
-        }
+        foreach (var kvp in result.SourcePaths)
+            _tupleListSourcePaths[kvp.Key] = kvp.Value;
     }
 
     /// <summary>

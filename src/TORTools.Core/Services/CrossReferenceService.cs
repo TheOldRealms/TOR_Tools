@@ -4,6 +4,37 @@ using TORTools.Core.Schema;
 namespace TORTools.Core.Services;
 
 /// <summary>
+/// Result of loading all cross-references for a schema.
+/// </summary>
+public class CrossReferenceLoadResult
+{
+    /// <summary>
+    /// Cross-reference data: field name -> local key -> list of referenced values.
+    /// </summary>
+    public Dictionary<string, Dictionary<string, List<string>>> CrossRefData { get; } = new();
+
+    /// <summary>
+    /// Source file paths: field name -> resolved file path.
+    /// </summary>
+    public Dictionary<string, string> SourcePaths { get; } = new();
+
+    /// <summary>
+    /// Available IDs for autocomplete: field name -> list of valid IDs.
+    /// </summary>
+    public Dictionary<string, List<string>> AvailableIds { get; } = new();
+
+    /// <summary>
+    /// Display names for IDs: field name -> ID -> display name.
+    /// </summary>
+    public Dictionary<string, Dictionary<string, string>> DisplayNames { get; } = new();
+
+    /// <summary>
+    /// Descriptions for IDs: field name -> ID -> description.
+    /// </summary>
+    public Dictionary<string, Dictionary<string, string>> Descriptions { get; } = new();
+}
+
+/// <summary>
 /// Service for loading and querying cross-reference data between XML files.
 /// </summary>
 public class CrossReferenceService
@@ -710,5 +741,141 @@ public class CrossReferenceService
         }
 
         return descriptions;
+    }
+
+    /// <summary>
+    /// Orchestrates loading all cross-references for a schema.
+    /// Iterates through schema fields, resolves file paths, and loads all cross-reference data.
+    /// </summary>
+    /// <param name="filePath">The path to the current file being edited</param>
+    /// <param name="schema">The schema definition for the file</param>
+    /// <param name="filePathResolver">Resolver for finding source files</param>
+    /// <returns>A result object containing all cross-reference data</returns>
+    public CrossReferenceLoadResult LoadAllCrossReferences(
+        string filePath,
+        SchemaDefinition? schema,
+        FilePathResolver filePathResolver)
+    {
+        var result = new CrossReferenceLoadResult();
+
+        if (schema == null) return result;
+
+        var baseDir = Path.GetDirectoryName(filePath);
+        if (string.IsNullOrEmpty(baseDir)) return result;
+
+        foreach (var kvp in schema.Fields)
+        {
+            var fieldName = kvp.Key;
+            var fieldDef = kvp.Value;
+
+            if (fieldDef.CrossReference == null) continue;
+
+            var config = fieldDef.CrossReference;
+
+            if (string.IsNullOrEmpty(config.SourceFile))
+            {
+                // Direct cross-reference: load available IDs from target file
+                LoadDirectCrossReference(fieldName, config, baseDir, filePathResolver, result);
+            }
+            else
+            {
+                // Indirect cross-reference: load from mapping file
+                LoadIndirectCrossReference(fieldName, fieldDef, config, baseDir, filePathResolver, result);
+            }
+        }
+
+        return result;
+    }
+
+    private void LoadDirectCrossReference(
+        string fieldName,
+        CrossReferenceConfig config,
+        string baseDir,
+        FilePathResolver filePathResolver,
+        CrossReferenceLoadResult result)
+    {
+        var targetFilePath = filePathResolver.FindSourceFile(baseDir, config.TargetFile);
+        if (targetFilePath == null || string.IsNullOrEmpty(config.TargetKeyField))
+        {
+            Console.WriteLine($"[CrossRef] Target file not found for direct crossref: {config.TargetFile}");
+            return;
+        }
+
+        var availableIds = LoadTargetKeys(targetFilePath, config.TargetKeyField);
+        result.AvailableIds[fieldName] = availableIds;
+        Console.WriteLine($"[CrossRef] Loaded {availableIds.Count} available IDs for direct crossref {fieldName} from {config.TargetFile}");
+
+        // Load display names if configured
+        if (!string.IsNullOrEmpty(config.TargetDisplayField))
+        {
+            var displayNames = LoadTargetDisplayNames(targetFilePath, config.TargetKeyField, config.TargetDisplayField);
+            if (displayNames.Count > 0)
+            {
+                result.DisplayNames[fieldName] = displayNames;
+                Console.WriteLine($"[CrossRef] Loaded {displayNames.Count} display names for {fieldName}");
+            }
+        }
+    }
+
+    private void LoadIndirectCrossReference(
+        string fieldName,
+        FieldDefinition fieldDef,
+        CrossReferenceConfig config,
+        string baseDir,
+        FilePathResolver filePathResolver,
+        CrossReferenceLoadResult result)
+    {
+        var sourceFilePath = filePathResolver.FindSourceFile(baseDir, config.SourceFile);
+        if (sourceFilePath == null)
+        {
+            Console.WriteLine($"[CrossRef] Source file not found: {config.SourceFile}");
+            return;
+        }
+
+        Dictionary<string, List<string>> crossRefData;
+
+        if (fieldDef.Type == "reverseCrossReference")
+        {
+            crossRefData = LoadReverseCrossReferences(sourceFilePath, config);
+            Console.WriteLine($"[CrossRef] Loaded {crossRefData.Count} reverse references for {fieldName} from {config.SourceFile}");
+        }
+        else
+        {
+            crossRefData = LoadCrossReferences(sourceFilePath, config);
+            Console.WriteLine($"[CrossRef] Loaded {crossRefData.Count} references for {fieldName} from {config.SourceFile}");
+
+            // For editable cross-references, load available target IDs
+            var targetFilePath = filePathResolver.FindSourceFile(baseDir, config.TargetFile);
+            if (targetFilePath != null && !string.IsNullOrEmpty(config.TargetKeyField))
+            {
+                var availableIds = LoadTargetKeys(targetFilePath, config.TargetKeyField);
+                result.AvailableIds[fieldName] = availableIds;
+                Console.WriteLine($"[CrossRef] Loaded {availableIds.Count} available IDs for {fieldName} autocomplete");
+
+                var descriptions = LoadTargetDescriptions(targetFilePath, config.TargetKeyField);
+                if (descriptions.Count > 0)
+                {
+                    result.Descriptions[fieldName] = descriptions;
+                    Console.WriteLine($"[CrossRef] Loaded {descriptions.Count} descriptions for {fieldName}");
+                }
+            }
+        }
+
+        result.CrossRefData[fieldName] = crossRefData;
+        result.SourcePaths[fieldName] = sourceFilePath;
+    }
+
+    /// <summary>
+    /// Refreshes all cross-references by clearing cache and reloading.
+    /// </summary>
+    public CrossReferenceLoadResult RefreshAllCrossReferences(
+        string filePath,
+        SchemaDefinition? schema,
+        FilePathResolver filePathResolver)
+    {
+        ClearCache();
+        var fileName = Path.GetFileName(filePath);
+        Console.WriteLine($"[CrossRef] Refreshing cross-references for {fileName}");
+        return LoadAllCrossReferences(filePath, schema, filePathResolver);
     }
 }
