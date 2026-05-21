@@ -446,7 +446,13 @@ public class XmlEntry
                 }
                 else if (int.TryParse(bracketContent, out var index))
                 {
-                    // Numeric index - must exist, can't create
+                    // Numeric index - create elements if needed to reach index
+                    var existingCount = current.Elements(elementName).Count();
+                    while (existingCount < index)
+                    {
+                        current.Add(new XElement(elementName));
+                        existingCount++;
+                    }
                     current = current.Elements(elementName).ElementAtOrDefault(index - 1);
                 }
                 else
