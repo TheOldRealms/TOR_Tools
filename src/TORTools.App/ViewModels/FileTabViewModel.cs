@@ -1460,11 +1460,11 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     public void DeleteRow()
     {
-        if (Context.Document == null || SelectedIndex < 0 || SelectedIndex >= Rows.Count)
+        if (Context.Document == null || SelectedIndex < 0 || SelectedIndex >= DisplayRows.Count)
             return;
 
-        var indexToDelete = SelectedIndex;
-        var rowToDelete = Rows[indexToDelete];
+        // Get row from DisplayRows (works correctly whether filtered or not)
+        var rowToDelete = DisplayRows[SelectedIndex];
 
         // Handle special row deletion (virtual, overridden in EquipmentFileTabViewModel)
         if (HandleRowDeletion(rowToDelete))
@@ -1472,8 +1472,14 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        // Check bounds for regular entries
-        if (indexToDelete >= XmlEntries.Count)
+        // Find actual indices in the source collections (different from SelectedIndex when filtered)
+        var actualRowIndex = Rows.IndexOf(rowToDelete);
+        if (actualRowIndex < 0)
+            return;
+
+        var xmlEntryCollection = new ObservableCollection<XmlEntry>(XmlEntries);
+        var actualXmlIndex = xmlEntryCollection.IndexOf(rowToDelete.XmlEntry);
+        if (actualXmlIndex < 0 || actualXmlIndex >= xmlEntryCollection.Count)
             return;
 
         // Store the row for "removed entries" display (only if not a new entry)
@@ -1484,8 +1490,7 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
             Console.WriteLine($"[Removed] Stored removed entry: {rowToDelete["id"]} (total: {Context.RemovedEntries.Count})");
         }
 
-        var xmlEntryCollection = new ObservableCollection<XmlEntry>(XmlEntries);
-        var entryToDelete = xmlEntryCollection[indexToDelete];
+        var entryToDelete = xmlEntryCollection[actualXmlIndex];
 
         // Remove from new entries tracking
         var entryId = entryToDelete.GetAttribute("id")?.DisplayValue ?? "";
@@ -1501,13 +1506,19 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         XmlEntries.Clear();
         XmlEntries.AddRange(xmlEntryCollection);
 
-        // Remove just this row from the UI (preserves scroll position)
-        Rows.RemoveAt(indexToDelete);
+        // Remove from the source Rows collection using actual index
+        Rows.RemoveAt(actualRowIndex);
 
         // Update row numbers for remaining rows
-        for (int i = indexToDelete; i < Rows.Count; i++)
+        for (int i = actualRowIndex; i < Rows.Count; i++)
         {
             Rows[i].RowNumber = i + 1;
+        }
+
+        // Also remove from FilteredRows if filtering is active
+        if (FilteredRows != null)
+        {
+            FilteredRows.Remove(rowToDelete);
         }
 
         // If ShowRemovedEntries is true, immediately re-insert at original position
@@ -1527,12 +1538,20 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     public virtual void DuplicateRow()
     {
-        if (Context.Document == null || SelectedIndex < 0 || SelectedIndex >= XmlEntries.Count)
+        if (Context.Document == null || SelectedIndex < 0 || SelectedIndex >= DisplayRows.Count)
             return;
 
+        // Get row from DisplayRows (works correctly whether filtered or not)
+        var rowToDuplicate = DisplayRows[SelectedIndex];
+
+        // Find actual index in XmlEntries (different from SelectedIndex when filtered)
         var xmlEntryCollection = new ObservableCollection<XmlEntry>(XmlEntries);
-        var entryToDuplicate = xmlEntryCollection[SelectedIndex];
-        var insertIndex = SelectedIndex + 1;
+        var actualXmlIndex = xmlEntryCollection.IndexOf(rowToDuplicate.XmlEntry);
+        if (actualXmlIndex < 0)
+            return;
+
+        var entryToDuplicate = xmlEntryCollection[actualXmlIndex];
+        var insertIndex = actualXmlIndex + 1;
 
         var command = new DuplicateRowCommand(Context.Document, xmlEntryCollection, entryToDuplicate);
         _undoRedoService.Execute(command);
@@ -1584,10 +1603,10 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     public void CopyRow()
     {
-        if (SelectedIndex < 0 || SelectedIndex >= Rows.Count)
+        if (SelectedIndex < 0 || SelectedIndex >= DisplayRows.Count)
             return;
 
-        SelectRowForCopy(Rows[SelectedIndex]);
+        SelectRowForCopy(DisplayRows[SelectedIndex]);
     }
 
     /// <summary>
@@ -1599,10 +1618,10 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         if (_copiedRowData == null)
             return;
 
-        if (SelectedIndex < 0 || SelectedIndex >= Rows.Count)
+        if (SelectedIndex < 0 || SelectedIndex >= DisplayRows.Count)
             return;
 
-        var targetRow = Rows[SelectedIndex];
+        var targetRow = DisplayRows[SelectedIndex];
 
         foreach (var kvp in _copiedRowData)
         {
@@ -1615,10 +1634,24 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         }
 
         // Force UI update by removing and re-adding the row at the same position
-        var index = SelectedIndex;
-        Rows.RemoveAt(index);
-        Rows.Insert(index, targetRow);
-        SelectedIndex = index;
+        // Find actual index in Rows (different from SelectedIndex when filtered)
+        var actualRowIndex = Rows.IndexOf(targetRow);
+        if (actualRowIndex >= 0)
+        {
+            Rows.RemoveAt(actualRowIndex);
+            Rows.Insert(actualRowIndex, targetRow);
+        }
+
+        // Also update FilteredRows if filtering is active
+        if (FilteredRows != null)
+        {
+            var filteredIndex = FilteredRows.IndexOf(targetRow);
+            if (filteredIndex >= 0)
+            {
+                FilteredRows.RemoveAt(filteredIndex);
+                FilteredRows.Insert(filteredIndex, targetRow);
+            }
+        }
 
         MarkAsModified();
     }
