@@ -135,6 +135,36 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     private int _selectedIndex = -1;
 
     /// <summary>
+    /// The currently selected column name (for cell-level selection).
+    /// When null, the entire row is selected. When set, only the specific cell is selected.
+    /// </summary>
+    [ObservableProperty]
+    private string? _selectedColumn;
+
+    /// <summary>
+    /// Event raised when a cell is selected (for visual highlighting).
+    /// </summary>
+    public event EventHandler<CellSelectionEventArgs>? CellSelected;
+
+    /// <summary>
+    /// Selects a specific cell.
+    /// </summary>
+    public void SelectCell(int rowIndex, string? columnName)
+    {
+        SelectedIndex = rowIndex;
+        SelectedColumn = columnName;
+        CellSelected?.Invoke(this, new CellSelectionEventArgs(rowIndex, columnName));
+    }
+
+    /// <summary>
+    /// Selects an entire row (clears column selection).
+    /// </summary>
+    public void SelectRow(int rowIndex)
+    {
+        SelectCell(rowIndex, null);
+    }
+
+    /// <summary>
     /// Whether ID editing is locked for all rows (default false - disabled for now to allow renaming).
     /// Toggle via the lock icon in the ID column header.
     /// </summary>
@@ -1339,6 +1369,16 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     private EntryRowViewModel? _copiedRow;
 
     /// <summary>
+    /// Stores a single copied cell value (for cell-level copy/paste).
+    /// </summary>
+    private string? _copiedCellValue;
+
+    /// <summary>
+    /// The column name of the copied cell (null = row mode, non-null = cell mode).
+    /// </summary>
+    private string? _copiedCellColumn;
+
+    /// <summary>
     /// Adds a new row after the current selection.
     /// </summary>
     [RelayCommand]
@@ -1595,10 +1635,11 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
 
         // Notify that copied row data is available
         OnPropertyChanged(nameof(HasCopiedRow));
+        OnPropertyChanged(nameof(HasCopiedData));
     }
 
     /// <summary>
-    /// Copies the currently selected row's data.
+    /// Copies the currently selected row's data, or just the selected cell if in cell mode.
     /// </summary>
     [RelayCommand]
     public void CopyRow()
@@ -1606,31 +1647,84 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         if (SelectedIndex < 0 || SelectedIndex >= DisplayRows.Count)
             return;
 
-        SelectRowForCopy(DisplayRows[SelectedIndex]);
+        var row = DisplayRows[SelectedIndex];
+
+        // Check if a single cell is selected (cell mode) vs entire row (row mode)
+        if (!string.IsNullOrEmpty(SelectedColumn))
+        {
+            // Cell mode: copy just this cell's value
+            _copiedCellColumn = SelectedColumn;
+            _copiedCellValue = row[SelectedColumn];
+            _copiedRowData = null; // Clear row data
+
+            // Clear previous row copy selection
+            if (_copiedRow != null)
+            {
+                _copiedRow.IsSelectedForCopy = false;
+                _copiedRow = null;
+            }
+
+            Console.WriteLine($"[Copy] Cell mode: {SelectedColumn} = {_copiedCellValue}");
+        }
+        else
+        {
+            // Row mode: copy entire row
+            _copiedCellColumn = null;
+            _copiedCellValue = null;
+            SelectRowForCopy(row);
+            Console.WriteLine($"[Copy] Row mode: {_copiedRowData?.Count} columns");
+        }
+
+        OnPropertyChanged(nameof(HasCopiedData));
     }
 
     /// <summary>
-    /// Pastes copied row data onto the currently selected row.
+    /// Pastes copied data onto the currently selected row or cell.
+    /// In cell mode: pastes to the selected cell only.
+    /// In row mode: pastes all columns from the copied row.
     /// </summary>
     [RelayCommand]
     public void PasteRow()
     {
-        if (_copiedRowData == null)
-            return;
-
         if (SelectedIndex < 0 || SelectedIndex >= DisplayRows.Count)
             return;
 
         var targetRow = DisplayRows[SelectedIndex];
 
-        foreach (var kvp in _copiedRowData)
+        // Check if we have cell data to paste
+        if (_copiedCellColumn != null && _copiedCellValue != null)
         {
-            // Skip ID for existing (non-new) entries
-            if (kvp.Key.Equals("id", StringComparison.OrdinalIgnoreCase) && !targetRow.IsNew)
-                continue;
+            // Cell mode: paste to the currently selected cell
+            var targetColumn = SelectedColumn ?? _copiedCellColumn;
 
-            // Set the value (this will trigger CellValueChanged for undo support)
-            targetRow[kvp.Key] = kvp.Value;
+            // Skip ID for existing (non-new) entries
+            if (targetColumn.Equals("id", StringComparison.OrdinalIgnoreCase) && !targetRow.IsNew)
+            {
+                Console.WriteLine($"[Paste] Skipped - cannot paste to ID column of existing entry");
+                return;
+            }
+
+            targetRow[targetColumn] = _copiedCellValue;
+            Console.WriteLine($"[Paste] Cell mode: {targetColumn} = {_copiedCellValue}");
+        }
+        else if (_copiedRowData != null)
+        {
+            // Row mode: paste all columns
+            foreach (var kvp in _copiedRowData)
+            {
+                // Skip ID for existing (non-new) entries
+                if (kvp.Key.Equals("id", StringComparison.OrdinalIgnoreCase) && !targetRow.IsNew)
+                    continue;
+
+                // Set the value (this will trigger CellValueChanged for undo support)
+                targetRow[kvp.Key] = kvp.Value;
+            }
+            Console.WriteLine($"[Paste] Row mode: {_copiedRowData.Count} columns");
+        }
+        else
+        {
+            // Nothing to paste
+            return;
         }
 
         // Force UI update by removing and re-adding the row at the same position
@@ -1660,6 +1754,11 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     /// Whether a row has been copied and is ready to paste.
     /// </summary>
     public bool HasCopiedRow => _copiedRowData != null;
+
+    /// <summary>
+    /// Whether any data (cell or row) has been copied and is ready to paste.
+    /// </summary>
+    public bool HasCopiedData => _copiedRowData != null || _copiedCellValue != null;
 
     /// <summary>
     /// Undoes the last operation.
@@ -1974,5 +2073,32 @@ public class CrossReferenceNavigationEventArgs : EventArgs
         TargetFiles = targetFiles.ToList();
         TargetKeyField = targetKeyField;
         TargetValue = targetValue;
+    }
+}
+
+/// <summary>
+/// Event args for cell selection changes.
+/// </summary>
+public class CellSelectionEventArgs : EventArgs
+{
+    /// <summary>
+    /// The selected row index (-1 if no selection).
+    /// </summary>
+    public int RowIndex { get; }
+
+    /// <summary>
+    /// The selected column name (null if entire row is selected).
+    /// </summary>
+    public string? ColumnName { get; }
+
+    /// <summary>
+    /// Whether an entire row is selected (ColumnName is null).
+    /// </summary>
+    public bool IsRowSelection => ColumnName == null;
+
+    public CellSelectionEventArgs(int rowIndex, string? columnName)
+    {
+        RowIndex = rowIndex;
+        ColumnName = columnName;
     }
 }

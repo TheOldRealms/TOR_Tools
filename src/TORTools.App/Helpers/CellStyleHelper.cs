@@ -19,6 +19,7 @@ public static class CellStyleHelper
     private static readonly string ClassModified = "modified";
     private static readonly string ClassWasNew = "wasNew";
     private static readonly string ClassSaved = "saved";
+    private static readonly string ClassCellSelected = "cellSelected";
 
     /// <summary>
     /// Updates the pseudo-classes on a cell border based on the current state.
@@ -133,5 +134,37 @@ public static class CellStyleHelper
         {
             ToolTip.SetTip(border, message);
         }
+    }
+
+    /// <summary>
+    /// Updates the cell selection state based on the current SelectedIndex and SelectedColumn.
+    /// Call this when the cell selection changes.
+    /// </summary>
+    /// <param name="border">The cell border to style</param>
+    /// <param name="rowVm">The row view model</param>
+    /// <param name="attributeName">The column/attribute name</param>
+    /// <param name="vm">The file tab view model</param>
+    public static void UpdateCellSelection(
+        Border border,
+        EntryRowViewModel rowVm,
+        string attributeName,
+        FileTabViewModel vm)
+    {
+        var rowIndex = rowVm.RowNumber - 1;
+
+        // Check if this specific cell is selected (not entire row)
+        var isCellSelected = vm.SelectedIndex == rowIndex &&
+                            vm.SelectedColumn != null &&
+                            vm.SelectedColumn.Equals(attributeName, StringComparison.OrdinalIgnoreCase);
+
+        SetClass(border, ClassCellSelected, isCellSelected);
+    }
+
+    /// <summary>
+    /// Clears cell selection state from a border.
+    /// </summary>
+    public static void ClearCellSelection(Border border)
+    {
+        SetClass(border, ClassCellSelected, false);
     }
 }

@@ -201,10 +201,10 @@ public partial class FileTabView : UserControl
             }
         }
 
-        // Fall back to regular row paste
-        if (vm.HasCopiedRow)
+        // Fall back to regular row/cell paste
+        if (vm.HasCopiedData)
         {
-            Console.WriteLine("[KeyDown] Pasting row...");
+            Console.WriteLine("[KeyDown] Pasting...");
             vm.PasteRow();
         }
     }
@@ -746,19 +746,27 @@ public partial class FileTabView : UserControl
 
             grid.Children.Add(pasteButton);
 
-            // Row number text
+            // Row number text - clickable to select entire row (Google Sheets-like)
             var text = new TextBlock
             {
                 FontSize = 11,
                 Foreground = new SolidColorBrush(Color.FromRgb(128, 128, 128)),
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand)
             };
             Grid.SetColumn(text, 1);
 
             if (rowVm != null)
             {
                 text.Bind(TextBlock.TextProperty, new Binding(nameof(EntryRowViewModel.RowNumber)));
+
+                // Click on row number to select entire row (clears cell selection)
+                text.PointerPressed += (s, e) =>
+                {
+                    var rowIndex = rowVm.RowNumber - 1;
+                    vm.SelectRow(rowIndex);
+                };
             }
 
             grid.Children.Add(text);
@@ -1201,6 +1209,19 @@ public partial class FileTabView : UserControl
 
             // Initial build
             RebuildLinks();
+
+            // Cell selection click handler (Google Sheets-like behavior)
+            border.PointerPressed += (s, e) =>
+            {
+                var rowIndex = rowVm.RowNumber - 1;
+                vm.SelectCell(rowIndex, attributeName);
+            };
+
+            // Subscribe to cell selection changes
+            vm.CellSelected += (s, e) =>
+            {
+                CellStyleHelper.UpdateCellSelection(border, rowVm, attributeName, vm);
+            };
 
             // Subscribe to centralized refresh event
             vm.CellRefreshRequested += (s, args) =>
@@ -1828,6 +1849,19 @@ public partial class FileTabView : UserControl
                 // Initial styling
                 CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
 
+                // Cell selection click handler (Google Sheets-like behavior)
+                border.PointerPressed += (s, e) =>
+                {
+                    var rowIndex = rowVm.RowNumber - 1;
+                    vm.SelectCell(rowIndex, attributeName);
+                };
+
+                // Subscribe to cell selection changes
+                vm.CellSelected += (s, e) =>
+                {
+                    CellStyleHelper.UpdateCellSelection(border, rowVm, attributeName, vm);
+                };
+
                 // Subscribe to centralized refresh event for all updates
                 vm.CellRefreshRequested += (s, args) =>
                 {
@@ -2010,6 +2044,19 @@ public partial class FileTabView : UserControl
                 {
                     text.Text = GetDisplayName(rowVm[attributeName]);
                 };
+
+                // Cell selection click handler (Google Sheets-like behavior)
+                border.PointerPressed += (s, e) =>
+                {
+                    var rowIndex = rowVm.RowNumber - 1;
+                    vm.SelectCell(rowIndex, attributeName);
+                };
+
+                // Subscribe to cell selection changes
+                vm.CellSelected += (s, e) =>
+                {
+                    CellStyleHelper.UpdateCellSelection(border, rowVm, attributeName, vm);
+                };
             }
 
             border.Child = text;
@@ -2040,6 +2087,19 @@ public partial class FileTabView : UserControl
                 {
                     var newValue = rowVm[attributeName];
                     text.Text = string.IsNullOrEmpty(newValue) ? "-" : newValue;
+                };
+
+                // Cell selection click handler (Google Sheets-like behavior)
+                border.PointerPressed += (s, e) =>
+                {
+                    var rowIndex = rowVm.RowNumber - 1;
+                    vm.SelectCell(rowIndex, attributeName);
+                };
+
+                // Subscribe to cell selection changes
+                vm.CellSelected += (s, e) =>
+                {
+                    CellStyleHelper.UpdateCellSelection(border, rowVm, attributeName, vm);
                 };
             }
 
@@ -2081,6 +2141,19 @@ public partial class FileTabView : UserControl
 
                     // Update cell state
                     CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
+                };
+
+                // Cell selection click handler (Google Sheets-like behavior)
+                border.PointerPressed += (s, e) =>
+                {
+                    var rowIndex = rowVm.RowNumber - 1;
+                    vm.SelectCell(rowIndex, attributeName);
+                };
+
+                // Subscribe to cell selection changes
+                vm.CellSelected += (s, e) =>
+                {
+                    CellStyleHelper.UpdateCellSelection(border, rowVm, attributeName, vm);
                 };
             }
 
@@ -2312,6 +2385,20 @@ public partial class FileTabView : UserControl
 
                 // Initial styling
                 CellStyleHelper.UpdateCellState(border, rowVm, attributeName, vm);
+
+                // Cell selection click handler (Google Sheets-like behavior)
+                border.PointerPressed += (s, e) =>
+                {
+                    // Select this specific cell when clicked
+                    var rowIndex = rowVm.RowNumber - 1;
+                    vm.SelectCell(rowIndex, attributeName);
+                };
+
+                // Subscribe to cell selection changes
+                vm.CellSelected += (s, e) =>
+                {
+                    CellStyleHelper.UpdateCellSelection(border, rowVm, attributeName, vm);
+                };
 
                 // Show fill handle on hover (like Excel)
                 border.PointerEntered += (s, e) =>
@@ -2569,6 +2656,19 @@ public partial class FileTabView : UserControl
                 {
                     text.Text = rowVm[attributeName] ?? "";
                 };
+
+                // Cell selection click handler (Google Sheets-like behavior)
+                border.PointerPressed += (s, e) =>
+                {
+                    var rowIndex = rowVm.RowNumber - 1;
+                    vm.SelectCell(rowIndex, attributeName);
+                };
+
+                // Subscribe to cell selection changes
+                vm.CellSelected += (s, e) =>
+                {
+                    CellStyleHelper.UpdateCellSelection(border, rowVm, attributeName, vm);
+                };
             }
 
             border.Child = grid;
@@ -2725,6 +2825,19 @@ public partial class FileTabView : UserControl
                         }
                     }
                 };
+
+                // Cell selection click handler (Google Sheets-like behavior)
+                border.PointerPressed += (s, e) =>
+                {
+                    var rowIndex = rowVm.RowNumber - 1;
+                    vm.SelectCell(rowIndex, attributeName);
+                };
+
+                // Subscribe to cell selection changes
+                vm.CellSelected += (s, e) =>
+                {
+                    CellStyleHelper.UpdateCellSelection(border, rowVm, attributeName, vm);
+                };
             }
             else
             {
@@ -2832,6 +2945,19 @@ public partial class FileTabView : UserControl
                     }
                     // Update visibility for removed rows
                     editButton.IsVisible = !rowVm.IsRemoved;
+                };
+
+                // Cell selection click handler (Google Sheets-like behavior)
+                border.PointerPressed += (s, e) =>
+                {
+                    var rowIndex = rowVm.RowNumber - 1;
+                    vm.SelectCell(rowIndex, attributeName);
+                };
+
+                // Subscribe to cell selection changes
+                vm.CellSelected += (s, e) =>
+                {
+                    CellStyleHelper.UpdateCellSelection(border, rowVm, attributeName, vm);
                 };
             }
             else
@@ -2991,6 +3117,19 @@ public partial class FileTabView : UserControl
 
             // Subscribe to refresh events
             vm.CellRefreshRequested += (s, args) => UpdateIconDisplay();
+
+            // Cell selection click handler (Google Sheets-like behavior)
+            border.PointerPressed += (s, e) =>
+            {
+                var rowIndex = rowVm.RowNumber - 1;
+                vm.SelectCell(rowIndex, attributeName);
+            };
+
+            // Subscribe to cell selection changes
+            vm.CellSelected += (s, e) =>
+            {
+                CellStyleHelper.UpdateCellSelection(border, rowVm, attributeName, vm);
+            };
 
             panel.Children.Add(iconImage);
             panel.Children.Add(iconText);
@@ -3191,6 +3330,19 @@ public partial class FileTabView : UserControl
 
             // Subscribe to refresh events
             vm.CellRefreshRequested += (s, args) => UpdateBannerDisplay();
+
+            // Cell selection click handler (Google Sheets-like behavior)
+            border.PointerPressed += (s, e) =>
+            {
+                var rowIndex = rowVm.RowNumber - 1;
+                vm.SelectCell(rowIndex, attributeName);
+            };
+
+            // Subscribe to cell selection changes
+            vm.CellSelected += (s, e) =>
+            {
+                CellStyleHelper.UpdateCellSelection(border, rowVm, attributeName, vm);
+            };
 
             // Edit button overlay on the image container
             var editButton = new Button
@@ -3744,6 +3896,19 @@ public partial class FileTabView : UserControl
             // Subscribe to refresh events
             vm.CellRefreshRequested += (s, args) => UpdateColorDisplay();
 
+            // Cell selection click handler (Google Sheets-like behavior)
+            border.PointerPressed += (s, e) =>
+            {
+                var rowIndex = rowVm.RowNumber - 1;
+                vm.SelectCell(rowIndex, attributeName);
+            };
+
+            // Subscribe to cell selection changes
+            vm.CellSelected += (s, e) =>
+            {
+                CellStyleHelper.UpdateCellSelection(border, rowVm, attributeName, vm);
+            };
+
             panel.Children.Add(colorSwatch);
             panel.Children.Add(hexText);
 
@@ -3785,6 +3950,19 @@ public partial class FileTabView : UserControl
                 {
                     await OpenWeaponPartsEditorAsync(rowVm, vm, button);
                 }
+            };
+
+            // Cell selection click handler (Google Sheets-like behavior)
+            border.PointerPressed += (s, e) =>
+            {
+                var rowIndex = rowVm.RowNumber - 1;
+                vm.SelectCell(rowIndex, attributeName);
+            };
+
+            // Subscribe to cell selection changes
+            vm.CellSelected += (s, e) =>
+            {
+                CellStyleHelper.UpdateCellSelection(border, rowVm, attributeName, vm);
             };
 
             border.Child = button;
