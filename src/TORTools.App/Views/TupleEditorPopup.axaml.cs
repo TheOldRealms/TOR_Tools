@@ -161,6 +161,8 @@ public partial class TupleEditorPopup : Window
     private void OnAddRow(object? sender, RoutedEventArgs e)
     {
         // Create empty row with default values
+        // Note: Values must be in STORAGE format (decimal) because TupleRowViewModel constructor
+        // converts from storage (0.00-1.00) to display (0-100) format
         var newTuple = new Dictionary<string, string>();
         foreach (var column in _config.Columns)
         {
@@ -170,7 +172,7 @@ public partial class TupleEditorPopup : Window
             }
             else if (column.Type == "number")
             {
-                newTuple[column.Attribute] = "100"; // Default to 100%
+                newTuple[column.Attribute] = "1.00"; // Default to 100% (stored as decimal)
             }
             else
             {

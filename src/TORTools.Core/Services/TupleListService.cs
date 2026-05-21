@@ -205,8 +205,18 @@ public class TupleListService
 
             if (targetEntry == null)
             {
-                Console.WriteLine($"[TupleListService] Entry not found for key: {localKey}");
-                return false;
+                // Entry doesn't exist - create a new one
+                // Determine entry element name from existing entries
+                var firstEntry = root.Elements().FirstOrDefault();
+                var entryElementName = firstEntry?.Name.LocalName ?? "Entry";
+
+                Console.WriteLine($"[TupleListService] Creating new entry for key: {localKey} (element: {entryElementName})");
+
+                targetEntry = new XElement(entryElementName);
+                targetEntry.SetAttributeValue(config.SourceKeyField, localKey);
+
+                // Add the new entry at the end of the document
+                root.Add(targetEntry);
             }
 
             // Find or create the container element
