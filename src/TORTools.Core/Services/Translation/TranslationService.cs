@@ -579,10 +579,13 @@ public partial class TranslationService
     {
         var results = new List<string>();
 
-        // Look for template in TORTools/templates/
-        var templatePath = Path.Combine(_modulesBasePath, "TORTools", "templates", "language_data_template.xml");
+        // Look for template in module's templates/ folder
+        var moduleDir = FilePathResolver.GetModuleDirectory();
+        var templatePath = moduleDir != null
+            ? Path.Combine(moduleDir, "templates", "language_data_template.xml")
+            : null;
 
-        if (!File.Exists(templatePath))
+        if (templatePath == null || !File.Exists(templatePath))
         {
             Console.WriteLine($"[TranslationService] Template not found: {templatePath}");
             return results;

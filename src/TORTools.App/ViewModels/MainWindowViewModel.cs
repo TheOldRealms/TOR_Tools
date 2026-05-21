@@ -213,8 +213,8 @@ public partial class MainWindowViewModel : ViewModelBase
                 TranslationsSidebar.ValidationCompleted += OnValidationCompleted;
 
                 // Initialize translation cache service in TORTools module
-                var torToolsPath = Path.Combine(modulesPath, "TORTools");
-                if (Directory.Exists(torToolsPath))
+                var torToolsPath = FilePathResolver.GetModuleDirectory();
+                if (torToolsPath != null && Directory.Exists(torToolsPath))
                 {
                     _translationCacheService = new TranslationCacheService(torToolsPath);
                     Console.WriteLine($"[MainVM] Translation cache initialized at {torToolsPath}");

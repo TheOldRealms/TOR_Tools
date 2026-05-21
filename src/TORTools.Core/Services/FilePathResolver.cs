@@ -8,6 +8,7 @@ namespace TORTools.Core.Services;
 public class FilePathResolver
 {
     private static string? _cachedDataDirectory;
+    private static string? _cachedModuleDirectory;
 
     /// <summary>
     /// Gets the path to the tool's data directory.
@@ -73,6 +74,39 @@ public class FilePathResolver
 
         var path = Path.Combine(dataDir, fileName);
         return File.Exists(path) ? path : null;
+    }
+
+    /// <summary>
+    /// Gets the module root directory (TORTools or TOR_Tools).
+    /// Works regardless of folder name by walking up from app location.
+    /// </summary>
+    public static string? GetModuleDirectory()
+    {
+        if (_cachedModuleDirectory != null)
+            return _cachedModuleDirectory;
+
+        var appDir = AppDomain.CurrentDomain.BaseDirectory;
+        var dir = new DirectoryInfo(appDir);
+
+        // Walk up to find module root (contains release/, src/, data/, or schemas/)
+        while (dir != null)
+        {
+            // Check for markers that indicate module root
+            var hasRelease = Directory.Exists(Path.Combine(dir.FullName, "release"));
+            var hasSrc = Directory.Exists(Path.Combine(dir.FullName, "src"));
+            var hasData = Directory.Exists(Path.Combine(dir.FullName, "data"));
+            var hasSchemas = Directory.Exists(Path.Combine(dir.FullName, "schemas"));
+
+            if (hasRelease || hasSrc || hasData || hasSchemas)
+            {
+                _cachedModuleDirectory = dir.FullName;
+                return _cachedModuleDirectory;
+            }
+
+            dir = dir.Parent;
+        }
+
+        return null;
     }
 
     /// <summary>
