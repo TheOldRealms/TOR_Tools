@@ -53,26 +53,19 @@
       "displayName": "Race Lock",
       "description": "Race restriction for this item (from extended properties).",
       "type": "crossReference",
+      "renderAs": "dropdown",
       "order": 11,
       "width": 100,
       "crossReference": {
         "sourceFile": "tor_extendeditemproperties.xml",
         "sourceKeyField": "ItemStringId",
         "sourceValuePath": "@RaceLock",
-        "localKeyField": "id"
-      },
-      "enumValues": [
-        { "value": "human", "displayName": "Human" },
-        { "value": "dwarf", "displayName": "Dwarf" },
-        { "value": "orc", "displayName": "Orc" },
-        { "value": "skeleton", "displayName": "Skeleton" },
-        { "value": "wraith", "displayName": "Wraith" },
-        { "value": "goblin", "displayName": "Goblin" },
-        { "value": "ungor", "displayName": "Ungor" },
-        { "value": "gor", "displayName": "Gor" },
-        { "value": "troll", "displayName": "Troll" },
-        { "value": "spirit_host", "displayName": "Spirit Host" }
-      ]
+        "localKeyField": "id",
+        "targetFile": "tor_races.xml",
+        "targetKeyField": "id",
+        "targetDisplayField": "displayName",
+        "singleValue": true
+      }
     },
     "is_merchandise": {
       "displayName": "Merchandise",

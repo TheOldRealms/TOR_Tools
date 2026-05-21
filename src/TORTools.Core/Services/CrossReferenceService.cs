@@ -858,6 +858,17 @@ public class CrossReferenceService
                     result.Descriptions[fieldName] = descriptions;
                     Console.WriteLine($"[CrossRef] Loaded {descriptions.Count} descriptions for {fieldName}");
                 }
+
+                // Load display names if configured (for dropdown display)
+                if (!string.IsNullOrEmpty(config.TargetDisplayField))
+                {
+                    var displayNames = LoadTargetDisplayNames(targetFilePath, config.TargetKeyField, config.TargetDisplayField);
+                    if (displayNames.Count > 0)
+                    {
+                        result.DisplayNames[fieldName] = displayNames;
+                        Console.WriteLine($"[CrossRef] Loaded {displayNames.Count} display names for {fieldName}");
+                    }
+                }
             }
         }
 
