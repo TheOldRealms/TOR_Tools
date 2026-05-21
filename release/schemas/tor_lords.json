@@ -162,10 +162,17 @@
     },
     "race": {
       "displayName": "Race",
-      "description": "Character race override.",
-      "type": "string",
+      "description": "Character race override (e.g., human, dwarf, orc).",
+      "type": "crossReference",
+      "renderAs": "dropdown",
       "order": 12,
-      "width": 80
+      "width": 100,
+      "crossReference": {
+        "targetFile": "tor_races.xml",
+        "targetKeyField": "id",
+        "targetDisplayField": "displayName",
+        "singleValue": true
+      }
     },
     "skill_template": {
       "displayName": "Skill Template",

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Races>
+  <!-- Human Races -->
+  <Race id="human" displayName="Human" description="Standard human race. Used for Empire, Vampire Counts (living), Chaos mortals." />
+  <Race id="bretonnian" displayName="Bretonnian" description="Bretonnian humans - peasants and knights of Bretonnia." />
+  <Race id="marauder" displayName="Marauder" description="Chaos Marauders - Norscan and tribal warriors of Chaos." />
+  <Race id="chaos_ud_cultist" displayName="Chaos Undivided Cultist" description="Cultists devoted to Chaos Undivided." />
+  <Race id="vampire" displayName="Vampire" description="Undead vampires - lords of the night." />
+
+  <!-- Elven Races -->
+  <Race id="elf" displayName="Elf" description="Elven race - Wood Elves, High Elves." />
+
+  <!-- Dwarven Races -->
+  <Race id="dwarf" displayName="Dwarf" description="Dwarfs of the Karaz Ankor." />
+
+  <!-- Greenskin Races -->
+  <Race id="orc" displayName="Orc" description="Orcs - larger, stronger greenskins." />
+  <Race id="goblin" displayName="Goblin" description="Goblins - smaller, more cunning greenskins." />
+
+  <!-- Undead Races -->
+  <Race id="skeleton" displayName="Skeleton" description="Animated skeletal warriors." />
+  <Race id="wraith" displayName="Wraith" description="Incorporeal undead spirits (Cairn Wraiths, Tomb Banshees)." />
+  <Race id="spirit_host" displayName="Spirit Host" description="Swarms of tormented spirits." />
+
+  <!-- Beastmen Races -->
+  <Race id="ungor" displayName="Ungor" description="Lesser beastmen, often used as skirmishers." />
+  <Race id="gor" displayName="Gor" description="True beastmen, the warriors of the herd." />
+  <Race id="minotaur" displayName="Minotaur" description="Massive bull-headed beastmen." />
+
+  <!-- Monster Races -->
+  <Race id="troll" displayName="Troll" description="Regenerating monsters found throughout the Old World." />
+  <Race id="large_humanoid_monster" displayName="Large Humanoid Monster" description="Large monster body type (Giants, Crypt Horrors, etc.)." />
+  <Race id="medium_humanoid_monster" displayName="Medium Humanoid Monster" description="Medium monster body type (Varghulfs, Rat Ogres, etc.)." />
+  <Race id="ogre" displayName="Ogre" description="Large, brutish creatures from the Mountains of Mourn." />
+  <Race id="giant" displayName="Giant" description="Massive humanoids." />
+</Races>

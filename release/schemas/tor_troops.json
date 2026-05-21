@@ -186,10 +186,17 @@
     },
     "race": {
       "displayName": "Race",
-      "description": "Character race type.",
-      "type": "string",
+      "description": "Character race type (e.g., human, dwarf, orc).",
+      "type": "crossReference",
+      "renderAs": "dropdown",
       "order": 31,
-      "width": 100
+      "width": 100,
+      "crossReference": {
+        "targetFile": "tor_races.xml",
+        "targetKeyField": "id",
+        "targetDisplayField": "displayName",
+        "singleValue": true
+      }
     },
     "voice": {
       "displayName": "Voice",
