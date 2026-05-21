@@ -73,12 +73,26 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     public event EventHandler? CellRefreshRequested;
 
     /// <summary>
+    /// Event raised when columns need to be regenerated (e.g., after reload).
+    /// Subscribe to this in views to reset column generation state.
+    /// </summary>
+    public event EventHandler? ColumnsInvalidated;
+
+    /// <summary>
     /// Triggers a refresh of all cell content and styling.
     /// Call this after any operation that changes data or state (save, undo, redo, etc.).
     /// </summary>
     public void RequestCellRefresh()
     {
         CellRefreshRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Triggers column regeneration in subscribed views.
+    /// </summary>
+    public void InvalidateColumns()
+    {
+        ColumnsInvalidated?.Invoke(this, EventArgs.Empty);
     }
 
     [ObservableProperty]
@@ -95,6 +109,9 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty]
     private bool _hasError;
+
+    [ObservableProperty]
+    private bool _isLoading;
 
     /// <summary>
     /// Observable rows for DataGrid binding - now accessed through Context.
@@ -880,10 +897,19 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     /// </summary>
     public void ReloadFile()
     {
+        // Clear all caches to force fresh reload
+        _crossRefData.Clear();
+        _crossRefSourcePaths.Clear();
+        _crossRefService.ClearCache();
+        FilePathResolver.ClearCache();
+
         LoadFile();
         _undoRedoService.Clear();
         Context.HasUnsavedChanges = false;
         HasUnsavedChanges = false;
+
+        // Force column regeneration and UI refresh
+        InvalidateColumns();
         OnPropertyChanged(nameof(Rows));
     }
 
@@ -1244,19 +1270,38 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
     public void Reload()
     {
         Console.WriteLine($"[Reload] Reloading {FilePath}");
+        IsLoading = true;
 
-        // Clear undo/redo history since we're starting fresh
-        _undoRedoService.Clear();
+        try
+        {
+            // Clear undo/redo history since we're starting fresh
+            _undoRedoService.Clear();
 
-        // Clear the context
-        Context.Clear();
-        Context.FilePath = FilePath;
-        Context.Schema = Schema;
+            // Clear all caches to force fresh reload
+            _crossRefData.Clear();
+            _crossRefSourcePaths.Clear();
+            _crossRefService.ClearCache();
+            FilePathResolver.ClearCache();
 
-        // Reload the file (this also reloads merged data files)
-        LoadFile();
+            // Clear the context
+            Context.Clear();
+            Context.FilePath = FilePath;
+            Context.Schema = Schema;
 
-        Console.WriteLine($"[Reload] Reload complete, {Rows.Count} rows loaded");
+            // Reload the file (this also reloads merged data files)
+            LoadFile();
+
+            // Force column regeneration and UI refresh
+            InvalidateColumns();
+            OnPropertyChanged(nameof(Rows));
+            OnPropertyChanged(nameof(ColumnNames));
+
+            Console.WriteLine($"[Reload] Reload complete, {Rows.Count} rows loaded");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
     private CancellationTokenSource? _validationDebounceToken;

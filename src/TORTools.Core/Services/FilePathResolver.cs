@@ -11,6 +11,15 @@ public class FilePathResolver
     private static string? _cachedModuleDirectory;
 
     /// <summary>
+    /// Clears all cached paths. Call this when reloading to ensure fresh path resolution.
+    /// </summary>
+    public static void ClearCache()
+    {
+        _cachedDataDirectory = null;
+        _cachedModuleDirectory = null;
+    }
+
+    /// <summary>
     /// Gets the path to the tool's data directory.
     /// Uses relative path from app location - works regardless of folder name.
     /// </summary>

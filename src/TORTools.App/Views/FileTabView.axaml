@@ -111,8 +111,9 @@
         </Border>
 
         <!-- DataGrid when loaded successfully -->
-        <Border Grid.Row="1" Padding="0,0,8,0">
-            <DataGrid x:Name="EntryGrid"
+        <Grid Grid.Row="1">
+            <Border Padding="0,0,8,0">
+                <DataGrid x:Name="EntryGrid"
                       ItemsSource="{Binding DisplayRows}"
                       SelectedIndex="{Binding SelectedIndex}"
                       IsVisible="{Binding !HasError}"
@@ -172,8 +173,34 @@
                     </MenuItem>
                 </ContextMenu>
             </DataGrid.ContextMenu>
-        </DataGrid>
-        </Border>
+            </DataGrid>
+            </Border>
+
+            <!-- Loading Overlay -->
+            <Border IsVisible="{Binding IsLoading}"
+                    Background="#DD202225"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch">
+                <Border Background="#36393f"
+                        CornerRadius="8"
+                        Padding="24,16"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        BorderBrush="#5865f2"
+                        BorderThickness="2">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="&#x21BB;"
+                                   FontSize="20"
+                                   Foreground="#5865f2"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Text="Reloading..."
+                                   Foreground="#dcddde"
+                                   FontSize="14"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </Border>
+        </Grid>
 
         <!-- Validation Panel -->
         <Border Grid.Row="2"

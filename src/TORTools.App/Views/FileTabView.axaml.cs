@@ -292,6 +292,17 @@ public partial class FileTabView : UserControl
     {
         base.OnDataContextChanged(e);
         _columnsGenerated = false;
+
+        // Subscribe to column invalidation for reload support
+        if (DataContext is FileTabViewModel vm)
+        {
+            vm.ColumnsInvalidated += (s, args) =>
+            {
+                _columnsGenerated = false;
+                TryGenerateColumns();
+            };
+        }
+
         TryGenerateColumns();
     }
 
