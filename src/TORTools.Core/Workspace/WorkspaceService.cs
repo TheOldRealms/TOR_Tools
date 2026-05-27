@@ -209,31 +209,23 @@ public class WorkspaceService : IWorkspaceService
 
         while (dir != null)
         {
-            // Check if this directory has a Modules subfolder
-            var modulesPath = Path.Combine(dir.FullName, "Modules");
-            if (Directory.Exists(modulesPath))
-            {
-                // Verify it looks like Bannerlord (has bin folder or Bannerlord.exe)
-                var hasBin = Directory.Exists(Path.Combine(dir.FullName, "bin"));
-                var hasExe = File.Exists(Path.Combine(dir.FullName, "bin", "Win64_Shipping_Client", "Bannerlord.exe")) ||
-                             File.Exists(Path.Combine(dir.FullName, "bin", "Win64_Shipping_Client", "Bannerlord.Native.exe"));
-
-                if (hasBin || hasExe)
-                {
-                    return dir.FullName;
-                }
-
-                // If we're inside the Modules folder itself, go up one more
-                if (dir.Name.Equals("Modules", StringComparison.OrdinalIgnoreCase))
-                {
-                    return dir.Parent?.FullName;
-                }
-            }
-
-            // Check if we ARE the Modules folder
+            // First: if we ARE inside the Modules folder, return its parent
             if (dir.Name.Equals("Modules", StringComparison.OrdinalIgnoreCase) && dir.Parent != null)
             {
                 return dir.Parent.FullName;
+            }
+
+            // Check if this directory has a Modules subfolder AND looks like Bannerlord
+            var modulesPath = Path.Combine(dir.FullName, "Modules");
+            if (Directory.Exists(modulesPath))
+            {
+                // Must have bin/Win64_Shipping_Client to be Bannerlord root (not just any bin folder)
+                var hasBannerlordBin = Directory.Exists(Path.Combine(dir.FullName, "bin", "Win64_Shipping_Client"));
+
+                if (hasBannerlordBin)
+                {
+                    return dir.FullName;
+                }
             }
 
             dir = dir.Parent;
