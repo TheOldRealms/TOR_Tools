@@ -141,10 +141,12 @@ public class WorkspaceService : IWorkspaceService
     {
         var config = new WorkspaceConfig();
 
-        // Detect Bannerlord path by walking up from current directory
-        // The app is expected to run from within Modules/TORTools
-        var currentDir = Directory.GetCurrentDirectory();
-        config.BannerlordPath = FindBannerlordPath(currentDir);
+        // Detect Bannerlord path by walking up from the app's location
+        // The app is expected to be in Modules/TORTools/release/
+        // Use BaseDirectory (exe location) instead of GetCurrentDirectory() (working directory)
+        // This ensures auto-detection works regardless of how the app was launched
+        var appDir = AppDomain.CurrentDomain.BaseDirectory;
+        config.BannerlordPath = FindBannerlordPath(appDir);
 
         if (config.BannerlordPath != null)
         {
