@@ -142,10 +142,32 @@ public class WorkspaceService : IWorkspaceService
         var config = new WorkspaceConfig();
 
         // Detect Bannerlord path by walking up from the app's location
-        // The app is expected to be in Modules/TORTools/release/
+        // The app is expected to be in Modules/TOR_Tools/release/
         // Use BaseDirectory (exe location) instead of GetCurrentDirectory() (working directory)
         // This ensures auto-detection works regardless of how the app was launched
         var appDir = AppDomain.CurrentDomain.BaseDirectory;
+
+        // Debug: write diagnostic info to file
+        var debugPath = Path.Combine(appDir, "autodetect_debug.txt");
+        try
+        {
+            var lines = new List<string>
+            {
+                $"AppDir: {appDir}",
+                $"CurrentDir: {Directory.GetCurrentDirectory()}"
+            };
+            var dir = new DirectoryInfo(appDir);
+            int level = 0;
+            while (dir != null && level < 10)
+            {
+                lines.Add($"Level {level}: {dir.FullName} (Name={dir.Name})");
+                dir = dir.Parent;
+                level++;
+            }
+            File.WriteAllLines(debugPath, lines);
+        }
+        catch { }
+
         config.BannerlordPath = FindBannerlordPath(appDir);
 
         if (config.BannerlordPath != null)
