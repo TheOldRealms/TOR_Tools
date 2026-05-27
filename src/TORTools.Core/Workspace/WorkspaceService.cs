@@ -149,44 +149,52 @@ public class WorkspaceService : IWorkspaceService
 
         // Debug: write diagnostic info to file
         var debugPath = Path.Combine(appDir, "autodetect_debug.txt");
+        var debugLines = new List<string>
+        {
+            $"AppDir: {appDir}",
+            $"CurrentDir: {Directory.GetCurrentDirectory()}"
+        };
         try
         {
-            var lines = new List<string>
-            {
-                $"AppDir: {appDir}",
-                $"CurrentDir: {Directory.GetCurrentDirectory()}"
-            };
             var dir = new DirectoryInfo(appDir);
             int level = 0;
             while (dir != null && level < 10)
             {
-                lines.Add($"Level {level}: {dir.FullName} (Name={dir.Name})");
+                debugLines.Add($"Level {level}: {dir.FullName} (Name={dir.Name})");
                 dir = dir.Parent;
                 level++;
             }
-            File.WriteAllLines(debugPath, lines);
         }
-        catch { }
+        catch (Exception ex) { debugLines.Add($"Hierarchy error: {ex.Message}"); }
 
         config.BannerlordPath = FindBannerlordPath(appDir);
+
+        debugLines.Add("");
+        debugLines.Add($"BannerlordPath: {config.BannerlordPath ?? "NULL"}");
 
         if (config.BannerlordPath != null)
         {
             var modulesPath = Path.Combine(config.BannerlordPath, "Modules");
+            debugLines.Add($"ModulesPath: {modulesPath} (Exists: {Directory.Exists(modulesPath)})");
 
             // Check for TOR repositories (sibling modules)
             var torCorePath = Path.Combine(modulesPath, "TOR_Core");
+            debugLines.Add($"TOR_Core: {torCorePath} (Exists: {Directory.Exists(torCorePath)})");
             if (Directory.Exists(torCorePath))
                 config.TorCorePath = torCorePath;
 
             var torArmoryPath = Path.Combine(modulesPath, "TOR_Armory");
+            debugLines.Add($"TOR_Armory: {torArmoryPath} (Exists: {Directory.Exists(torArmoryPath)})");
             if (Directory.Exists(torArmoryPath))
                 config.TorArmoryPath = torArmoryPath;
 
             var torEnvironmentPath = Path.Combine(modulesPath, "TOR_Environment");
+            debugLines.Add($"TOR_Environment: {torEnvironmentPath} (Exists: {Directory.Exists(torEnvironmentPath)})");
             if (Directory.Exists(torEnvironmentPath))
                 config.TorEnvironmentPath = torEnvironmentPath;
         }
+
+        try { File.WriteAllLines(debugPath, debugLines); } catch { }
 
         return config;
     }
