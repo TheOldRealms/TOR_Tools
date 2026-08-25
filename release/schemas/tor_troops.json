@@ -16,11 +16,20 @@
     },
     "name": {
       "displayName": "Name",
-      "description": "Display name with localization key.",
+      "description": "Display name shown in-game. Localization key is preserved automatically when editing.",
       "type": "string",
       "required": true,
       "order": 2,
       "width": 200
+    },
+    "localizationId": {
+      "displayName": "Loc ID",
+      "description": "Localization key for the name. Auto-generated from ID.",
+      "type": "localizationId",
+      "sourceAttribute": "name",
+      "order": 3,
+      "width": 180,
+      "hidden": false
     },
     "level": {
       "displayName": "Level",
