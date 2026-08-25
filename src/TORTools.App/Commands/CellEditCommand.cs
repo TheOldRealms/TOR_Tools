@@ -49,15 +49,28 @@ public class CellEditCommand : IEditCommand
             return;
         }
 
+        // Check if the value already contains a localization key pattern
+        // If the user entered {=key}text, use it as-is (they're setting a new key)
+        var (userKey, userText) = LocalizationHelper.Unwrap(value);
+
         var attr = _rowVm.XmlEntry.GetAttribute(_columnName);
-        if (attr != null)
+        if (userKey != null)
         {
+            // User provided their own localization key
+            // Clean any multiple keys (only first one is used)
+            var cleanedValue = LocalizationHelper.CleanMultipleKeys(value);
+            _rowVm.XmlEntry.SetAttributeValue(_columnName, cleanedValue);
+        }
+        else if (attr != null && attr.LocalizationKey != null)
+        {
+            // No user key, but existing attribute has one - re-wrap with existing key
             var rawValue = LocalizationHelper.Wrap(attr.LocalizationKey, value);
             _rowVm.XmlEntry.SetAttributeValue(_columnName, rawValue);
         }
         else
         {
             // New attribute - add it directly without localization wrapping
+            // (Key will be auto-generated on save if needed)
             _rowVm.XmlEntry.SetAttributeValue(_columnName, value);
         }
     }

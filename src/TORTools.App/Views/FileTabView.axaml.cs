@@ -524,6 +524,17 @@ public partial class FileTabView : UserControl
                     CellTemplate = CreateActionButtonTemplate(displayInfo.AttributeName, fieldDef, vm)
                 };
             }
+            else if (fieldDef?.Type == "localizationId")
+            {
+                // Localization ID field - read-only display of localization key with reset button
+                column = new DataGridTemplateColumn
+                {
+                    Header = CreateColumnHeader(displayInfo, fieldDef),
+                    Width = new DataGridLength(columnWidth),
+                    IsReadOnly = true,
+                    CellTemplate = CreateLocalizationIdCellTemplate(displayInfo.AttributeName, fieldDef, vm)
+                };
+            }
             else if (fieldDef?.Multiline == true)
             {
                 // Multiline text field with edit button (but also allows inline editing)
@@ -692,7 +703,7 @@ public partial class FileTabView : UserControl
     }
 
     /// <summary>
-    /// Creates the cell template for the row number column with paste button.
+    /// Creates the cell template for the row number column with paste button and error indicator.
     /// </summary>
     private IDataTemplate CreateRowNumberTemplate(FileTabViewModel vm)
     {
@@ -700,8 +711,21 @@ public partial class FileTabView : UserControl
         {
             var grid = new Grid
             {
-                ColumnDefinitions = new ColumnDefinitions("Auto,*")
+                ColumnDefinitions = new ColumnDefinitions("Auto,Auto,*")
             };
+
+            // Error indicator icon (only visible when row has validation errors)
+            var errorIcon = new TextBlock
+            {
+                Text = "⚠",
+                FontSize = 12,
+                Foreground = new SolidColorBrush(Color.FromRgb(237, 66, 69)), // Discord red
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                IsVisible = false,
+                Margin = new Thickness(2, 0, 0, 0)
+            };
+            Grid.SetColumn(errorIcon, 0);
 
             // Paste button (only visible when there's copied data)
             var pasteButton = new Button
@@ -719,7 +743,7 @@ public partial class FileTabView : UserControl
                 IsVisible = vm.HasCopiedRow
             };
             ToolTip.SetTip(pasteButton, "Paste copied row data here");
-            Grid.SetColumn(pasteButton, 0);
+            Grid.SetColumn(pasteButton, 1);
 
             if (rowVm != null)
             {
@@ -733,6 +757,40 @@ public partial class FileTabView : UserControl
                         vm.PasteRow();
                     }
                 };
+
+                // Update error icon visibility based on validation issues for this row
+                void UpdateErrorIcon()
+                {
+                    var rowIndex = rowVm.RowNumber - 1;
+                    var hasErrors = vm.ValidationManager.Issues
+                        .Any(i => i.RowIndex == rowIndex && i.Severity == Core.Validation.ValidationSeverity.Error);
+                    var hasWarnings = !hasErrors && vm.ValidationManager.Issues
+                        .Any(i => i.RowIndex == rowIndex && i.Severity == Core.Validation.ValidationSeverity.Warning);
+
+                    errorIcon.IsVisible = hasErrors || hasWarnings;
+                    if (hasErrors)
+                    {
+                        errorIcon.Foreground = new SolidColorBrush(Color.FromRgb(237, 66, 69)); // Red
+                        var errorMessages = vm.ValidationManager.Issues
+                            .Where(i => i.RowIndex == rowIndex && i.Severity == Core.Validation.ValidationSeverity.Error)
+                            .Select(i => $"{i.AttributeName}: {i.Message}");
+                        ToolTip.SetTip(errorIcon, string.Join("\n", errorMessages));
+                    }
+                    else if (hasWarnings)
+                    {
+                        errorIcon.Foreground = new SolidColorBrush(Color.FromRgb(255, 180, 0)); // Orange
+                        var warningMessages = vm.ValidationManager.Issues
+                            .Where(i => i.RowIndex == rowIndex && i.Severity == Core.Validation.ValidationSeverity.Warning)
+                            .Select(i => $"{i.AttributeName}: {i.Message}");
+                        ToolTip.SetTip(errorIcon, string.Join("\n", warningMessages));
+                    }
+                }
+
+                // Initial update
+                UpdateErrorIcon();
+
+                // Subscribe to validation changes
+                vm.ValidationManager.IssuesChanged += (s, e) => UpdateErrorIcon();
             }
 
             // Update visibility when copy state changes
@@ -744,6 +802,7 @@ public partial class FileTabView : UserControl
                 }
             };
 
+            grid.Children.Add(errorIcon);
             grid.Children.Add(pasteButton);
 
             // Row number text - clickable to select entire row (Google Sheets-like)
@@ -755,7 +814,7 @@ public partial class FileTabView : UserControl
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                 Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand)
             };
-            Grid.SetColumn(text, 1);
+            Grid.SetColumn(text, 2);
 
             if (rowVm != null)
             {
@@ -3966,6 +4025,120 @@ public partial class FileTabView : UserControl
             };
 
             border.Child = button;
+            return border;
+        });
+    }
+
+    /// <summary>
+    /// Creates a template for localization ID fields - read-only display with reset button.
+    /// </summary>
+    private static IDataTemplate CreateLocalizationIdCellTemplate(string attributeName, FieldDefinition fieldDef, FileTabViewModel vm)
+    {
+        var sourceAttribute = fieldDef.SourceAttribute ?? "name";
+        var abilityPattern = fieldDef.AbilityPattern;
+
+        return new FuncDataTemplate<EntryRowViewModel>((rowVm, _) =>
+        {
+            var border = new Border();
+            border.Classes.Add("dataCell");
+
+            if (rowVm == null)
+            {
+                return border;
+            }
+
+            var grid = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitions("*,Auto")
+            };
+
+            // Get localization key from the source attribute (e.g., "name")
+            var sourceAttr = rowVm.XmlEntry.GetAttribute(sourceAttribute);
+            var localizationKey = sourceAttr?.LocalizationKey ?? "";
+
+            var textBlock = new TextBlock
+            {
+                Text = localizationKey,
+                VerticalAlignment = VerticalAlignment.Center,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                Margin = new Thickness(4, 0, 0, 0),
+                Foreground = new SolidColorBrush(Color.Parse("#888888")),  // Grayed out to indicate read-only
+                FontStyle = FontStyle.Italic
+            };
+            Grid.SetColumn(textBlock, 0);
+            grid.Children.Add(textBlock);
+
+            // Reset button
+            var resetButton = new Button
+            {
+                Content = "↻",
+                Padding = new Thickness(4, 0),
+                FontSize = 12,
+                VerticalAlignment = VerticalAlignment.Center,
+                Background = Brushes.Transparent,
+                MinWidth = 24
+            };
+            ToolTip.SetTip(resetButton, "Reset to default (str_{id})");
+            Grid.SetColumn(resetButton, 1);
+            grid.Children.Add(resetButton);
+
+            resetButton.Click += (s, e) =>
+            {
+                e.Handled = true;
+
+                // Get the entry's ID
+                var entryId = rowVm.XmlEntry.Id ?? rowVm["id"];
+                if (string.IsNullOrEmpty(entryId))
+                {
+                    return;
+                }
+
+                // Generate the default localization key
+                var newKey = LocalizationHelper.GenerateKey(entryId, abilityPattern);
+
+                // Get the current raw value and update it with the new key
+                var currentSourceAttr = rowVm.XmlEntry.GetAttribute(sourceAttribute);
+                var currentRawValue = currentSourceAttr?.RawValue ?? "";
+                var newRawValue = LocalizationHelper.UpdateKey(currentRawValue, newKey);
+
+                // Update the attribute
+                rowVm.XmlEntry.SetAttributeValue(sourceAttribute, newRawValue);
+
+                // Update the display
+                textBlock.Text = newKey;
+
+                // Also update the row view model's display value for the source column
+                var (_, displayText) = LocalizationHelper.Unwrap(newRawValue);
+                rowVm[sourceAttribute] = displayText;
+
+                // Mark the document as having unsaved changes
+                vm.MarkAsModified();
+            };
+
+            // Cell selection click handler
+            border.PointerPressed += (s, e) =>
+            {
+                var rowIndex = rowVm.RowNumber - 1;
+                vm.SelectCell(rowIndex, attributeName);
+            };
+
+            // Subscribe to cell selection changes
+            vm.CellSelected += (s, e) =>
+            {
+                CellStyleHelper.UpdateCellSelection(border, rowVm, attributeName, vm);
+            };
+
+            // Subscribe to property changes to update the localization key display
+            rowVm.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == $"Item[{sourceAttribute}]" || e.PropertyName == "Item[]")
+                {
+                    var updatedAttr = rowVm.XmlEntry.GetAttribute(sourceAttribute);
+                    textBlock.Text = updatedAttr?.LocalizationKey ?? "";
+                }
+            };
+
+            border.Child = grid;
             return border;
         });
     }

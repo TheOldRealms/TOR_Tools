@@ -112,7 +112,8 @@
 
         <!-- DataGrid when loaded successfully -->
         <Grid Grid.Row="1">
-            <Border Padding="0,0,8,0">
+            <!-- Right padding for scrollbar, bottom margin to prevent overlap with last row -->
+            <Border Padding="0,0,8,16">
                 <DataGrid x:Name="EntryGrid"
                       ItemsSource="{Binding DisplayRows}"
                       SelectedIndex="{Binding SelectedIndex}"

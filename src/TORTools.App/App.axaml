@@ -141,6 +141,11 @@
         <Style Selector="DataGridColumnHeader">
             <Setter Property="Background" Value="{StaticResource DiscordBgDarkBrush}"/>
             <Setter Property="Foreground" Value="{StaticResource DiscordTextSecondaryBrush}"/>
+            <Setter Property="Padding" Value="8,4,4,4"/>
+            <Setter Property="MinHeight" Value="28"/>
+        </Style>
+        <Style Selector="DataGridColumnHeader /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Margin" Value="0"/>
         </Style>
         <Style Selector="DataGridRow">
             <Setter Property="Foreground" Value="{StaticResource DiscordTextPrimaryBrush}"/>
