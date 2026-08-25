@@ -7,6 +7,8 @@
     <Application.Resources>
         <!-- Shared converters -->
         <converters:SeverityToColorConverter x:Key="SeverityToColorConverter"/>
+        <!-- Remove reserved sort icon space in DataGrid headers -->
+        <x:Double x:Key="DataGridSortIconMinWidth">0</x:Double>
         <!-- Custom Thumb ControlTheme - no animations -->
         <ControlTheme x:Key="AlwaysVisibleThumb" TargetType="Thumb">
             <Setter Property="Background" Value="#5a5d63"/>
@@ -141,11 +143,27 @@
         <Style Selector="DataGridColumnHeader">
             <Setter Property="Background" Value="{StaticResource DiscordBgDarkBrush}"/>
             <Setter Property="Foreground" Value="{StaticResource DiscordTextSecondaryBrush}"/>
-            <Setter Property="Padding" Value="8,4,4,4"/>
+            <Setter Property="Padding" Value="4,2,0,2"/>
             <Setter Property="MinHeight" Value="28"/>
+            <Setter Property="ClipToBounds" Value="True"/>
+            <Setter Property="SeparatorBrush" Value="#3f3f3f"/>
         </Style>
         <Style Selector="DataGridColumnHeader /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Margin" Value="0"/>
+        </Style>
+        <!-- Minimize resize gripper width -->
+        <Style Selector="DataGridColumnHeader /template/ Thumb#PART_LeftResizer">
+            <Setter Property="Width" Value="2"/>
+        </Style>
+        <Style Selector="DataGridColumnHeader /template/ Thumb#PART_RightResizer">
+            <Setter Property="Width" Value="4"/>
+        </Style>
+        <!-- Hide sort indicator to save space -->
+        <Style Selector="DataGridColumnHeader /template/ Path#SortIcon">
+            <Setter Property="IsVisible" Value="False"/>
+        </Style>
+        <Style Selector="DataGridColumnHeader TextBlock">
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
         </Style>
         <Style Selector="DataGridRow">
             <Setter Property="Foreground" Value="{StaticResource DiscordTextPrimaryBrush}"/>
