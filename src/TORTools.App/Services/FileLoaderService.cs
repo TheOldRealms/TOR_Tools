@@ -480,10 +480,16 @@ public class FileLoaderService
             .Select(f => f.Key)
             .ToList();
 
+        // Debug: show all fields including hidden status
+        foreach (var field in context.Schema.Fields)
+        {
+            Console.WriteLine($"[DiscoverColumns] Field: {field.Key}, Hidden: {field.Value.Hidden}, Type: {field.Value.Type}");
+        }
+
         context.ColumnNames.Clear();
         context.ColumnNames.AddRange(orderedFields);
 
-        Console.WriteLine($"[DiscoverColumns] Discovered {context.ColumnNames.Count} columns from schema");
+        Console.WriteLine($"[DiscoverColumns] Discovered {context.ColumnNames.Count} columns from schema: {string.Join(", ", orderedFields)}");
     }
 
     /// <summary>
@@ -523,8 +529,15 @@ public class FileLoaderService
             var fieldDef = context.Schema?.GetField(columnName);
             string? value = null;
 
+            // Check if this is a localizationId field (virtual field extracting key from source attribute)
+            if (fieldDef?.Type == "localizationId")
+            {
+                var sourceAttribute = fieldDef.SourceAttribute ?? "name";
+                var sourceAttr = entry.GetAttribute(sourceAttribute);
+                value = sourceAttr?.LocalizationKey ?? "";
+            }
             // Check if this is a tagList field
-            if (fieldDef?.TagList != null)
+            else if (fieldDef?.TagList != null)
             {
                 var tagConfig = fieldDef.TagList;
                 value = entry.GetTagList(
@@ -560,8 +573,15 @@ public class FileLoaderService
                 var fieldDef = context.Schema.GetField(fieldName);
                 string? value = null;
 
+                // Check if this is a localizationId field
+                if (fieldDef?.Type == "localizationId")
+                {
+                    var sourceAttribute = fieldDef.SourceAttribute ?? "name";
+                    var sourceAttr = entry.GetAttribute(sourceAttribute);
+                    value = sourceAttr?.LocalizationKey ?? "";
+                }
                 // Check if this is a tagList field
-                if (fieldDef?.TagList != null)
+                else if (fieldDef?.TagList != null)
                 {
                     var tagConfig = fieldDef.TagList;
                     value = entry.GetTagList(

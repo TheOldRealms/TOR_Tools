@@ -192,20 +192,65 @@ public class FileSaverService
 
                 var attr = xmlEntry.GetAttribute(columnName);
 
-                if (attr != null)
+                // Check if this field should have a localization key (has a localizationId field pointing to it)
+                var locIdField = context.Schema?.Fields.Values
+                    .FirstOrDefault(f => f.Type == "localizationId" &&
+                        (f.SourceAttribute ?? "name").Equals(columnName, StringComparison.OrdinalIgnoreCase));
+                var needsLocalization = locIdField != null;
+                var entryId = xmlEntry.Id ?? "";
+
+                // Check if user provided a localization key pattern in their input
+                var (userKey, userText) = LocalizationHelper.Unwrap(currentValue);
+
+                // Determine the final value to save
+                string? valueToSave = null;
+
+                if (userKey != null)
                 {
-                    // Existing attribute - update if changed
-                    if (attr.DisplayValue != currentValue)
+                    // User provided their own localization key via {=key}text format
+                    // Clean any multiple keys (use only the first one)
+                    valueToSave = LocalizationHelper.CleanMultipleKeys(currentValue);
+                }
+                else if (needsLocalization && !string.IsNullOrEmpty(entryId))
+                {
+                    // This field needs localization - ensure it has a key
+                    if (attr?.LocalizationKey != null)
                     {
-                        xmlEntry.SetAttributeValue(columnName,
-                            LocalizationHelper.Wrap(attr.LocalizationKey, currentValue ?? ""));
-                        context.Document!.HasUnsavedChanges = true;
+                        // Existing key - preserve it, just update display text
+                        valueToSave = LocalizationHelper.Wrap(attr.LocalizationKey, currentValue ?? "");
+                    }
+                    else
+                    {
+                        // No existing key - auto-generate one
+                        valueToSave = LocalizationHelper.EnsureKey(currentValue, entryId, locIdField!.AbilityPattern);
                     }
                 }
-                else if (!string.IsNullOrEmpty(currentValue))
+                else
                 {
-                    // New attribute on new entry - add it
-                    xmlEntry.SetAttributeValue(columnName, currentValue);
+                    // Regular field without localization requirements
+                    if (attr != null && attr.LocalizationKey != null)
+                    {
+                        // Had a key before - preserve it
+                        valueToSave = LocalizationHelper.Wrap(attr.LocalizationKey, currentValue ?? "");
+                    }
+                    else
+                    {
+                        // No key needed
+                        valueToSave = currentValue;
+                    }
+                }
+
+                // Apply the change if different from current
+                var existingRaw = attr?.RawValue ?? "";
+                if (existingRaw != valueToSave && !string.IsNullOrEmpty(valueToSave))
+                {
+                    xmlEntry.SetAttributeValue(columnName, valueToSave);
+                    context.Document!.HasUnsavedChanges = true;
+                }
+                else if (attr == null && !string.IsNullOrEmpty(valueToSave))
+                {
+                    // New attribute
+                    xmlEntry.SetAttributeValue(columnName, valueToSave);
                     context.Document!.HasUnsavedChanges = true;
                 }
             }

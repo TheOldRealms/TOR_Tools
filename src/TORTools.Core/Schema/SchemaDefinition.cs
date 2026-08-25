@@ -332,6 +332,20 @@ public class FieldDefinition
     /// </summary>
     [JsonPropertyName("actionType")]
     public string? ActionType { get; set; }
+
+    /// <summary>
+    /// For "localizationId" type: the attribute name to extract the localization key from.
+    /// Defaults to "name" if not specified.
+    /// </summary>
+    [JsonPropertyName("sourceAttribute")]
+    public string? SourceAttribute { get; set; }
+
+    /// <summary>
+    /// For "localizationId" type: if true, uses the ability pattern ({lowercase_id}_label_str)
+    /// instead of the standard pattern (str_{id}).
+    /// </summary>
+    [JsonPropertyName("abilityPattern")]
+    public bool AbilityPattern { get; set; }
 }
 
 /// <summary>
