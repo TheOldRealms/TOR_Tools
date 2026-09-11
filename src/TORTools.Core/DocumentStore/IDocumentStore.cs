@@ -16,6 +16,11 @@ public interface IDocumentStore
     InitializeResult Initialize();
 
     /// <summary>
+    /// Initializes the document store against an already-resolved workspace, skipping discovery.
+    /// </summary>
+    InitializeResult Initialize(WorkspaceConfig config);
+
+    /// <summary>
     /// Gets the current workspace configuration.
     /// </summary>
     WorkspaceConfig GetWorkspaceConfig();
