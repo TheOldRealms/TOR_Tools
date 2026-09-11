@@ -111,18 +111,27 @@ public class StandaloneDocumentStore : IDocumentStore
 
     public InitializeResult Initialize()
     {
+        // No caller-supplied paths: rank saved config above auto-detection, as before.
+        var resolved = WorkspaceResolver.Resolve(
+            commandLine: new WorkspaceOverrides(),
+            environment: new WorkspaceOverrides(),
+            saved: _workspaceService.LoadConfig(),
+            autoDetect: _workspaceService.AutoDetect);
+
+        return Initialize(resolved.Config);
+    }
+
+    public InitializeResult Initialize(WorkspaceConfig config)
+    {
+        ArgumentNullException.ThrowIfNull(config);
+
         Log("Initializing workspace...");
         try
         {
-            // Try to load saved config, fall back to auto-detect
-            _workspaceConfig = _workspaceService.LoadConfig();
-            Log($"  Loaded config: TOR_Core={_workspaceConfig.TorCorePath ?? "(not set)"}");
-
-            if (!_workspaceConfig.IsConfigured)
-            {
-                Log("  Config not set, auto-detecting...");
-                _workspaceConfig = _workspaceService.AutoDetect();
-            }
+            _workspaceConfig = config;
+            Log($"  TOR_Core={_workspaceConfig.TorCorePath ?? "(not set)"}");
+            Log($"  TOR_Armory={_workspaceConfig.TorArmoryPath ?? "(not set)"}");
+            Log($"  TOR_Environment={_workspaceConfig.TorEnvironmentPath ?? "(not set)"}");
 
             var validation = _workspaceService.ValidateWorkspace(_workspaceConfig);
             Log($"  Validation: Core={validation.TorCoreFound}, Armory={validation.TorArmoryFound}, Env={validation.TorEnvironmentFound}");
