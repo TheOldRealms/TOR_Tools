@@ -27,11 +27,18 @@
       "order": 3,
       "width": 300
     },
+    "heroes_only": {
+      "displayName": "Heroes Only",
+      "description": "If true, this attribute may only be assigned to heroes/lords, not to regular troops.",
+      "type": "boolean",
+      "order": 4,
+      "width": 100
+    },
     "LinkedUnits": {
       "displayName": "Used By",
       "description": "Units that have this attribute. Click to navigate to unit.",
       "type": "reverseCrossReference",
-      "order": 4,
+      "order": 5,
       "width": 300,
       "crossReference": {
         "sourceFile": "tor_extendedunitproperties.xml",
