@@ -13,6 +13,14 @@
       "required": true,
       "order": 1,
       "width": 260
+    },
+    "AdditionalHealth": {
+      "displayName": "Additional Health",
+      "description": "Flat bonus hit points added to the character's base health. Stored as the integer value of the <AdditionalHealth> element on CharacterExtendedInfo.",
+      "type": "int",
+      "order": 2,
+      "width": 100,
+      "min": 0
     }
   }
 }
