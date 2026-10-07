@@ -1533,7 +1533,7 @@ public partial class FileTabView : UserControl
             var listBox = new ListBox
             {
                 Height = 180,
-                ItemsSource = availableIds.Take(50).ToList()
+                ItemsSource = availableIds.ToList()
             };
             customSection.Children.Add(listBox);
 
@@ -1544,7 +1544,6 @@ public partial class FileTabView : UserControl
                 var filtered = availableIds
                     .Where(id => string.IsNullOrEmpty(searchText) ||
                                  id.Contains(searchText, StringComparison.OrdinalIgnoreCase))
-                    .Take(50)
                     .ToList();
                 listBox.ItemsSource = filtered;
             };
@@ -1623,7 +1622,7 @@ public partial class FileTabView : UserControl
             var listBox = new ListBox
             {
                 Height = 180,
-                ItemsSource = availableIds.Take(50).ToList()
+                ItemsSource = availableIds.ToList()
             };
             stack.Children.Add(listBox);
 
@@ -1640,7 +1639,6 @@ public partial class FileTabView : UserControl
                     .Where(id => !currentIds.Contains(id.ToLowerInvariant()))
                     .Where(id => string.IsNullOrEmpty(searchText) ||
                                  id.Contains(searchText, StringComparison.OrdinalIgnoreCase))
-                    .Take(50)
                     .ToList();
                 listBox.ItemsSource = filtered;
             };
