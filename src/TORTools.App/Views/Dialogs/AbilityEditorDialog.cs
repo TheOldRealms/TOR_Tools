@@ -107,7 +107,6 @@ public class AbilityEditorDialog : BaseEditorDialog
             .Where(id => !selectedSet.Contains(id))
             .Where(id => string.IsNullOrEmpty(searchText) ||
                          id.Contains(searchText, StringComparison.OrdinalIgnoreCase))
-            .Take(50)
             .ToList();
     }
 
