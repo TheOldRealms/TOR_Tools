@@ -1,0 +1,103 @@
+{
+  "file": "tor_string_overrides.xml",
+  "displayName": "String Overrides (Vanilla)",
+  "description": "Overrides for vanilla Bannerlord strings with race/culture-specific variants (Orc-speak, Dwarf-speak, etc.).",
+  "rootElement": "strings",
+  "entryElement": "string",
+  "compactFormat": true,
+  "groupByField": "category",
+  "mergedDataFile": {
+    "file": "tor_string_overrides_metadata.xml",
+    "rootElement": "StringOverrideMetadata",
+    "entryElement": "Override",
+    "matchField": "id",
+    "fieldMappings": {
+      "category": "category",
+      "suffix": "suffix",
+      "translation_key": "translation_key",
+      "vanilla_text": "vanilla_text",
+      "comment": "comment"
+    }
+  },
+  "fields": {
+    "id": {
+      "displayName": "ID",
+      "description": "Combined ID: vanilla hash + conversation ID + race (e.g., 'GAsVO8cZ.arena_master_tournament_meet_orc').",
+      "type": "string",
+      "required": true,
+      "order": 1,
+      "width": 280
+    },
+    "translation_key": {
+      "displayName": "Translation Key",
+      "description": "The translation key (e.g., 'str_tor_arena_orc'). Used in the {=key} prefix.",
+      "type": "string",
+      "order": 99,
+      "width": 220,
+      "linkedField": true,
+      "hidden": true
+    },
+    "category": {
+      "displayName": "Category",
+      "description": "Category for organization (e.g., 'Arena', 'Tavern', 'Lords').",
+      "type": "string",
+      "order": 3,
+      "width": 120,
+      "linkedField": true
+    },
+    "suffix": {
+      "displayName": "Suffix",
+      "description": "Race/culture suffix for the string variation (e.g., 'orc', 'dwarf').",
+      "type": "string",
+      "order": 4,
+      "width": 80,
+      "linkedField": true
+    },
+    "vanilla_text": {
+      "displayName": "Vanilla Text",
+      "description": "Original vanilla English text (for reference, stored in metadata).",
+      "type": "string",
+      "order": 5,
+      "width": 300,
+      "linkedField": true,
+      "readOnly": true,
+      "multiline": true
+    },
+    "text": {
+      "displayName": "Override Text",
+      "description": "Override text with localization key prefix (e.g., '{=str_tor_arena_orc}Lookin' ta bash...').",
+      "type": "string",
+      "required": true,
+      "order": 6,
+      "width": 500,
+      "multiline": true
+    },
+    "tags": {
+      "displayName": "Tags",
+      "description": "Conditional tags - when this override applies (e.g., IsOrcTag for Orc characters).",
+      "type": "tagList",
+      "order": 7,
+      "width": 150,
+      "tagList": {
+        "containerElement": "tags",
+        "itemElement": "tag",
+        "nameAttribute": "tag_name",
+        "knownTags": [
+          "IsOrcTag", "IsDwarfTag", "IsGoblinTag", "ElfMaleTag", "VampireMaleTag", "VampireFemaleTag",
+          "PlayerIsOrcTag", "PlayerIsDwarfTag", "PlayerIsElfTag",
+          "EmpireTag", "VlandianTag", "SturgianTag", "AseraiTag", "KhuzaitTag", "BattanianTag",
+          "AsraiTag", "EonirTag", "MousillonTag", "BloodDragonTag",
+          "IsBretonnianTag", "IsEmpireTag"
+        ]
+      }
+    },
+    "comment": {
+      "displayName": "Comment",
+      "description": "Notes about this override (stored in metadata).",
+      "type": "string",
+      "order": 8,
+      "width": 200,
+      "linkedField": true
+    }
+  }
+}
