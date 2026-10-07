@@ -9,6 +9,7 @@
 
   <!-- Elven Races -->
   <Race id="elf" displayName="Elf" description="Elven race - Wood Elves, High Elves." />
+  <Race id="orion" displayName="Orion" description="Godking of Athel Loren." />
 
   <!-- Dwarven Races -->
   <Race id="dwarf" displayName="Dwarf" description="Dwarfs of the Karaz Ankor." />
@@ -21,11 +22,13 @@
   <Race id="skeleton" displayName="Skeleton" description="Animated skeletal warriors." />
   <Race id="wraith" displayName="Wraith" description="Incorporeal undead spirits (Cairn Wraiths, Tomb Banshees)." />
   <Race id="spirit_host" displayName="Spirit Host" description="Swarms of tormented spirits." />
-
+  <Race id="ghoul" displayName="Ghoul" description="Scavangers of battle remains." />
+  
   <!-- Beastmen Races -->
   <Race id="ungor" displayName="Ungor" description="Lesser beastmen, often used as skirmishers." />
-  <Race id="gor" displayName="Gor" description="True beastmen, the warriors of the herd." />
+  <Race id="gor2" displayName="Gor2" description="True beastmen, the warriors of the herd." />
   <Race id="minotaur" displayName="Minotaur" description="Massive bull-headed beastmen." />
+  
 
   <!-- Monster Races -->
   <Race id="troll" displayName="Troll" description="Regenerating monsters found throughout the Old World." />
