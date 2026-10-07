@@ -211,6 +211,20 @@
         "targetKeyField": "StringID",
         "localKeyField": "id"
       }
+    },
+    "ext_AdditionalHealth": {
+      "displayName": "Add. HP",
+      "description": "Flat bonus hit points added to base health (from tor_extendedunitproperties.xml).",
+      "type": "crossReference",
+      "order": 52,
+      "width": 70,
+      "crossReference": {
+        "sourceFile": "tor_extendedunitproperties.xml",
+        "sourceKeyField": "id",
+        "sourceValuePath": "AdditionalHealth",
+        "localKeyField": "id",
+        "valueType": "int"
+      }
     }
   }
 }
