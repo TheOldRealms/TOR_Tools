@@ -1,0 +1,40 @@
+{
+  "file": "tor_tags.xml",
+  "displayName": "String Tags",
+  "description": "Conversation tags for conditional string selection. Applied to strings to show different text based on character race, culture, career, or traits.",
+  "rootElement": "Tags",
+  "entryElement": "Tag",
+  "compactFormat": true,
+  "fields": {
+    "id": {
+      "displayName": "Tag",
+      "description": "Unique tag identifier (e.g., IsOrcTag, EmpireTag).",
+      "type": "string",
+      "required": true,
+      "order": 1,
+      "width": 200
+    },
+    "category": {
+      "displayName": "Category",
+      "description": "Tag category for organization.",
+      "type": "enum",
+      "order": 2,
+      "width": 100,
+      "enumValues": [
+        { "value": "Culture", "displayName": "Culture" },
+        { "value": "Race", "displayName": "Race" },
+        { "value": "Player", "displayName": "Player" },
+        { "value": "Career", "displayName": "Career" },
+        { "value": "Trait", "displayName": "Trait" }
+      ]
+    },
+    "description": {
+      "displayName": "Description",
+      "description": "What this tag means and when it applies.",
+      "type": "string",
+      "order": 3,
+      "width": 500,
+      "multiline": true
+    }
+  }
+}

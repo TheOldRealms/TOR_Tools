@@ -1,0 +1,208 @@
+{
+  "file": "tor_meleeweapons.xml",
+  "displayName": "Melee Weapons",
+  "description": "Melee weapon definitions (crafted items with weapon pieces).",
+  "rootElement": "Items",
+  "entryElement": "CraftedItem",
+  "fields": {
+    "id": {
+      "displayName": "ID",
+      "description": "Unique identifier for this weapon.",
+      "type": "string",
+      "required": true,
+      "order": 1,
+      "width": 280
+    },
+    "name": {
+      "displayName": "Name",
+      "description": "Display name with localization key (e.g., {=str_id}Display Text).",
+      "type": "string",
+      "required": true,
+      "order": 2,
+      "width": 200
+    },
+    "crafting_template": {
+      "displayName": "Crafting Template",
+      "description": "Crafting template ID for smithing.",
+      "type": "string",
+      "order": 10,
+      "width": 180
+    },
+    "OpenPartsEditor": {
+      "displayName": "Parts",
+      "description": "Open the visual 3D weapon parts editor.",
+      "type": "action",
+      "actionType": "openWeaponPartsEditor",
+      "order": 11,
+      "width": 60
+    },
+    "culture": {
+      "displayName": "Culture",
+      "description": "Cultural origin of this weapon. Click to navigate to culture definition.",
+      "type": "crossReference",
+      "renderAs": "dropdown",
+      "order": 15,
+      "width": 140,
+      "crossReference": {
+        "targetFile": "tor_cultures.xml",
+        "targetKeyField": "id",
+        "targetDisplayField": "name",
+        "localKeyField": "culture",
+        "prefixToStrip": "Culture.",
+        "prefixToAdd": "Culture."
+      }
+    },
+    "RaceLock": {
+      "displayName": "Race Lock",
+      "description": "Race restriction for this weapon (from extended properties).",
+      "type": "crossReference",
+      "renderAs": "dropdown",
+      "order": 16,
+      "width": 100,
+      "crossReference": {
+        "sourceFile": "tor_extendeditemproperties.xml",
+        "sourceKeyField": "ItemStringId",
+        "sourceValuePath": "@RaceLock",
+        "localKeyField": "id",
+        "targetFile": "tor_races.xml",
+        "targetKeyField": "id",
+        "targetDisplayField": "displayName",
+        "singleValue": true
+      }
+    },
+    "is_merchandise": {
+      "displayName": "Merchandise",
+      "description": "Whether this item appears in shops.",
+      "type": "enum",
+      "order": 20,
+      "width": 90,
+      "default": "true",
+      "enumValues": [
+        { "value": "true", "displayName": "Yes" },
+        { "value": "false", "displayName": "No" }
+      ]
+    },
+    "value": {
+      "displayName": "Value",
+      "description": "Base price in denars.",
+      "type": "int",
+      "min": 0,
+      "max": 1000000,
+      "order": 21,
+      "width": 80
+    },
+    "DamageProportions": {
+      "displayName": "Damage",
+      "description": "Damage type proportions dealt by this weapon.",
+      "type": "tupleList",
+      "order": 65,
+      "width": 180,
+      "tupleList": {
+        "sourceFile": "tor_extendeditemproperties.xml",
+        "sourceKeyField": "ItemStringId",
+        "containerPath": "DamageProportions",
+        "elementName": "DamageProportionTuple",
+        "localKeyField": "id",
+        "columns": [
+          { "attribute": "DamageType", "displayName": "Type", "type": "enum", "width": 80, "enumValues": ["Physical", "Fire", "Frost", "Lightning", "Holy", "Magical", "All"] },
+          { "attribute": "Percent", "displayName": "%", "type": "number", "width": 50 }
+        ]
+      }
+    },
+    "ItemTraits": {
+      "displayName": "Item Traits",
+      "description": "Traits assigned to this item (from extended properties). Click to navigate to trait definition.",
+      "type": "crossReference",
+      "order": 70,
+      "width": 200,
+      "crossReference": {
+        "sourceFile": "tor_extendeditemproperties.xml",
+        "sourceKeyField": "ItemStringId",
+        "sourceValuePath": "ItemTraits/ItemTrait",
+        "targetFile": "tor_itemtraits.xml",
+        "targetKeyField": "ItemTraitStringId",
+        "localKeyField": "id"
+      }
+    },
+    "blade_id": {
+      "displayName": "Blade ID",
+      "description": "Crafting piece ID for the blade component.",
+      "type": "string",
+      "nested": true,
+      "nestedPath": "Pieces/Piece[@Type='Blade']/@id",
+      "order": 30,
+      "width": 200,
+      "group": "Parts"
+    },
+    "blade_scale": {
+      "displayName": "Blade Scale",
+      "description": "Scale factor for the blade piece (default 100).",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "Pieces/Piece[@Type='Blade']/@scale_factor",
+      "order": 31,
+      "width": 60,
+      "group": "Parts"
+    },
+    "handle_id": {
+      "displayName": "Handle ID",
+      "description": "Crafting piece ID for the handle component.",
+      "type": "string",
+      "nested": true,
+      "nestedPath": "Pieces/Piece[@Type='Handle']/@id",
+      "order": 32,
+      "width": 200,
+      "group": "Parts"
+    },
+    "handle_scale": {
+      "displayName": "Handle Scale",
+      "description": "Scale factor for the handle piece (default 100).",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "Pieces/Piece[@Type='Handle']/@scale_factor",
+      "order": 33,
+      "width": 60,
+      "group": "Parts"
+    },
+    "guard_id": {
+      "displayName": "Guard ID",
+      "description": "Crafting piece ID for the guard component.",
+      "type": "string",
+      "nested": true,
+      "nestedPath": "Pieces/Piece[@Type='Guard']/@id",
+      "order": 34,
+      "width": 200,
+      "group": "Parts"
+    },
+    "guard_scale": {
+      "displayName": "Guard Scale",
+      "description": "Scale factor for the guard piece (default 100).",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "Pieces/Piece[@Type='Guard']/@scale_factor",
+      "order": 35,
+      "width": 60,
+      "group": "Parts"
+    },
+    "pommel_id": {
+      "displayName": "Pommel ID",
+      "description": "Crafting piece ID for the pommel component.",
+      "type": "string",
+      "nested": true,
+      "nestedPath": "Pieces/Piece[@Type='Pommel']/@id",
+      "order": 36,
+      "width": 200,
+      "group": "Parts"
+    },
+    "pommel_scale": {
+      "displayName": "Pommel Scale",
+      "description": "Scale factor for the pommel piece (default 100).",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "Pieces/Piece[@Type='Pommel']/@scale_factor",
+      "order": 37,
+      "width": 60,
+      "group": "Parts"
+    }
+  }
+}

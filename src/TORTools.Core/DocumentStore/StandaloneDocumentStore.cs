@@ -1,3 +1,4 @@
+using System.Xml.Linq;
 using TORTools.Core.Models;
 using TORTools.Core.Schema;
 using TORTools.Core.Services;
@@ -207,6 +208,13 @@ public class StandaloneDocumentStore : IDocumentStore
                 _loadedDocuments[filePath] = doc;
                 Log($"GetDocument({fileKey}) -> loaded {_xmlService.GetEntries(doc).Count} entries");
 
+                // Merge linked data (e.g. tor_strings_metadata.xml) into in-memory entries
+                var schema = GetSchema(fileKey);
+                if (schema?.MergedDataFile != null)
+                {
+                    MergeDataFromFile(doc, schema);
+                }
+
                 DocumentChanged?.Invoke(this, new DocumentChangedEventArgs
                 {
                     FileKey = fileKey,
@@ -237,8 +245,49 @@ public class StandaloneDocumentStore : IDocumentStore
             var schema = GetSchema(fileKey);
             var compactFormat = schema?.CompactFormat ?? true;
 
-            Log($"SaveDocument({fileKey}) -> saving to {doc.FilePath} (compact={compactFormat})");
-            _xmlService.Save(doc, compactFormat: compactFormat);
+            // Fields that live in a sidecar file (e.g. tor_strings_metadata.xml). These must
+            // be stripped from the main document on save; the UI's FileSaverService does the
+            // same thing (see FileSaverService.CreateDocumentFromEntries / SaveMergedDataFile).
+            var linkedFields = schema?.Fields
+                .Where(f => f.Value.LinkedField == true)
+                .Select(f => f.Key)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var excludeFields = linkedFields != null && linkedFields.Count > 0 ? linkedFields : null;
+
+            Log($"SaveDocument({fileKey}) -> saving to {doc.FilePath} (compact={compactFormat}, linkedFields={excludeFields?.Count ?? 0})");
+
+            // tor_strings uses groupByField="category" where category is itself a linked field,
+            // so we need the special save path that reads the group value from XmlEntry attrs
+            // (which include the merged-in linked values) rather than from the raw XML.
+            var groupByField = schema?.GroupByField;
+            var groupFieldDef = !string.IsNullOrEmpty(groupByField) ? schema!.GetField(groupByField) : null;
+
+            if (groupFieldDef?.LinkedField == true)
+            {
+                var entries = _xmlService.GetEntries(doc);
+                _xmlService.SaveWithCategoryComments(
+                    doc,
+                    entries,
+                    doc.FilePath,
+                    schema!.RootElement ?? "strings",
+                    compactFormat,
+                    excludeFields);
+            }
+            else
+            {
+                _xmlService.Save(doc, null, compactFormat, groupByField, excludeFields);
+            }
+
+            // Write linked-field values back to the sidecar file.
+            if (schema?.MergedDataFile != null)
+            {
+                var baseDir = Path.GetDirectoryName(doc.FilePath);
+                if (!string.IsNullOrEmpty(baseDir))
+                {
+                    SaveMergedDataFile(doc, schema, baseDir);
+                }
+            }
+
             Log($"SaveDocument({fileKey}) -> saved successfully");
 
             DocumentChanged?.Invoke(this, new DocumentChangedEventArgs
@@ -463,6 +512,214 @@ public class StandaloneDocumentStore : IDocumentStore
         // Check for ID in a colon-separated list
         var parts = value.Split(':');
         return parts.Any(p => p.Trim().Equals(targetId, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Reads a merged data file (e.g. tor_strings_metadata.xml) and copies its mapped
+    /// attributes onto the in-memory XmlEntry elements. Mirrors FileLoaderService.MergeDataFromFile.
+    /// </summary>
+    private void MergeDataFromFile(XmlDocumentWrapper doc, SchemaDefinition schema)
+    {
+        var mergedConfig = schema.MergedDataFile;
+        if (mergedConfig == null) return;
+
+        var baseDir = Path.GetDirectoryName(doc.FilePath);
+        if (string.IsNullOrEmpty(baseDir)) return;
+
+        var mergedFilePath = FindMergedDataFile(baseDir, mergedConfig.FileName);
+        if (mergedFilePath == null)
+        {
+            Log($"MergeData -> sidecar '{mergedConfig.FileName}' not found; skipping");
+            return;
+        }
+
+        var entryElementName = mergedConfig.EntryElement ?? "String";
+        var matchField = mergedConfig.MatchField ?? "id";
+
+        XDocument mergedDoc;
+        try
+        {
+            mergedDoc = XDocument.Load(mergedFilePath);
+        }
+        catch (Exception ex)
+        {
+            Log($"MergeData -> failed to load {mergedFilePath}: {ex.Message}");
+            return;
+        }
+
+        var mergedRoot = mergedDoc.Root;
+        if (mergedRoot == null) return;
+
+        var mergedData = new Dictionary<string, XElement>(StringComparer.OrdinalIgnoreCase);
+        foreach (var element in mergedRoot.Elements(entryElementName))
+        {
+            var key = element.Attribute(matchField)?.Value;
+            if (!string.IsNullOrEmpty(key))
+                mergedData[key] = element;
+        }
+
+        var entries = _xmlService.GetEntries(doc);
+        int mergedCount = 0;
+        foreach (var entry in entries)
+        {
+            var entryId = entry.GetAttributeValue(matchField);
+            if (string.IsNullOrEmpty(entryId)) continue;
+            if (!mergedData.TryGetValue(entryId, out var mergedElement)) continue;
+            if (mergedConfig.FieldMappings == null) continue;
+
+            foreach (var mapping in mergedConfig.FieldMappings)
+            {
+                var sourceValue = mergedElement.Attribute(mapping.Value)?.Value;
+                if (!string.IsNullOrEmpty(sourceValue))
+                    entry.SetAttributeValue(mapping.Key, sourceValue);
+            }
+            mergedCount++;
+        }
+
+        // Match UI behavior: auto-infer category from string ID for entries that don't have one.
+        if (mergedConfig.FieldMappings?.ContainsKey("category") == true)
+        {
+            foreach (var entry in entries)
+            {
+                if (!string.IsNullOrEmpty(entry.GetAttributeValue("category"))) continue;
+                var inferred = StringCategoryService.InferCategory(entry.GetAttributeValue("id"));
+                if (!string.IsNullOrEmpty(inferred))
+                    entry.SetAttributeValue("category", inferred);
+            }
+        }
+
+        Log($"MergeData -> merged {mergedCount} entries from {mergedFilePath}");
+    }
+
+    /// <summary>
+    /// Writes linked-field values back to the sidecar metadata file, upserting entries
+    /// by match field. Mirrors FileSaverService.SaveMergedDataFile.
+    /// </summary>
+    private void SaveMergedDataFile(XmlDocumentWrapper doc, SchemaDefinition schema, string baseDir)
+    {
+        var mergedConfig = schema.MergedDataFile;
+        if (mergedConfig == null) return;
+
+        var entryElementName = mergedConfig.EntryElement ?? "String";
+        var matchField = mergedConfig.MatchField ?? "id";
+        var rootElementName = mergedConfig.RootElement ?? "StringMetadata";
+
+        var mergedFilePath = FindMergedDataFile(baseDir, mergedConfig.FileName);
+
+        XDocument mergedDoc;
+        XElement mergedRoot;
+        if (mergedFilePath == null)
+        {
+            mergedFilePath = GetMetadataFilePath(baseDir, mergedConfig.FileName);
+            Log($"SaveMergedData -> creating new sidecar: {mergedFilePath}");
+            mergedRoot = new XElement(rootElementName);
+            mergedDoc = new XDocument(new XDeclaration("1.0", "UTF-8", null), mergedRoot);
+        }
+        else
+        {
+            try
+            {
+                mergedDoc = XDocument.Load(mergedFilePath);
+                mergedRoot = mergedDoc.Root ?? new XElement(rootElementName);
+            }
+            catch (Exception ex)
+            {
+                Log($"SaveMergedData -> failed to load {mergedFilePath}, recreating: {ex.Message}");
+                mergedRoot = new XElement(rootElementName);
+                mergedDoc = new XDocument(new XDeclaration("1.0", "UTF-8", null), mergedRoot);
+            }
+        }
+
+        var existingEntries = new Dictionary<string, XElement>(StringComparer.OrdinalIgnoreCase);
+        foreach (var element in mergedRoot.Elements(entryElementName))
+        {
+            var key = element.Attribute(matchField)?.Value;
+            if (!string.IsNullOrEmpty(key))
+                existingEntries[key] = element;
+        }
+
+        int updated = 0, created = 0;
+        foreach (var entry in _xmlService.GetEntries(doc))
+        {
+            var entryId = entry.GetAttributeValue(matchField);
+            if (string.IsNullOrEmpty(entryId)) continue;
+            if (mergedConfig.FieldMappings == null) continue;
+
+            bool hasLinkedData = mergedConfig.FieldMappings
+                .Any(m => !string.IsNullOrEmpty(entry.GetAttributeValue(m.Key)));
+            if (!hasLinkedData) continue;
+
+            if (existingEntries.TryGetValue(entryId, out var element))
+            {
+                foreach (var mapping in mergedConfig.FieldMappings)
+                {
+                    var value = entry.GetAttributeValue(mapping.Key);
+                    if (!string.IsNullOrEmpty(value) && element.Attribute(mapping.Value)?.Value != value)
+                    {
+                        element.SetAttributeValue(mapping.Value, value);
+                        updated++;
+                    }
+                }
+            }
+            else
+            {
+                var newElement = new XElement(entryElementName);
+                newElement.SetAttributeValue(matchField, entryId);
+                foreach (var mapping in mergedConfig.FieldMappings)
+                {
+                    var value = entry.GetAttributeValue(mapping.Key);
+                    if (!string.IsNullOrEmpty(value))
+                        newElement.SetAttributeValue(mapping.Value, value);
+                }
+                mergedRoot.Add(newElement);
+                created++;
+            }
+        }
+
+        Log($"SaveMergedData -> {updated} updated / {created} created in {mergedFilePath}");
+
+        try
+        {
+            var wrapper = new XmlDocumentWrapper(mergedDoc, mergedFilePath, doc.HasBom, doc.Encoding, doc.IndentString);
+            _xmlService.Save(wrapper, mergedFilePath, mergedConfig.CompactFormat);
+        }
+        catch (Exception ex)
+        {
+            Log($"SaveMergedData -> error saving {mergedFilePath}: {ex.Message}");
+        }
+    }
+
+    private static string? FindMergedDataFile(string baseDir, string fileName)
+    {
+        var torToolsDataPath = FilePathResolver.GetDataDirectory();
+        if (!string.IsNullOrEmpty(torToolsDataPath))
+        {
+            var toolsDataFile = Path.Combine(torToolsDataPath, fileName);
+            if (File.Exists(toolsDataFile)) return toolsDataFile;
+        }
+
+        var customPath = Path.Combine(baseDir, "tor_custom_xmls", fileName);
+        if (File.Exists(customPath)) return customPath;
+
+        var basePath = Path.Combine(baseDir, fileName);
+        if (File.Exists(basePath)) return basePath;
+
+        var parentDir = Path.GetDirectoryName(baseDir);
+        if (!string.IsNullOrEmpty(parentDir))
+        {
+            var parentPath = Path.Combine(parentDir, fileName);
+            if (File.Exists(parentPath)) return parentPath;
+        }
+
+        return null;
+    }
+
+    private static string GetMetadataFilePath(string baseDir, string fileName)
+    {
+        var torToolsDataPath = FilePathResolver.GetDataDirectory();
+        if (!string.IsNullOrEmpty(torToolsDataPath))
+            return Path.Combine(torToolsDataPath, fileName);
+        return Path.Combine(baseDir, fileName);
     }
 
     private string? ResolveFilePath(string fileKey)

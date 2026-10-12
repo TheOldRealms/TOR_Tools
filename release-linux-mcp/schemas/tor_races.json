@@ -1,0 +1,33 @@
+{
+  "file": "tor_races.xml",
+  "displayName": "Races",
+  "description": "Race definitions for characters and items.",
+  "rootElement": "Races",
+  "entryElement": "Race",
+  "fields": {
+    "id": {
+      "displayName": "ID",
+      "description": "Race identifier (used in XML files).",
+      "type": "string",
+      "required": true,
+      "readOnly": true,
+      "order": 1,
+      "width": 120
+    },
+    "displayName": {
+      "displayName": "Display Name",
+      "description": "Human-readable name for this race.",
+      "type": "string",
+      "required": true,
+      "order": 2,
+      "width": 150
+    },
+    "description": {
+      "displayName": "Description",
+      "description": "Detailed description of this race.",
+      "type": "string",
+      "order": 3,
+      "width": 400
+    }
+  }
+}

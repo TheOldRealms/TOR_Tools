@@ -20,6 +20,15 @@ public class FilePathResolver
     }
 
     /// <summary>
+    /// Overrides the data directory. Intended for integration tests so they don't fall
+    /// back to the real repo's data folder via the walk-up heuristic. Pass null to clear.
+    /// </summary>
+    public static void OverrideDataDirectoryForTesting(string? path)
+    {
+        _cachedDataDirectory = path;
+    }
+
+    /// <summary>
     /// Gets the path to the tool's data directory.
     /// Uses relative path from app location - works regardless of folder name.
     /// </summary>

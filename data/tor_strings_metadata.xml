@@ -4824,4 +4824,63 @@
   <String id="tor_spelltrainer_shop_purchase" category="Spelltrainer" />
   <String id="tor_spelltrainer_shop_no_gold" category="Spelltrainer" />
   <String id="tor_spelltrainer_shop_farewell" category="Spelltrainer" />
+  <String id="tor_we_scout" category="Units" subcategory="Wood Elves" />
+  <String id="tor_we_kings_bowman" category="Units" subcategory="Wood Elves" />
+  <String id="tor_test_subject" category="Units" subcategory="Test" />
+  <String id="str_tor_culture_beastmen" category="Factions" subcategory="Beastmen" />
+  <String id="str_tor_kingdom_beastmen" category="Factions" subcategory="Beastmen" />
+  <String id="str_tor_kingdom_beastmen_short" category="Factions" subcategory="Beastmen" />
+  <String id="str_tor_kingdom_beastmen_title" category="Factions" subcategory="Beastmen" />
+  <String id="str_tor_kingdom_beastmen_ruler" category="Factions" subcategory="Beastmen" />
+  <String id="str_tor_kingdom_beastmen_text" category="Factions" subcategory="Beastmen" />
+  <String id="str_tor_clan_beastmen_1" category="Factions" subcategory="Beastmen" />
+  <String id="str_tor_clan_beastmen_1_text" category="Factions" subcategory="Beastmen" />
+  <String id="str_tor_hero_beastmen_leader_text" category="Factions" subcategory="Beastmen" />
+  <String id="tor_cc_beastmen_ungor_label" category="Character Creation" subcategory="Beastmen" />
+  <String id="tor_cc_beastmen_ungor_text" category="Character Creation" subcategory="Beastmen" />
+  <String id="tor_cc_beastmen_gor_label" category="Character Creation" subcategory="Beastmen" />
+  <String id="tor_cc_beastmen_gor_text" category="Character Creation" subcategory="Beastmen" />
+  <String id="tor_cc_beastmen_touched_label" category="Character Creation" subcategory="Beastmen" />
+  <String id="tor_cc_beastmen_touched_text" category="Character Creation" subcategory="Beastmen" />
+  <String id="tor_cc_beastmen_stalker_label" category="Character Creation" subcategory="Beastmen" />
+  <String id="tor_cc_beastmen_stalker_text" category="Character Creation" subcategory="Beastmen" />
+  <String id="tor_cc_beastmen_raider_label" category="Character Creation" subcategory="Beastmen" />
+  <String id="tor_cc_beastmen_raider_text" category="Character Creation" subcategory="Beastmen" />
+  <String id="tor_cc_beastmen_herdstone_label" category="Character Creation" subcategory="Beastmen" />
+  <String id="tor_cc_beastmen_herdstone_text" category="Character Creation" subcategory="Beastmen" />
+  <String id="tor_cc_beastmen_fetcher_label" category="Character Creation" subcategory="Beastmen" />
+  <String id="tor_cc_beastmen_fetcher_text" category="Character Creation" subcategory="Beastmen" />
+  <String id="tor_cc_beastmen_warrior_label" category="Character Creation" subcategory="Beastmen" />
+  <String id="tor_cc_beastmen_warrior_text" category="Character Creation" subcategory="Beastmen" />
+  <String id="tor_cc_beastmen_wargor_label" category="Character Creation" subcategory="Beastmen" />
+  <String id="tor_cc_beastmen_wargor_text" category="Character Creation" subcategory="Beastmen" />
+  <String id="str_tor_beastmen_lord_factionleader" category="Factions" subcategory="Beastmen" />
+  <String id="tor_custom_resource_name.DarkOmen" category="Custom Resources" subcategory="Beastmen" />
+  <String id="tor_custom_resource_description.DarkOmen" category="Custom Resources" subcategory="Beastmen" />
+  <String id="str_culture_rich_name.beastmen" category="Factions" subcategory="Beastmen" />
+  <String id="str_culture_description.beastmen" category="Factions" subcategory="Beastmen" />
+  <String id="str_faction_formal_name_for_culture.beastmen" category="Factions" subcategory="Beastmen" />
+  <String id="str_faction_informal_name_for_culture.beastmen" category="Factions" subcategory="Beastmen" />
+  <String id="str_adjective_for_culture.beastmen" category="Factions" subcategory="Beastmen" />
+  <String id="str_neutral_term_for_culture.beastmen" category="Factions" subcategory="Beastmen" />
+  <String id="tor_poi_wizardhall.Name" category="POIs" subcategory="Wizard Hall" />
+  <String id="tor_poi_wizardhall.EnterLabel" category="POIs" subcategory="Wizard Hall" />
+  <String id="tor_poi_wizardhall.Undiscovered" category="POIs" subcategory="Wizard Hall" />
+  <String id="tor_poi_wizardhall.Sealed" category="POIs" subcategory="Wizard Hall" />
+  <String id="tor_poi_wizardhall.SiegeSealed" category="POIs" subcategory="Wizard Hall" />
+  <String id="tor_poi_wizardhall.Rejected" category="POIs" subcategory="Wizard Hall" />
+  <String id="tor_poi_wizardhall.MustHaveCareer" category="POIs" subcategory="Wizard Hall" />
+  <String id="tor_poi_witchhunter_lodge.Name" category="POIs" subcategory="Witch Hunter Lodge" />
+  <String id="tor_poi_witchhunter_lodge.EnterLabel" category="POIs" subcategory="Witch Hunter Lodge" />
+  <String id="tor_poi_witchhunter_lodge.Undiscovered" category="POIs" subcategory="Witch Hunter Lodge" />
+  <String id="tor_poi_witchhunter_lodge.Sealed" category="POIs" subcategory="Witch Hunter Lodge" />
+  <String id="tor_poi_witchhunter_lodge.SiegeSealed" category="POIs" subcategory="Witch Hunter Lodge" />
+  <String id="tor_poi_witchhunter_lodge.Rejected" category="POIs" subcategory="Witch Hunter Lodge" />
+  <String id="tor_poi_empire_engineer_hall.Name" category="POIs" subcategory="Empire Engineer Hall" />
+  <String id="tor_poi_empire_engineer_hall.EnterLabel" category="POIs" subcategory="Empire Engineer Hall" />
+  <String id="tor_poi_empire_engineer_hall.Undiscovered" category="POIs" subcategory="Empire Engineer Hall" />
+  <String id="tor_poi_empire_engineer_hall.Sealed" category="POIs" subcategory="Empire Engineer Hall" />
+  <String id="tor_poi_empire_engineer_hall.SiegeSealed" category="POIs" subcategory="Empire Engineer Hall" />
+  <String id="tor_poi_empire_engineer_hall.Rejected" category="POIs" subcategory="Empire Engineer Hall" />
+  <String id="tor_poi_empire_engineer_hall.WrongCulture" category="POIs" subcategory="Empire Engineer Hall" />
 </StringMetadata>
