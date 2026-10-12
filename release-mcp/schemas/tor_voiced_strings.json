@@ -1,0 +1,49 @@
+{
+  "file": "tor_voiced_strings.xml",
+  "displayName": "Voiced Strings",
+  "description": "Voiced dialogue strings with conversation tags for conditional selection (vampire lines, orc lines, etc.).",
+  "rootElement": "strings",
+  "entryElement": "string",
+  "compactFormat": true,
+  "fields": {
+    "id": {
+      "displayName": "String ID",
+      "description": "Unique string identifier for the voiced line.",
+      "type": "string",
+      "required": true,
+      "order": 1,
+      "width": 300
+    },
+    "text": {
+      "displayName": "Text",
+      "description": "Voiced dialogue text with localization key prefix.",
+      "type": "string",
+      "required": true,
+      "order": 2,
+      "width": 600,
+      "multiline": true
+    },
+    "tags": {
+      "displayName": "Tags",
+      "description": "Conversation tags for conditional selection (e.g., VampireMaleTag, FirstMeetingTag, UnderCommandTag).",
+      "type": "tagList",
+      "order": 3,
+      "width": 300,
+      "tagList": {
+        "containerElement": "tags",
+        "itemElement": "tag",
+        "nameAttribute": "tag_name",
+        "weightAttribute": "weight",
+        "knownTags": [
+          "FirstMeetingTag", "MetBeforeTag", "UnderCommandTag", "AttackingTag", "WaryTag",
+          "HostileRelationshipTag", "FriendlyRelationshipTag", "AnyNotableTypeTag",
+          "VampireMaleTag", "VampireFemaleTag", "ElfMaleTag", "ElfFemaleTag",
+          "IsOrcTag", "IsGoblinTag", "IsDwarfTag",
+          "EmpireTag", "VlandianTag", "SturgianTag", "AseraiTag", "KhuzaitTag", "BattanianTag",
+          "AsraiTag", "EonirTag", "MousillonTag", "BloodDragonTag",
+          "CruelTag", "MercyTag", "HonorTag", "GenerosityTag"
+        ]
+      }
+    }
+  }
+}
