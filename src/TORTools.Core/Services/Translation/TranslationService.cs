@@ -460,12 +460,12 @@ public partial class TranslationService
                 .Where(f => !toRemoveSet.Contains(f))
                 .ToList();
 
-            Console.WriteLine($"[TranslationService] Repaired language_data.xml - removed {elementsToRemove.Count} invalid entries");
+            Console.Error.WriteLine($"[TranslationService] Repaired language_data.xml - removed {elementsToRemove.Count} invalid entries");
             return true;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[TranslationService] Failed to repair language_data.xml: {ex.Message}");
+            Console.Error.WriteLine($"[TranslationService] Failed to repair language_data.xml: {ex.Message}");
             return false;
         }
     }
@@ -529,7 +529,7 @@ public partial class TranslationService
                             """;
                         File.WriteAllText(templatePath, template, Encoding.UTF8);
                         templatesCreated++;
-                        Console.WriteLine($"[TranslationService] Created template: {templatePath}");
+                        Console.Error.WriteLine($"[TranslationService] Created template: {templatePath}");
                     }
                 }
 
@@ -540,12 +540,12 @@ public partial class TranslationService
             // Save the updated language_data.xml
             doc.Save(languageDataPath);
 
-            Console.WriteLine($"[TranslationService] Added {addedCount} entries to language_data.xml, created {templatesCreated} template files");
+            Console.Error.WriteLine($"[TranslationService] Added {addedCount} entries to language_data.xml, created {templatesCreated} template files");
             return true;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[TranslationService] Failed to add missing files: {ex.Message}");
+            Console.Error.WriteLine($"[TranslationService] Failed to add missing files: {ex.Message}");
             return false;
         }
     }
@@ -587,7 +587,7 @@ public partial class TranslationService
 
         if (templatePath == null || !File.Exists(templatePath))
         {
-            Console.WriteLine($"[TranslationService] Template not found: {templatePath}");
+            Console.Error.WriteLine($"[TranslationService] Template not found: {templatePath}");
             return results;
         }
 
@@ -604,7 +604,7 @@ public partial class TranslationService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[TranslationService] Failed to load template: {ex.Message}");
+            Console.Error.WriteLine($"[TranslationService] Failed to load template: {ex.Message}");
             return results;
         }
     }

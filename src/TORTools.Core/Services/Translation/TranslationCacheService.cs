@@ -63,7 +63,7 @@ public class TranslationCacheService
         var json = JsonSerializer.Serialize(cache, JsonOptions);
         File.WriteAllText(cachePath, json);
 
-        Console.WriteLine($"[TranslationCache] Saved {entries.Count} entries to {cachePath}");
+        Console.Error.WriteLine($"[TranslationCache] Saved {entries.Count} entries to {cachePath}");
     }
 
     /// <summary>
@@ -75,7 +75,7 @@ public class TranslationCacheService
 
         if (!File.Exists(cachePath))
         {
-            Console.WriteLine($"[TranslationCache] No cache found at {cachePath}");
+            Console.Error.WriteLine($"[TranslationCache] No cache found at {cachePath}");
             return null;
         }
 
@@ -83,12 +83,12 @@ public class TranslationCacheService
         {
             var json = File.ReadAllText(cachePath);
             var cache = JsonSerializer.Deserialize<TranslationCache>(json, JsonOptions);
-            Console.WriteLine($"[TranslationCache] Loaded {cache?.Entries.Count ?? 0} entries from cache");
+            Console.Error.WriteLine($"[TranslationCache] Loaded {cache?.Entries.Count ?? 0} entries from cache");
             return cache;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[TranslationCache] Error loading cache: {ex.Message}");
+            Console.Error.WriteLine($"[TranslationCache] Error loading cache: {ex.Message}");
             return null;
         }
     }
@@ -112,7 +112,7 @@ public class TranslationCacheService
         if (File.Exists(cachePath))
         {
             File.Delete(cachePath);
-            Console.WriteLine($"[TranslationCache] Cleared cache at {cachePath}");
+            Console.Error.WriteLine($"[TranslationCache] Cleared cache at {cachePath}");
         }
     }
 

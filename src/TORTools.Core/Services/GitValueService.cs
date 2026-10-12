@@ -30,11 +30,11 @@ public class GitValueService : IGitValueService
             // Parse the XML content and extract values
             ParseGitContent(gitContent, gitValues);
 
-            Console.WriteLine($"[Git] Loaded {gitValues.Count} entries from git for comparison");
+            Console.Error.WriteLine($"[Git] Loaded {gitValues.Count} entries from git for comparison");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[Git] Failed to load git committed values: {ex.Message}");
+            Console.Error.WriteLine($"[Git] Failed to load git committed values: {ex.Message}");
         }
 
         return gitValues;
@@ -156,7 +156,7 @@ public class GitValueService : IGitValueService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[Git] Failed to parse git content: {ex.Message}");
+            Console.Error.WriteLine($"[Git] Failed to parse git content: {ex.Message}");
         }
     }
 }

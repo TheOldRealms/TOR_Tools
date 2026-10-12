@@ -447,7 +447,7 @@ public class CraftingPieceCatalogService
 
             if (pieceElement == null)
             {
-                Console.WriteLine($"[SavePieceOffsets] Piece not found: {offsets.PieceId}");
+                Console.Error.WriteLine($"[SavePieceOffsets] Piece not found: {offsets.PieceId}");
                 continue;
             }
 
@@ -531,7 +531,7 @@ public class CraftingPieceCatalogService
                 }
 
                 updatedCount++;
-                Console.WriteLine($"[SavePieceOffsets] Updated {offsets.PieceId}: offset={pieceOffsetStr}, next={nextOffsetStr}, prev={prevOffsetStr}");
+                Console.Error.WriteLine($"[SavePieceOffsets] Updated {offsets.PieceId}: offset={pieceOffsetStr}, next={nextOffsetStr}, prev={prevOffsetStr}");
             }
         }
 
@@ -545,7 +545,7 @@ public class CraftingPieceCatalogService
             }
             File.Delete(_piecesFilePath);
             File.Move(tempPath, _piecesFilePath);
-            Console.WriteLine($"[SavePieceOffsets] Saved {updatedCount} piece(s) to {_piecesFilePath}");
+            Console.Error.WriteLine($"[SavePieceOffsets] Saved {updatedCount} piece(s) to {_piecesFilePath}");
         }
 
         return updatedCount;

@@ -65,7 +65,7 @@ public class IconService : IIconService
             .Where(Directory.Exists)
             .ToArray();
 
-        Console.WriteLine($"[IconService] Scanning for icons in {_iconDirectories.Length} directories");
+        Console.Error.WriteLine($"[IconService] Scanning for icons in {_iconDirectories.Length} directories");
         LoadIcons(spritesPath);
     }
 
@@ -97,7 +97,7 @@ public class IconService : IIconService
         // Sort by name
         _icons.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
 
-        Console.WriteLine($"[IconService] Loaded {_icons.Count} icons");
+        Console.Error.WriteLine($"[IconService] Loaded {_icons.Count} icons");
     }
 
     public IReadOnlyList<IconInfo> GetAllIcons() => _icons;

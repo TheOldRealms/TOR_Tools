@@ -64,7 +64,7 @@ public class FactionCatalogService
             if (cultureColorsPath != null)
                 LoadCultureColorsFromJson(cultureColorsPath);
 
-            Console.WriteLine($"[FactionCatalogService] Loaded {_clanIds.Count} clans, {_kingdomIds.Count} kingdoms, {_cultureIds.Count} cultures");
+            Console.Error.WriteLine($"[FactionCatalogService] Loaded {_clanIds.Count} clans, {_kingdomIds.Count} kingdoms, {_cultureIds.Count} cultures");
             _isLoaded = true;
         }
     }
@@ -73,7 +73,7 @@ public class FactionCatalogService
     {
         if (!File.Exists(filePath))
         {
-            Console.WriteLine($"[FactionCatalogService] File not found: {filePath}");
+            Console.Error.WriteLine($"[FactionCatalogService] File not found: {filePath}");
             return;
         }
 
@@ -103,11 +103,11 @@ public class FactionCatalogService
                 }
             }
 
-            Console.WriteLine($"[FactionCatalogService] Loaded {_clanIds.Count} clans from {Path.GetFileName(filePath)}");
+            Console.Error.WriteLine($"[FactionCatalogService] Loaded {_clanIds.Count} clans from {Path.GetFileName(filePath)}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[FactionCatalogService] Error loading {filePath}: {ex.Message}");
+            Console.Error.WriteLine($"[FactionCatalogService] Error loading {filePath}: {ex.Message}");
         }
     }
 
@@ -115,7 +115,7 @@ public class FactionCatalogService
     {
         if (!File.Exists(filePath))
         {
-            Console.WriteLine($"[FactionCatalogService] File not found: {filePath}");
+            Console.Error.WriteLine($"[FactionCatalogService] File not found: {filePath}");
             return;
         }
 
@@ -178,11 +178,11 @@ public class FactionCatalogService
                 }
             }
 
-            Console.WriteLine($"[FactionCatalogService] Loaded {_kingdomIds.Count} kingdoms, {_cultureColors.Count} culture colors from {Path.GetFileName(filePath)}");
+            Console.Error.WriteLine($"[FactionCatalogService] Loaded {_kingdomIds.Count} kingdoms, {_cultureColors.Count} culture colors from {Path.GetFileName(filePath)}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[FactionCatalogService] Error loading {filePath}: {ex.Message}");
+            Console.Error.WriteLine($"[FactionCatalogService] Error loading {filePath}: {ex.Message}");
         }
     }
 
@@ -190,7 +190,7 @@ public class FactionCatalogService
     {
         if (!File.Exists(filePath))
         {
-            Console.WriteLine($"[FactionCatalogService] File not found: {filePath}");
+            Console.Error.WriteLine($"[FactionCatalogService] File not found: {filePath}");
             return;
         }
 
@@ -209,11 +209,11 @@ public class FactionCatalogService
                 }
             }
 
-            Console.WriteLine($"[FactionCatalogService] Loaded {_cultureIds.Count} cultures from {Path.GetFileName(filePath)}");
+            Console.Error.WriteLine($"[FactionCatalogService] Loaded {_cultureIds.Count} cultures from {Path.GetFileName(filePath)}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[FactionCatalogService] Error loading {filePath}: {ex.Message}");
+            Console.Error.WriteLine($"[FactionCatalogService] Error loading {filePath}: {ex.Message}");
         }
     }
 
@@ -223,7 +223,7 @@ public class FactionCatalogService
 
         if (!File.Exists(filePath))
         {
-            Console.WriteLine($"[FactionCatalogService] Culture colors file not found: {filePath}");
+            Console.Error.WriteLine($"[FactionCatalogService] Culture colors file not found: {filePath}");
             return;
         }
 
@@ -245,11 +245,11 @@ public class FactionCatalogService
                 }
             }
 
-            Console.WriteLine($"[FactionCatalogService] Loaded {_configuredCultureColors.Count} culture colors from {Path.GetFileName(filePath)}");
+            Console.Error.WriteLine($"[FactionCatalogService] Loaded {_configuredCultureColors.Count} culture colors from {Path.GetFileName(filePath)}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[FactionCatalogService] Error loading culture colors: {ex.Message}");
+            Console.Error.WriteLine($"[FactionCatalogService] Error loading culture colors: {ex.Message}");
         }
     }
 

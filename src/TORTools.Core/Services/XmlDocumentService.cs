@@ -357,7 +357,7 @@ public class XmlDocumentService : IXmlDocumentService
             }
             File.Move(tempPath, filePath);
 
-            Console.WriteLine($"[SaveWithCategoryComments] Saved {entries.Count} entries to {filePath}");
+            Console.Error.WriteLine($"[SaveWithCategoryComments] Saved {entries.Count} entries to {filePath}");
         }
         catch
         {
@@ -391,7 +391,7 @@ public class XmlDocumentService : IXmlDocumentService
         var idAttr = element.Attribute("id") ?? element.Attribute("StringID") ?? element.Attribute("ItemTraitStringId");
         if (idAttr == null)
         {
-            Console.WriteLine($"[Patch] Element {element.Name.LocalName} has no id attribute, skipping");
+            Console.Error.WriteLine($"[Patch] Element {element.Name.LocalName} has no id attribute, skipping");
             return content;
         }
 
@@ -408,7 +408,7 @@ public class XmlDocumentService : IXmlDocumentService
 
         if (!match.Success)
         {
-            Console.WriteLine($"[Patch] Could not find element {elementName} with {idName}={idValue} in content");
+            Console.Error.WriteLine($"[Patch] Could not find element {elementName} with {idName}={idValue} in content");
             return content;
         }
 
@@ -440,7 +440,7 @@ public class XmlDocumentService : IXmlDocumentService
         // Replace the original tag with the patched version
         if (patchedTag != originalTag)
         {
-            Console.WriteLine($"[Patch] Patched {elementName} {idName}={idValue}");
+            Console.Error.WriteLine($"[Patch] Patched {elementName} {idName}={idValue}");
             content = content.Substring(0, startIndex) + patchedTag + content.Substring(endIndex + 1);
         }
 

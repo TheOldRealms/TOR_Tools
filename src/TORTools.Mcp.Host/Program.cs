@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
 using TORTools.Core.Services;
 using TORTools.Core.Workspace;
@@ -58,6 +59,10 @@ if (verbose)
 }
 
 var builder = Host.CreateApplicationBuilder(args);
+
+// MCP stdio transport: stdout is reserved for JSON-RPC frames. Any stray stdout write
+// (default console logger, Console.WriteLine from services) breaks the handshake.
+builder.Logging.ClearProviders();
 
 // Register core services
 builder.Services.AddSingleton<IXmlDocumentService, XmlDocumentService>();

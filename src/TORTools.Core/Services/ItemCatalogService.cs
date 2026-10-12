@@ -99,7 +99,7 @@ public class ItemCatalogService
                 }
             }
 
-            Console.WriteLine($"[ItemCatalogService] Loaded {_allItemIds.Count} total item IDs from {_itemIdsByFile.Count} files");
+            Console.Error.WriteLine($"[ItemCatalogService] Loaded {_allItemIds.Count} total item IDs from {_itemIdsByFile.Count} files");
             _isLoaded = true;
         }
     }
@@ -113,7 +113,7 @@ public class ItemCatalogService
 
         if (!File.Exists(filePath))
         {
-            Console.WriteLine($"[ItemCatalogService] File not found: {filePath}");
+            Console.Error.WriteLine($"[ItemCatalogService] File not found: {filePath}");
             return result;
         }
 
@@ -132,11 +132,11 @@ public class ItemCatalogService
                 }
             }
 
-            Console.WriteLine($"[ItemCatalogService] Loaded {result.Count} items from {Path.GetFileName(filePath)}");
+            Console.Error.WriteLine($"[ItemCatalogService] Loaded {result.Count} items from {Path.GetFileName(filePath)}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[ItemCatalogService] Error loading {filePath}: {ex.Message}");
+            Console.Error.WriteLine($"[ItemCatalogService] Error loading {filePath}: {ex.Message}");
         }
 
         return result;

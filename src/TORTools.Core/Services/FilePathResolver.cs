@@ -137,14 +137,14 @@ public class FilePathResolver
     /// </summary>
     public string? FindSourceFile(string baseDir, string fileName)
     {
-        Console.WriteLine($"[FindSourceFile] Looking for {fileName} from base {baseDir}");
+        Console.Error.WriteLine($"[FindSourceFile] Looking for {fileName} from base {baseDir}");
 
         // FIRST: Check TORTools/data for tool-specific data files (highest priority)
         // This allows tool-specific files like tor_attributes.xml to live in TORTools
         var torToolsDataPath = FindTorToolsDataPath(baseDir, fileName);
         if (torToolsDataPath != null)
         {
-            Console.WriteLine($"[FindSourceFile] Found in TORTools/data: {torToolsDataPath}");
+            Console.Error.WriteLine($"[FindSourceFile] Found in TORTools/data: {torToolsDataPath}");
             return torToolsDataPath;
         }
 
@@ -152,7 +152,7 @@ public class FilePathResolver
         var path = Path.Combine(baseDir, fileName);
         if (File.Exists(path))
         {
-            Console.WriteLine($"[FindSourceFile] Found at: {path}");
+            Console.Error.WriteLine($"[FindSourceFile] Found at: {path}");
             return path;
         }
 
@@ -160,7 +160,7 @@ public class FilePathResolver
         path = Path.Combine(baseDir, "tor_custom_xmls", fileName);
         if (File.Exists(path))
         {
-            Console.WriteLine($"[FindSourceFile] Found at: {path}");
+            Console.Error.WriteLine($"[FindSourceFile] Found at: {path}");
             return path;
         }
 
@@ -178,10 +178,10 @@ public class FilePathResolver
             {
                 // Check TOR_Core/ModuleData/tor_custom_xmls
                 var torCorePath = Path.Combine(parent, "TOR_Core", "ModuleData", "tor_custom_xmls", fileName);
-                Console.WriteLine($"[FindSourceFile] Checking TOR_Core path: {torCorePath}");
+                Console.Error.WriteLine($"[FindSourceFile] Checking TOR_Core path: {torCorePath}");
                 if (File.Exists(torCorePath))
                 {
-                    Console.WriteLine($"[FindSourceFile] Found at: {torCorePath}");
+                    Console.Error.WriteLine($"[FindSourceFile] Found at: {torCorePath}");
                     return torCorePath;
                 }
 
@@ -189,7 +189,7 @@ public class FilePathResolver
                 torCorePath = Path.Combine(parent, "TOR_Core", "ModuleData", fileName);
                 if (File.Exists(torCorePath))
                 {
-                    Console.WriteLine($"[FindSourceFile] Found at: {torCorePath}");
+                    Console.Error.WriteLine($"[FindSourceFile] Found at: {torCorePath}");
                     return torCorePath;
                 }
                 break;
@@ -197,7 +197,7 @@ public class FilePathResolver
             current = parent;
         }
 
-        Console.WriteLine($"[FindSourceFile] Not found: {fileName}");
+        Console.Error.WriteLine($"[FindSourceFile] Not found: {fileName}");
         return null;
     }
 

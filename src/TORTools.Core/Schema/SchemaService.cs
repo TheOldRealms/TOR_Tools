@@ -78,7 +78,7 @@ public class SchemaService : ISchemaService
 
         if (!Directory.Exists(_schemasPath))
         {
-            Console.WriteLine($"[SchemaService] Schemas directory not found: {_schemasPath}");
+            Console.Error.WriteLine($"[SchemaService] Schemas directory not found: {_schemasPath}");
             return;
         }
 
@@ -92,20 +92,20 @@ public class SchemaService : ISchemaService
                 if (schema != null && !string.IsNullOrEmpty(schema.FileName))
                 {
                     _schemas[schema.FileName] = schema;
-                    Console.WriteLine($"[SchemaService] Loaded schema for {schema.FileName}");
+                    Console.Error.WriteLine($"[SchemaService] Loaded schema for {schema.FileName}");
                     if (schema.MergedDataFile != null)
                     {
-                        Console.WriteLine($"[SchemaService]   -> Has MergedDataFile: {schema.MergedDataFile.FileName}");
+                        Console.Error.WriteLine($"[SchemaService]   -> Has MergedDataFile: {schema.MergedDataFile.FileName}");
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[SchemaService] Error loading schema {file}: {ex.Message}");
+                Console.Error.WriteLine($"[SchemaService] Error loading schema {file}: {ex.Message}");
             }
         }
 
-        Console.WriteLine($"[SchemaService] Loaded {_schemas.Count} schemas from {_schemasPath}");
+        Console.Error.WriteLine($"[SchemaService] Loaded {_schemas.Count} schemas from {_schemasPath}");
     }
 
     public SchemaDefinition? GetSchema(string fileName)

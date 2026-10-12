@@ -55,7 +55,7 @@ public class AbilityCatalogService : IAbilityCatalogService
 
         if (!File.Exists(abilityFile))
         {
-            Console.WriteLine($"[AbilityCatalogService] Ability templates file not found: {abilityFile}");
+            Console.Error.WriteLine($"[AbilityCatalogService] Ability templates file not found: {abilityFile}");
             return;
         }
 
@@ -83,11 +83,11 @@ public class AbilityCatalogService : IAbilityCatalogService
             }
 
             _abilityIds.Sort(StringComparer.OrdinalIgnoreCase);
-            Console.WriteLine($"[AbilityCatalogService] Loaded {_abilities.Count} abilities");
+            Console.Error.WriteLine($"[AbilityCatalogService] Loaded {_abilities.Count} abilities");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AbilityCatalogService] Error loading abilities: {ex.Message}");
+            Console.Error.WriteLine($"[AbilityCatalogService] Error loading abilities: {ex.Message}");
         }
     }
 

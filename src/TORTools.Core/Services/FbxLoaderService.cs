@@ -83,11 +83,11 @@ public class FbxLoaderService : IDisposable
     /// </summary>
     public void Initialize(string assetSourcesPath)
     {
-        Console.WriteLine($"[FbxLoader] Initialize called with path: {assetSourcesPath}");
-        Console.WriteLine($"[FbxLoader] Path exists: {Directory.Exists(assetSourcesPath)}");
+        Console.Error.WriteLine($"[FbxLoader] Initialize called with path: {assetSourcesPath}");
+        Console.Error.WriteLine($"[FbxLoader] Path exists: {Directory.Exists(assetSourcesPath)}");
         _assetSourcesPath = assetSourcesPath;
         BuildFilenameIndex();
-        Console.WriteLine($"[FbxLoader] Filename index built with {_meshToFbxPathIndex.Count} entries");
+        Console.Error.WriteLine($"[FbxLoader] Filename index built with {_meshToFbxPathIndex.Count} entries");
     }
 
     /// <summary>
@@ -165,44 +165,44 @@ public class FbxLoaderService : IDisposable
     {
         if (string.IsNullOrEmpty(meshName))
         {
-            Console.WriteLine($"[FbxLoader] LoadMesh called with empty name");
+            Console.Error.WriteLine($"[FbxLoader] LoadMesh called with empty name");
             return null;
         }
 
-        Console.WriteLine($"[FbxLoader] LoadMesh requested: {meshName}");
+        Console.Error.WriteLine($"[FbxLoader] LoadMesh requested: {meshName}");
 
         // Check cache first
         if (_meshCache.TryGetValue(meshName, out var cachedMesh))
         {
-            Console.WriteLine($"[FbxLoader] Found in cache: {meshName}");
+            Console.Error.WriteLine($"[FbxLoader] Found in cache: {meshName}");
             return cachedMesh;
         }
 
         // Find the FBX file containing this mesh
         if (!_meshToFbxPathIndex.TryGetValue(meshName, out var fbxPath))
         {
-            Console.WriteLine($"[FbxLoader] Not in index, trying file search for: {meshName}");
+            Console.Error.WriteLine($"[FbxLoader] Not in index, trying file search for: {meshName}");
             // Try direct file path as fallback
             fbxPath = FindFbxByMeshName(meshName);
             if (fbxPath == null)
             {
-                Console.WriteLine($"[FbxLoader] Could not find FBX for mesh: {meshName}");
+                Console.Error.WriteLine($"[FbxLoader] Could not find FBX for mesh: {meshName}");
                 return null;
             }
         }
 
-        Console.WriteLine($"[FbxLoader] Loading from: {fbxPath}");
+        Console.Error.WriteLine($"[FbxLoader] Loading from: {fbxPath}");
 
         // Load the specific mesh from the FBX file
         var mesh = LoadMeshFromFbx(fbxPath, meshName);
         if (mesh != null)
         {
-            Console.WriteLine($"[FbxLoader] Loaded mesh: {meshName} with {mesh.VertexCount} vertices, {mesh.TriangleCount} triangles");
+            Console.Error.WriteLine($"[FbxLoader] Loaded mesh: {meshName} with {mesh.VertexCount} vertices, {mesh.TriangleCount} triangles");
             _meshCache[meshName] = mesh;
         }
         else
         {
-            Console.WriteLine($"[FbxLoader] Failed to load mesh from FBX: {meshName}");
+            Console.Error.WriteLine($"[FbxLoader] Failed to load mesh from FBX: {meshName}");
         }
 
         return mesh;
@@ -266,18 +266,18 @@ public class FbxLoaderService : IDisposable
             var nodeToMeshMap = new Dictionary<string, uint>(StringComparer.OrdinalIgnoreCase);
             CollectNodeMeshMappings(scene->MRootNode, scene, nodeToMeshMap);
 
-            Console.WriteLine($"[FbxLoader] FBX '{Path.GetFileName(fbxPath)}' node->mesh mappings:");
+            Console.Error.WriteLine($"[FbxLoader] FBX '{Path.GetFileName(fbxPath)}' node->mesh mappings:");
             foreach (var kvp in nodeToMeshMap.Take(10))
             {
-                Console.WriteLine($"[FbxLoader]   Node '{kvp.Key}' -> Mesh[{kvp.Value}]");
+                Console.Error.WriteLine($"[FbxLoader]   Node '{kvp.Key}' -> Mesh[{kvp.Value}]");
             }
             if (nodeToMeshMap.Count > 10)
-                Console.WriteLine($"[FbxLoader]   ... and {nodeToMeshMap.Count - 10} more");
+                Console.Error.WriteLine($"[FbxLoader]   ... and {nodeToMeshMap.Count - 10} more");
 
             // Try exact node name match
             if (nodeToMeshMap.TryGetValue(meshName, out var meshIndex))
             {
-                Console.WriteLine($"[FbxLoader] Found exact node match for '{meshName}' -> Mesh[{meshIndex}]");
+                Console.Error.WriteLine($"[FbxLoader] Found exact node match for '{meshName}' -> Mesh[{meshIndex}]");
                 return ExtractMeshData(scene->MMeshes[meshIndex]);
             }
 
@@ -286,7 +286,7 @@ public class FbxLoaderService : IDisposable
             {
                 if (kvp.Key.Contains(meshName, StringComparison.OrdinalIgnoreCase))
                 {
-                    Console.WriteLine($"[FbxLoader] Found partial node match: '{kvp.Key}' contains '{meshName}'");
+                    Console.Error.WriteLine($"[FbxLoader] Found partial node match: '{kvp.Key}' contains '{meshName}'");
                     return ExtractMeshData(scene->MMeshes[kvp.Value]);
                 }
             }
@@ -296,7 +296,7 @@ public class FbxLoaderService : IDisposable
             {
                 if (meshName.Contains(kvp.Key, StringComparison.OrdinalIgnoreCase))
                 {
-                    Console.WriteLine($"[FbxLoader] Found reverse node match: '{meshName}' contains '{kvp.Key}'");
+                    Console.Error.WriteLine($"[FbxLoader] Found reverse node match: '{meshName}' contains '{kvp.Key}'");
                     return ExtractMeshData(scene->MMeshes[kvp.Value]);
                 }
             }
@@ -319,7 +319,7 @@ public class FbxLoaderService : IDisposable
                 {
                     if (kvp.Key.Contains(targetPieceType, StringComparison.OrdinalIgnoreCase))
                     {
-                        Console.WriteLine($"[FbxLoader] Found piece type node match: '{kvp.Key}' for type '{targetPieceType}'");
+                        Console.Error.WriteLine($"[FbxLoader] Found piece type node match: '{kvp.Key}' for type '{targetPieceType}'");
                         return ExtractMeshData(scene->MMeshes[kvp.Value]);
                     }
                 }
@@ -331,7 +331,7 @@ public class FbxLoaderService : IDisposable
                 var mesh = scene->MMeshes[i];
                 if (mesh != null && mesh->MName.AsString == meshName)
                 {
-                    Console.WriteLine($"[FbxLoader] Found exact mesh name match for '{meshName}'");
+                    Console.Error.WriteLine($"[FbxLoader] Found exact mesh name match for '{meshName}'");
                     return ExtractMeshData(mesh);
                 }
             }
@@ -339,7 +339,7 @@ public class FbxLoaderService : IDisposable
             // Return first mesh if no match found (fallback for simple single-mesh files)
             if (scene->MNumMeshes > 0)
             {
-                Console.WriteLine($"[FbxLoader] No match found for '{meshName}', using first mesh as fallback");
+                Console.Error.WriteLine($"[FbxLoader] No match found for '{meshName}', using first mesh as fallback");
                 return ExtractMeshData(scene->MMeshes[0]);
             }
         }
@@ -476,7 +476,7 @@ public class FbxLoaderService : IDisposable
                 var files = Directory.GetFiles(_assetSourcesPath, pattern, SearchOption.AllDirectories);
                 if (files.Length > 0)
                 {
-                    Console.WriteLine($"[FbxLoader] Found via pattern '{pattern}': {files[0]}");
+                    Console.Error.WriteLine($"[FbxLoader] Found via pattern '{pattern}': {files[0]}");
                     return files[0];
                 }
             }
@@ -507,7 +507,7 @@ public class FbxLoaderService : IDisposable
 
         if (baseName != meshName)
         {
-            Console.WriteLine($"[FbxLoader] Trying base name: {baseName}");
+            Console.Error.WriteLine($"[FbxLoader] Trying base name: {baseName}");
             var basePatterns = new[]
             {
                 $"{baseName}.fbx",
@@ -522,7 +522,7 @@ public class FbxLoaderService : IDisposable
                     var files = Directory.GetFiles(_assetSourcesPath, pattern, SearchOption.AllDirectories);
                     if (files.Length > 0)
                     {
-                        Console.WriteLine($"[FbxLoader] Found via base pattern '{pattern}': {files[0]}");
+                        Console.Error.WriteLine($"[FbxLoader] Found via base pattern '{pattern}': {files[0]}");
                         return files[0];
                     }
                 }

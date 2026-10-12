@@ -61,7 +61,7 @@ public class ItemTraitCatalogService : IItemTraitCatalogService
 
         if (!File.Exists(traitFile))
         {
-            Console.WriteLine($"[ItemTraitCatalogService] Item traits file not found: {traitFile}");
+            Console.Error.WriteLine($"[ItemTraitCatalogService] Item traits file not found: {traitFile}");
             return;
         }
 
@@ -90,11 +90,11 @@ public class ItemTraitCatalogService : IItemTraitCatalogService
             }
 
             _traitIds.Sort(StringComparer.OrdinalIgnoreCase);
-            Console.WriteLine($"[ItemTraitCatalogService] Loaded {_traits.Count} item traits");
+            Console.Error.WriteLine($"[ItemTraitCatalogService] Loaded {_traits.Count} item traits");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[ItemTraitCatalogService] Error loading item traits: {ex.Message}");
+            Console.Error.WriteLine($"[ItemTraitCatalogService] Error loading item traits: {ex.Message}");
         }
     }
 

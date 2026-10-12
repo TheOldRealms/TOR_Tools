@@ -4883,4 +4883,163 @@
   <String id="tor_poi_empire_engineer_hall.SiegeSealed" category="POIs" subcategory="Empire Engineer Hall" />
   <String id="tor_poi_empire_engineer_hall.Rejected" category="POIs" subcategory="Empire Engineer Hall" />
   <String id="tor_poi_empire_engineer_hall.WrongCulture" category="POIs" subcategory="Empire Engineer Hall" />
+  <String id="tor_cheat_party_inspect" category="Cheat" />
+  <String id="tor_ability_effect_type.ItemPlacement" category="Ability Types" />
+  <String id="tor_spellbook_title" category="Spellbook" />
+  <String id="tor_spellcasting_stat" category="Spellcasting" />
+  <String id="tor_spell_stat_unfamiliar" category="Spells - Stats" />
+  <String id="tor_spellbook_button" category="Spellbook" />
+  <String id="tor_spell_learn_label" category="Spells" />
+  <String id="tor_spell_learn_descr" category="Spells" />
+  <String id="tor_choose_companion_spellcaster_label" category="Choose" />
+  <String id="tor_choose_companion_spellcaster_descr" category="Choose" />
+  <String id="tor_spell_stat_name_fire" category="Spells - Stats" />
+  <String id="tor_spell_stat_name_light" category="Spells - Stats" />
+  <String id="tor_spell_stat_name_minor" category="Spells - Stats" />
+  <String id="tor_spell_stat_name_beasts" category="Spells - Stats" />
+  <String id="tor_spell_stat_name_death" category="Spells - Stats" />
+  <String id="tor_spell_stat_name_heavens" category="Spells - Stats" />
+  <String id="tor_spell_stat_name_life" category="Spells - Stats" />
+  <String id="tor_spell_stat_name_metal" category="Spells - Stats" />
+  <String id="tor_spell_stat_name_necromancy" category="Spells - Stats" />
+  <String id="tor_spell_stat_name_high" category="Spells - Stats" />
+  <String id="tor_spell_stat_name_dark" category="Spells - Stats" />
+  <String id="tor_spell_stat_name_big_waaagh" category="Spells - Stats" />
+  <String id="tor_menu_disabled_during_installation" category="Menu" />
+  <String id="tor_windsOfMagic_base" category="WindsOfMagic" />
+  <String id="tor_main_menu_welcome_title" category="Main" />
+  <String id="tor_main_menu_welcome_description" category="Main" />
+  <String id="tor_main_menu_manual_button" category="Main" />
+  <String id="tor_main_menu_discord_button" category="Main" />
+  <String id="tor_main_menu_welcome_continue_button" category="Main" />
+  <String id="tor_main_menu_welcome_disable_button" category="Main" />
+  <String id="tor_main_menu_welcome_preference_save_failed" category="Main" />
+  <String id="tor_main_menu_link_open_failed" category="Main" />
+  <String id="tor_main_menu_recommended_settings_button" category="Main" />
+  <String id="tor_main_menu_recommended_settings_applied" category="Main" />
+  <String id="tor_main_menu_recommended_settings_apply_failed" category="Main" />
+  <String id="tor_main_menu_recommended_settings_save_failed" category="Main" />
+  <String id="tor_main_menu_recommended_settings_verification_failed" category="Main" />
+  <String id="tor_main_menu_recommended_settings_title" category="Main" />
+  <String id="tor_main_menu_recommended_settings_description" category="Main" />
+  <String id="tor_main_menu_recommended_settings_apply_button" category="Main" />
+  <String id="tor_main_menu_recommended_settings_cancel_button" category="Main" />
+  <String id="tor_menu_shader_cache_popup_message" category="Menu" />
+  <String id="tor_menu_shader_cache_popup_title" category="Menu" />
+  <String id="tor_menu_shader_cache_popup_confirm" category="Menu" />
+  <String id="tor_menu_shader_cache_popup_reject" category="Menu" />
+  <String id="tor_unique_orion_spawned_message" category="Unique" />
+  <String id="tor_unique_orion_returned_message" category="Unique" />
+  <String id="tor_unique_orion_retreat_started_message" category="Unique" />
+  <String id="tor_unique_orion_defeated_message" category="Unique" />
+  <String id="tor_unique_orion_behavior_hunting" category="Unique" />
+  <String id="tor_unique_orion_behavior_protecting" category="Unique" />
+  <String id="tor_unique_orion_behavior_keeping_watch" category="Unique" />
+  <String id="tor_unique_orion_behavior_ravaging" category="Unique" />
+  <String id="tor_unique_orion_behavior_raiding" category="Unique" />
+  <String id="tor_unique_orion_hunt_player" category="Unique" />
+  <String id="tor_unique_orion_to_player_land" category="Unique" />
+  <String id="tor_generic_companionLimitReached" category="Generic" />
+  <String id="tor_generic_equipmentWeight" category="Generic" />
+  <String id="tor_unit_rune_requirement_unmet" category="Unit" />
+  <String id="tor_greenskin_shaman_player" category="Greenskins" />
+  <String id="tor_greenskin_shaman_companion" category="Greenskins" />
+  <String id="tor_stats_additional_health_text" category="Stats" />
+  <String id="tor_stats_dwarf_bonus_text" category="Stats" />
+  <String id="tor_stats_goblin_bonus_text" category="Stats" />
+  <String id="tor_stats_orc_bonus_text" category="Stats" />
+  <String id="tor_stats_troop_tier_text" category="Stats" />
+  <String id="tor_stats_undead_body_text" category="Stats" />
+  <String id="tor_stats_necromancer_champion_text" category="Stats" />
+  <String id="tor_stats_everchosen_text" category="Stats" />
+  <String id="tor_stats_orion_text" category="Stats" />
+  <String id="tor_stats_tough_text" category="Stats" />
+  <String id="tor_stats_gift_of_nurgle_text" category="Stats" />
+  <String id="tor_stats_oak_of_ages_text" category="Stats" />
+  <String id="tor_stats_perks_text" category="Stats" />
+  <String id="tor_enchantmentshop_blueprint_hint" category="Enchantmentshop" />
+  <String id="tor_enchantmentshop_blueprint_hint_notice" category="Enchantmentshop" />
+  <String id="tor_enchantmentshop_blueprint_cost" category="Enchantmentshop" />
+  <String id="tor_enchantmentshop_insufficient_both" category="Enchantmentshop" />
+  <String id="tor_enchantmentshop_insufficient_customresource" category="Enchantmentshop" />
+  <String id="tor_enchantmentshop_insufficient_gold" category="Enchantmentshop" />
+  <String id="tor_enchantment_learned_text" category="Enchantment" />
+  <String id="tor_enchantment_already_learned_text" category="Enchantment" />
+  <String id="tor_enchantment_manuscript_useless_text" category="Enchantment" />
+  <String id="tor_enchanting_items_header" category="Enchanting" />
+  <String id="tor_enchanting_traits_header" category="Enchanting" />
+  <String id="tor_enchanting_enchant_button" category="Enchanting" />
+  <String id="tor_enchant_trait_hint_requirement" category="Enchant" />
+  <String id="tor_gained_resource_notification_text" category="Gained" />
+  <String id="tor_gained_items_notification_text" category="Gained" />
+  <String id="tor_gained_item_amount_text" category="Gained" />
+  <String id="tor_enchant_prompt_disintegrate.title" category="Enchant" />
+  <String id="tor_enchant_prompt_disintegrate.text" category="Enchant" />
+  <String id="tor_enchant_no_description" category="Enchant" />
+  <String id="tor_enchanting_title" category="Enchanting" />
+  <String id="tor_runesmithing_title" category="Runesmithing" />
+  <String id="tor_enchanting_requires_skill" category="Enchanting" />
+  <String id="tor_enchanting_requires_lore" category="Enchanting" />
+  <String id="tor_enchanting_requires_attribute" category="Enchanting" />
+  <String id="tor_enchantmentshop_future_requirement" category="Enchantmentshop" />
+  <String id="tor_dw_oathgold.time_days_value" category="Dw" />
+  <String id="tor_dw_oathgold.time_value" category="Dw" />
+  <String id="tor_dw_guild_relationship.unknown" category="Dw" />
+  <String id="tor_dw_guild_relationship.trustworthy" category="Dw" />
+  <String id="tor_dw_guild_relationship.reliable" category="Dw" />
+  <String id="tor_dw_guild_relationship.respected" category="Dw" />
+  <String id="tor_dw_oath_gold_spending_title_text" category="Dw" />
+  <String id="tor_dw_oath_gold_spending_description_text" category="Dw" />
+  <String id="tor_refine_all_text" category="Refine" />
+  <String id="tor_refine_all_count_text" category="Refine" />
+  <String id="tor_religion_affiliation" category="Religion" />
+  <String id="tor_waywatcher_arrow_label" category="Waywatcher" />
+  <String id="tor_waywatcher_arrow_descr" category="Waywatcher" />
+  <String id="tor_careerchoice_description.BonesAnFirepitzPassive1" category="Careerchoice" />
+  <String id="tor_extendedInfo.Monstrous" category="ExtendedInfo.Monstrous" />
+  <String id="tor_extendedInfo.cult_of_loec" category="ExtendedInfo.cult" />
+  <String id="tor_extendedInfo.cult_of_manaan" category="ExtendedInfo.cult" />
+  <String id="tor_extendedInfo.cult_of_morr" category="ExtendedInfo.cult" />
+  <String id="tor_extendedInfo.cult_of_sigmar" category="ExtendedInfo.cult" />
+  <String id="tor_extendedInfo.cult_of_lady" category="ExtendedInfo.cult" />
+  <String id="tor_extendedInfo.cult_of_ulric" category="ExtendedInfo.cult" />
+  <String id="tor_extendedInfo.cult_of_grimnir" category="ExtendedInfo.cult" />
+  <String id="tor_extendedInfo.cult_of_myrmidia" category="ExtendedInfo.cult" />
+  <String id="tor_extendedInfo.Regeneration" category="ExtendedInfo.Regeneration" />
+  <String id="tor_extendedInfo.Brute" category="ExtendedInfo.Brute" />
+  <String id="tor_extendedInfo.Bulwark" category="ExtendedInfo.Bulwark" />
+  <String id="tor_extendedInfo.Swift" category="ExtendedInfo.Swift" />
+  <String id="tor_extendedInfo.Poisonous" category="ExtendedInfo.Poisonous" />
+  <String id="tor_extendedInfo.TheHunger" category="ExtendedInfo.TheHunger" />
+  <String id="tor_extendedInfo.Frenzy" category="ExtendedInfo.Frenzy" />
+  <String id="tor_extendedInfo.UndeadSlayer" category="ExtendedInfo.UndeadSlayer" />
+  <String id="tor_extendedInfo.Immortality" category="ExtendedInfo.Immortality" />
+  <String id="tor_extendedInfo.Deadeye" category="ExtendedInfo.Deadeye" />
+  <String id="tor_extendedInfo.Ethereal" category="ExtendedInfo.Ethereal" />
+  <String id="tor_extendedInfo.KillingBlow" category="ExtendedInfo.KillingBlow" />
+  <String id="tor_extendedInfo.WightKing" category="ExtendedInfo.WightKing" />
+  <String id="tor_extendedInfo.MonsterSlayer" category="ExtendedInfo.MonsterSlayer" />
+  <String id="tor_custom_resource_cost" category="Custom" />
+  <String id="tor_inky_OrionDefeatedByPlayer.Title" category="Inky" />
+  <String id="tor_inky_OrionDefeatedByPlayer.STR_Start1" category="Inky" />
+  <String id="tor_inky_OrionDefeatedByPlayer.STR_Start2" category="Inky" />
+  <String id="tor_inky_OrionDefeatedByPlayer.STR_Start3" category="Inky" />
+  <String id="tor_inky_OrionDefeatedByPlayer.STR_Start4" category="Inky" />
+  <String id="tor_hirelinglordquit_serviceDuration" category="Hirelinglordquit" />
+  <String id="tor_powerstone_choose_title" category="Powerstone" />
+  <String id="tor_powerstone_choose_description" category="Powerstone" />
+  <String id="tor_powerstone_inquiry_description" category="Powerstone" />
+  <String id="tor_powerstone_remove_hint" category="Powerstone" />
+  <String id="tor_powerstone_not_enough_winds" category="Powerstone" />
+  <String id="tor_powerstone_not_experienced_enough" category="Powerstone" />
+  <String id="tor_powerstone_not_enough_prestige" category="Powerstone" />
+  <String id="tor_powerstone_remove" category="Powerstone" />
+  <String id="tor_powerstone_apply_tooltip" category="Powerstone" />
+  <String id="tor_gs_quartermaster_shinies_option_text_owner" category="Gs" />
+  <String id="tor_gs_give_items_to_boss_text" category="Gs" />
+  <String id="tor_gs_spend_gold_description_text_teef" category="Gs" />
+  <String id="tor_gs_spend_gold_description_text_piles" category="Gs" />
+  <String id="tor_ironingot6_name" category="Ironingot6" />
+  <String id="tor_cc_review_description_copy" category="Character Creation" />
+  <String id="tor_test_mcp_linkedfield_verification" category="POIs" subcategory="Smoke Test" />
 </StringMetadata>

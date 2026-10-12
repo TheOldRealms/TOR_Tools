@@ -47,7 +47,7 @@ public class TupleListService
 
         if (!File.Exists(sourceFilePath))
         {
-            Console.WriteLine($"[TupleListService] Source file not found: {sourceFilePath}");
+            Console.Error.WriteLine($"[TupleListService] Source file not found: {sourceFilePath}");
             return result;
         }
 
@@ -96,7 +96,7 @@ public class TupleListService
                 }
             }
 
-            Console.WriteLine($"[TupleListService] Loaded {result.Count} entries with {config.ElementName} from {Path.GetFileName(sourceFilePath)}");
+            Console.Error.WriteLine($"[TupleListService] Loaded {result.Count} entries with {config.ElementName} from {Path.GetFileName(sourceFilePath)}");
 
             lock (_cacheLock)
             {
@@ -105,7 +105,7 @@ public class TupleListService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[TupleListService] Error loading {sourceFilePath}: {ex.Message}");
+            Console.Error.WriteLine($"[TupleListService] Error loading {sourceFilePath}: {ex.Message}");
         }
 
         return result;
@@ -177,7 +177,7 @@ public class TupleListService
     {
         if (!File.Exists(sourceFilePath))
         {
-            Console.WriteLine($"[TupleListService] Source file not found: {sourceFilePath}");
+            Console.Error.WriteLine($"[TupleListService] Source file not found: {sourceFilePath}");
             return false;
         }
 
@@ -187,7 +187,7 @@ public class TupleListService
             var root = doc.Root;
             if (root == null)
             {
-                Console.WriteLine($"[TupleListService] No root element in {sourceFilePath}");
+                Console.Error.WriteLine($"[TupleListService] No root element in {sourceFilePath}");
                 return false;
             }
 
@@ -210,7 +210,7 @@ public class TupleListService
                 var firstEntry = root.Elements().FirstOrDefault();
                 var entryElementName = firstEntry?.Name.LocalName ?? "Entry";
 
-                Console.WriteLine($"[TupleListService] Creating new entry for key: {localKey} (element: {entryElementName})");
+                Console.Error.WriteLine($"[TupleListService] Creating new entry for key: {localKey} (element: {entryElementName})");
 
                 targetEntry = new XElement(entryElementName);
                 targetEntry.SetAttributeValue(config.SourceKeyField, localKey);
@@ -246,7 +246,7 @@ public class TupleListService
 
             // Save the file
             doc.Save(sourceFilePath);
-            Console.WriteLine($"[TupleListService] Saved {tuples.Count} tuples for {localKey} to {Path.GetFileName(sourceFilePath)}");
+            Console.Error.WriteLine($"[TupleListService] Saved {tuples.Count} tuples for {localKey} to {Path.GetFileName(sourceFilePath)}");
 
             // Update the cache
             var cacheKey = $"{sourceFilePath}|{config.ContainerPath}|{config.ElementName}";
@@ -262,7 +262,7 @@ public class TupleListService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[TupleListService] Error saving {sourceFilePath}: {ex.Message}");
+            Console.Error.WriteLine($"[TupleListService] Error saving {sourceFilePath}: {ex.Message}");
             return false;
         }
     }
@@ -313,11 +313,11 @@ public class TupleListService
                 var tupleData = LoadTupleData(sourceFilePath, config);
                 result.TupleData[fieldName] = tupleData;
                 result.SourcePaths[fieldName] = sourceFilePath;
-                Console.WriteLine($"[TupleList] Loaded {tupleData.Count} entries for {fieldName} from {config.SourceFile}");
+                Console.Error.WriteLine($"[TupleList] Loaded {tupleData.Count} entries for {fieldName} from {config.SourceFile}");
             }
             else
             {
-                Console.WriteLine($"[TupleList] Source file not found: {config.SourceFile}");
+                Console.Error.WriteLine($"[TupleList] Source file not found: {config.SourceFile}");
             }
         }
 

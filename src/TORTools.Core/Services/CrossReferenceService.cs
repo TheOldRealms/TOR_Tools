@@ -134,7 +134,7 @@ public class CrossReferenceService
 
         if (!File.Exists(sourceFilePath))
         {
-            Console.WriteLine($"[CrossReferenceService] Source file not found: {sourceFilePath}");
+            Console.Error.WriteLine($"[CrossReferenceService] Source file not found: {sourceFilePath}");
             return result;
         }
 
@@ -163,7 +163,7 @@ public class CrossReferenceService
                 }
             }
 
-            Console.WriteLine($"[CrossReferenceService] Loaded {result.Count} cross-references from {Path.GetFileName(sourceFilePath)}");
+            Console.Error.WriteLine($"[CrossReferenceService] Loaded {result.Count} cross-references from {Path.GetFileName(sourceFilePath)}");
 
             lock (_cacheLock)
             {
@@ -172,7 +172,7 @@ public class CrossReferenceService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[CrossReferenceService] Error loading {sourceFilePath}: {ex.Message}");
+            Console.Error.WriteLine($"[CrossReferenceService] Error loading {sourceFilePath}: {ex.Message}");
         }
 
         return result;
@@ -233,7 +233,7 @@ public class CrossReferenceService
 
         if (!File.Exists(sourceFilePath))
         {
-            Console.WriteLine($"[CrossReferenceService] Source file not found for reverse lookup: {sourceFilePath}");
+            Console.Error.WriteLine($"[CrossReferenceService] Source file not found for reverse lookup: {sourceFilePath}");
             return result;
         }
 
@@ -279,7 +279,7 @@ public class CrossReferenceService
                 }
             }
 
-            Console.WriteLine($"[CrossReferenceService] Loaded {result.Count} reverse cross-references from {Path.GetFileName(sourceFilePath)}");
+            Console.Error.WriteLine($"[CrossReferenceService] Loaded {result.Count} reverse cross-references from {Path.GetFileName(sourceFilePath)}");
 
             lock (_cacheLock)
             {
@@ -288,7 +288,7 @@ public class CrossReferenceService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[CrossReferenceService] Error loading reverse refs from {sourceFilePath}: {ex.Message}");
+            Console.Error.WriteLine($"[CrossReferenceService] Error loading reverse refs from {sourceFilePath}: {ex.Message}");
         }
 
         return result;
@@ -307,7 +307,7 @@ public class CrossReferenceService
     {
         if (!File.Exists(sourceFilePath))
         {
-            Console.WriteLine($"[CrossReferenceService] Cannot update - source file not found: {sourceFilePath}");
+            Console.Error.WriteLine($"[CrossReferenceService] Cannot update - source file not found: {sourceFilePath}");
             return false;
         }
 
@@ -354,7 +354,7 @@ public class CrossReferenceService
                 targetEntry = new XElement(entryName);
                 targetEntry.SetAttributeValue(config.SourceKeyField, localKey);
                 root.Add(targetEntry);
-                Console.WriteLine($"[CrossReferenceService] Created new entry for {localKey}");
+                Console.Error.WriteLine($"[CrossReferenceService] Created new entry for {localKey}");
             }
 
             // Handle attribute path differently from element path
@@ -418,8 +418,8 @@ public class CrossReferenceService
 
             // Save with proper formatting based on compactFormat parameter
             SaveDocument(doc, sourceFilePath, compactFormat);
-            Console.WriteLine($"[CrossReferenceService] Saved file to: {sourceFilePath}");
-            Console.WriteLine($"[CrossReferenceService] Updated {localKey} with {newValues.Count} values in {Path.GetFileName(sourceFilePath)}");
+            Console.Error.WriteLine($"[CrossReferenceService] Saved file to: {sourceFilePath}");
+            Console.Error.WriteLine($"[CrossReferenceService] Updated {localKey} with {newValues.Count} values in {Path.GetFileName(sourceFilePath)}");
 
             // Clear cache to force reload
             ClearCache();
@@ -428,7 +428,7 @@ public class CrossReferenceService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[CrossReferenceService] Error updating {sourceFilePath}: {ex.Message}");
+            Console.Error.WriteLine($"[CrossReferenceService] Error updating {sourceFilePath}: {ex.Message}");
             return false;
         }
     }
@@ -600,7 +600,7 @@ public class CrossReferenceService
 
         if (!File.Exists(targetFilePath))
         {
-            Console.WriteLine($"[CrossReferenceService] Target file not found for keys: {targetFilePath}");
+            Console.Error.WriteLine($"[CrossReferenceService] Target file not found for keys: {targetFilePath}");
             return result;
         }
 
@@ -620,7 +620,7 @@ public class CrossReferenceService
                 }
             }
 
-            Console.WriteLine($"[CrossReferenceService] Loaded {result.Count} target keys from {Path.GetFileName(targetFilePath)}");
+            Console.Error.WriteLine($"[CrossReferenceService] Loaded {result.Count} target keys from {Path.GetFileName(targetFilePath)}");
 
             // Cache as dictionary for consistent cache format
             lock (_cacheLock)
@@ -630,7 +630,7 @@ public class CrossReferenceService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[CrossReferenceService] Error loading keys from {targetFilePath}: {ex.Message}");
+            Console.Error.WriteLine($"[CrossReferenceService] Error loading keys from {targetFilePath}: {ex.Message}");
         }
 
         return result;
@@ -650,7 +650,7 @@ public class CrossReferenceService
 
         if (!File.Exists(targetFilePath))
         {
-            Console.WriteLine($"[CrossReferenceService] Target file not found for display names: {targetFilePath}");
+            Console.Error.WriteLine($"[CrossReferenceService] Target file not found for display names: {targetFilePath}");
             return displayNames;
         }
 
@@ -669,11 +669,11 @@ public class CrossReferenceService
                 }
             }
 
-            Console.WriteLine($"[CrossReferenceService] Loaded {displayNames.Count} display names from {Path.GetFileName(targetFilePath)}");
+            Console.Error.WriteLine($"[CrossReferenceService] Loaded {displayNames.Count} display names from {Path.GetFileName(targetFilePath)}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[CrossReferenceService] Error loading display names from {targetFilePath}: {ex.Message}");
+            Console.Error.WriteLine($"[CrossReferenceService] Error loading display names from {targetFilePath}: {ex.Message}");
         }
 
         return displayNames;
@@ -713,7 +713,7 @@ public class CrossReferenceService
 
         if (!File.Exists(targetFilePath))
         {
-            Console.WriteLine($"[CrossReferenceService] Target file not found for descriptions: {targetFilePath}");
+            Console.Error.WriteLine($"[CrossReferenceService] Target file not found for descriptions: {targetFilePath}");
             return descriptions;
         }
 
@@ -733,11 +733,11 @@ public class CrossReferenceService
                 }
             }
 
-            Console.WriteLine($"[CrossReferenceService] Loaded {descriptions.Count} descriptions from {Path.GetFileName(targetFilePath)}");
+            Console.Error.WriteLine($"[CrossReferenceService] Loaded {descriptions.Count} descriptions from {Path.GetFileName(targetFilePath)}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[CrossReferenceService] Error loading descriptions from {targetFilePath}: {ex.Message}");
+            Console.Error.WriteLine($"[CrossReferenceService] Error loading descriptions from {targetFilePath}: {ex.Message}");
         }
 
         return descriptions;
@@ -797,13 +797,13 @@ public class CrossReferenceService
         var targetFilePath = filePathResolver.FindSourceFile(baseDir, config.TargetFile);
         if (targetFilePath == null || string.IsNullOrEmpty(config.TargetKeyField))
         {
-            Console.WriteLine($"[CrossRef] Target file not found for direct crossref: {config.TargetFile}");
+            Console.Error.WriteLine($"[CrossRef] Target file not found for direct crossref: {config.TargetFile}");
             return;
         }
 
         var availableIds = LoadTargetKeys(targetFilePath, config.TargetKeyField);
         result.AvailableIds[fieldName] = availableIds;
-        Console.WriteLine($"[CrossRef] Loaded {availableIds.Count} available IDs for direct crossref {fieldName} from {config.TargetFile}");
+        Console.Error.WriteLine($"[CrossRef] Loaded {availableIds.Count} available IDs for direct crossref {fieldName} from {config.TargetFile}");
 
         // Load display names if configured
         if (!string.IsNullOrEmpty(config.TargetDisplayField))
@@ -812,7 +812,7 @@ public class CrossReferenceService
             if (displayNames.Count > 0)
             {
                 result.DisplayNames[fieldName] = displayNames;
-                Console.WriteLine($"[CrossRef] Loaded {displayNames.Count} display names for {fieldName}");
+                Console.Error.WriteLine($"[CrossRef] Loaded {displayNames.Count} display names for {fieldName}");
             }
         }
     }
@@ -828,7 +828,7 @@ public class CrossReferenceService
         var sourceFilePath = filePathResolver.FindSourceFile(baseDir, config.SourceFile);
         if (sourceFilePath == null)
         {
-            Console.WriteLine($"[CrossRef] Source file not found: {config.SourceFile}");
+            Console.Error.WriteLine($"[CrossRef] Source file not found: {config.SourceFile}");
             return;
         }
 
@@ -837,12 +837,12 @@ public class CrossReferenceService
         if (fieldDef.Type == "reverseCrossReference")
         {
             crossRefData = LoadReverseCrossReferences(sourceFilePath, config);
-            Console.WriteLine($"[CrossRef] Loaded {crossRefData.Count} reverse references for {fieldName} from {config.SourceFile}");
+            Console.Error.WriteLine($"[CrossRef] Loaded {crossRefData.Count} reverse references for {fieldName} from {config.SourceFile}");
         }
         else
         {
             crossRefData = LoadCrossReferences(sourceFilePath, config);
-            Console.WriteLine($"[CrossRef] Loaded {crossRefData.Count} references for {fieldName} from {config.SourceFile}");
+            Console.Error.WriteLine($"[CrossRef] Loaded {crossRefData.Count} references for {fieldName} from {config.SourceFile}");
 
             // For editable cross-references, load available target IDs
             var targetFilePath = filePathResolver.FindSourceFile(baseDir, config.TargetFile);
@@ -850,13 +850,13 @@ public class CrossReferenceService
             {
                 var availableIds = LoadTargetKeys(targetFilePath, config.TargetKeyField);
                 result.AvailableIds[fieldName] = availableIds;
-                Console.WriteLine($"[CrossRef] Loaded {availableIds.Count} available IDs for {fieldName} autocomplete");
+                Console.Error.WriteLine($"[CrossRef] Loaded {availableIds.Count} available IDs for {fieldName} autocomplete");
 
                 var descriptions = LoadTargetDescriptions(targetFilePath, config.TargetKeyField);
                 if (descriptions.Count > 0)
                 {
                     result.Descriptions[fieldName] = descriptions;
-                    Console.WriteLine($"[CrossRef] Loaded {descriptions.Count} descriptions for {fieldName}");
+                    Console.Error.WriteLine($"[CrossRef] Loaded {descriptions.Count} descriptions for {fieldName}");
                 }
 
                 // Load display names if configured (for dropdown display)
@@ -866,7 +866,7 @@ public class CrossReferenceService
                     if (displayNames.Count > 0)
                     {
                         result.DisplayNames[fieldName] = displayNames;
-                        Console.WriteLine($"[CrossRef] Loaded {displayNames.Count} display names for {fieldName}");
+                        Console.Error.WriteLine($"[CrossRef] Loaded {displayNames.Count} display names for {fieldName}");
                     }
                 }
             }
@@ -886,7 +886,7 @@ public class CrossReferenceService
     {
         ClearCache();
         var fileName = Path.GetFileName(filePath);
-        Console.WriteLine($"[CrossRef] Refreshing cross-references for {fileName}");
+        Console.Error.WriteLine($"[CrossRef] Refreshing cross-references for {fileName}");
         return LoadAllCrossReferences(filePath, schema, filePathResolver);
     }
 }
