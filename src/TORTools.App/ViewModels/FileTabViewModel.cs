@@ -1155,7 +1155,15 @@ public partial class FileTabViewModel : ViewModelBase, IDisposable
         // Handle nested fields
         if (!string.IsNullOrEmpty(nestedPath))
         {
-            rowVm.XmlEntry.SetNestedValue(nestedPath, value);
+            var fieldDefNested = GetFieldDefinition(columnName);
+            if (fieldDefNested?.PairedCivilianVariant == true)
+            {
+                rowVm.XmlEntry.SetEquipmentRosterWithCivilianPair(value);
+            }
+            else
+            {
+                rowVm.XmlEntry.SetNestedValue(nestedPath, value);
+            }
             return;
         }
 

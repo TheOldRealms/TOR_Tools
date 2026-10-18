@@ -180,7 +180,8 @@
       "order": 20,
       "width": 240,
       "nested": true,
-      "nestedPath": "Equipments/EquipmentSet[1]/@id"
+      "nestedPath": "Equipments/EquipmentSet[1]/@id",
+      "pairedCivilianVariant": true
     },
     "is_female": {
       "displayName": "Female",

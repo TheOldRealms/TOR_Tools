@@ -1384,8 +1384,16 @@ public partial class FileTabView : UserControl
                                 // Check if this is a nested field (like EquipmentRosterId with nestedPath)
                                 if (fieldDef.Nested && !string.IsNullOrEmpty(fieldDef.NestedPath))
                                 {
-                                    rowVm.XmlEntry.SetNestedValue(fieldDef.NestedPath, valueToStore);
-                                    Console.WriteLine($"[CrossRef] Updated nested crossref {attributeName} at {fieldDef.NestedPath} to: {valueToStore}");
+                                    if (fieldDef.PairedCivilianVariant)
+                                    {
+                                        rowVm.XmlEntry.SetEquipmentRosterWithCivilianPair(valueToStore);
+                                        Console.WriteLine($"[CrossRef] Updated nested crossref {attributeName} (with civilian pair) to: {valueToStore}");
+                                    }
+                                    else
+                                    {
+                                        rowVm.XmlEntry.SetNestedValue(fieldDef.NestedPath, valueToStore);
+                                        Console.WriteLine($"[CrossRef] Updated nested crossref {attributeName} at {fieldDef.NestedPath} to: {valueToStore}");
+                                    }
                                 }
                                 else
                                 {

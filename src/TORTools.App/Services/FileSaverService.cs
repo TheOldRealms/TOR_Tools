@@ -184,7 +184,14 @@ public class FileSaverService
                     var normalizedCurrent = currentValue ?? "";
                     if (existingValue != normalizedCurrent)
                     {
-                        xmlEntry.SetNestedValue(fieldDef.NestedPath, currentValue);
+                        if (fieldDef.PairedCivilianVariant)
+                        {
+                            xmlEntry.SetEquipmentRosterWithCivilianPair(currentValue);
+                        }
+                        else
+                        {
+                            xmlEntry.SetNestedValue(fieldDef.NestedPath, currentValue);
+                        }
                         context.Document!.HasUnsavedChanges = true;
                     }
                     continue;

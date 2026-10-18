@@ -241,6 +241,36 @@ public class XmlEntry
         var elementPath = parts[0];
         var attributeName = parts.Length > 1 ? parts[1] : null;
 
+        // Special case: Equipments/EquipmentSet[1]/@id — the "[1]" index needs the
+        // element to already exist, but when the user sets the equipment roster on
+        // a brand-new character the <Equipments> container is empty. Create the
+        // combat <EquipmentSet> inline so the write succeeds. The civilian pair
+        // (if the schema requests one) is handled by SetEquipmentRosterWithCivilianPair.
+        if (elementPath == "Equipments/EquipmentSet[1]"
+            && attributeName == "id"
+            && !string.IsNullOrEmpty(value))
+        {
+            var equipments = OriginalElement.Element("Equipments");
+            if (equipments == null)
+            {
+                equipments = new XElement("Equipments");
+                OriginalElement.Add(equipments);
+            }
+            var firstCombat = equipments.Elements("EquipmentSet")
+                .FirstOrDefault(e => e.Attribute("equipmentType")?.Value != "Civilian");
+            if (firstCombat == null)
+            {
+                firstCombat = new XElement("EquipmentSet", new XAttribute("id", value));
+                equipments.Add(firstCombat);
+            }
+            else
+            {
+                firstCombat.SetAttributeValue("id", value);
+            }
+            IsModified = true;
+            return;
+        }
+
         // Navigate to or create the target element
         var targetElement = NavigateOrCreateElement(OriginalElement, elementPath);
         if (targetElement == null) return; // Can't create indexed/filtered elements
@@ -268,6 +298,57 @@ public class XmlEntry
             {
                 targetElement.Value = value;
             }
+        }
+
+        IsModified = true;
+    }
+
+    /// <summary>
+    /// Writes an equipment roster reference and keeps a matching civilian variant
+    /// (&lt;EquipmentSet id="..." equipmentType="Civilian"/&gt;) in sync with it.
+    /// Call this instead of <see cref="SetNestedValue"/> for fields that are
+    /// flagged with FieldDefinition.PairedCivilianVariant.
+    /// </summary>
+    public void SetEquipmentRosterWithCivilianPair(string? equipmentId)
+    {
+        var equipments = OriginalElement.Element("Equipments");
+
+        if (string.IsNullOrEmpty(equipmentId))
+        {
+            // Clearing: drop both the combat and civilian EquipmentSets, and the
+            // whole <Equipments> container if nothing else lives in it.
+            if (equipments == null) return;
+            foreach (var set in equipments.Elements("EquipmentSet").ToList())
+            {
+                set.Remove();
+            }
+            if (!equipments.Elements().Any())
+            {
+                equipments.Remove();
+            }
+            IsModified = true;
+            return;
+        }
+
+        // Write combat EquipmentSet (SetNestedValue handles creating <Equipments>
+        // and the combat element when they don't exist yet).
+        SetNestedValue("Equipments/EquipmentSet[1]/@id", equipmentId);
+
+        equipments = OriginalElement.Element("Equipments");
+        if (equipments == null) return;
+
+        var civilian = equipments.Elements("EquipmentSet")
+            .FirstOrDefault(e => e.Attribute("equipmentType")?.Value == "Civilian");
+        if (civilian == null)
+        {
+            civilian = new XElement("EquipmentSet",
+                new XAttribute("id", equipmentId),
+                new XAttribute("equipmentType", "Civilian"));
+            equipments.Add(civilian);
+        }
+        else
+        {
+            civilian.SetAttributeValue("id", equipmentId);
         }
 
         IsModified = true;

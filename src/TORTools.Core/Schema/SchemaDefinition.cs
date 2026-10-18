@@ -288,6 +288,15 @@ public class FieldDefinition
     public string? NestedPath { get; set; }
 
     /// <summary>
+    /// When set on an equipment-set reference field (nestedPath targets
+    /// Equipments/EquipmentSet[1]/@id), writing the field also mirrors the
+    /// value into a sibling &lt;EquipmentSet id="..." equipmentType="Civilian"/&gt;
+    /// so Bannerlord has both a battle and a civilian loadout to pick from.
+    /// </summary>
+    [JsonPropertyName("pairedCivilianVariant")]
+    public bool PairedCivilianVariant { get; set; }
+
+    /// <summary>
     /// Prefix to strip from values for display (e.g., "NPCCharacter." for upgrade targets).
     /// </summary>
     [JsonPropertyName("prefixToStrip")]

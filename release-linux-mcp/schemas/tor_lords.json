@@ -199,6 +199,7 @@
       "width": 200,
       "nested": true,
       "nestedPath": "Equipments/EquipmentSet[1]/@id",
+      "pairedCivilianVariant": true,
       "crossReference": {
         "targetFile": "tor_equipment_sets.xml",
         "targetKeyField": "id",
