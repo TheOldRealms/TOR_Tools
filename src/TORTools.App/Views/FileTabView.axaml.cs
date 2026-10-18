@@ -1311,7 +1311,7 @@ public partial class FileTabView : UserControl
             };
             ToolTip.SetTip(editButton, tooltipText);
 
-            editButton.Click += (s, e) =>
+            editButton.Click += async (s, e) =>
             {
                 Console.WriteLine($"[CrossRef] Edit button clicked for {attributeName}");
                 var currentValue = rowVm[attributeName] ?? "";
@@ -1345,7 +1345,10 @@ public partial class FileTabView : UserControl
                     if (parentWindow != null)
                     {
                         var abilityDialog = new AbilityEditorDialog(currentValue, availableIds, vm);
-                        var dialogResult = abilityDialog.ShowDialog(parentWindow);
+                        // Avalonia's Window.ShowDialog<T> is async; a prior sync
+                        // wrapper on BaseEditorDialog returned null before the user
+                        // ever saw OK — losing every added spell/prayer (issue #20).
+                        var dialogResult = await abilityDialog.ShowDialog<string?>(parentWindow);
                         if (dialogResult != null && dialogResult != currentValue)
                         {
                             var success = vm.UpdateCrossReferenceValue(attributeName, localKey, dialogResult);

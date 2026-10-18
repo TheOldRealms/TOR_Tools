@@ -155,14 +155,13 @@ public abstract class BaseEditorDialog : Window
         MainStack.Children.Add(buttonPanel);
     }
 
-    /// <summary>
-    /// Shows the dialog and returns the result.
-    /// </summary>
-    public new string? ShowDialog(Window owner)
-    {
-        base.ShowDialog(owner);
-        return Result;
-    }
+    // Dialogs are opened with Avalonia's Window.ShowDialog<T>(owner) — see
+    // callers such as FileTabView's AbilityEditorDialog / TextEditorDialog
+    // call sites. The OK handler above forwards GetResultValue() to Close()
+    // so Task<string?> resolves to that value. Do not add a synchronous
+    // wrapper here: Window.ShowDialog returns immediately in Avalonia, so a
+    // sync-return wrapper would always hand back null and silently discard
+    // the user's edits (reproduced as issue #20 for the abilities dialog).
 
     /// <summary>
     /// Helper to create a search box with filtering.
