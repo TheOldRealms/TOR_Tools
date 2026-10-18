@@ -25,6 +25,7 @@ public class EquipmentRosterPickerDialog : BaseEditorDialog
     private ListBox? _civilianList;
     private TextBox? _combatSearch;
     private TextBox? _civilianSearch;
+    private TextBlock? _civilianLabel;
 
     public string? ResultCombatId { get; private set; }
     public string? ResultCivilianId { get; private set; }
@@ -80,7 +81,8 @@ public class EquipmentRosterPickerDialog : BaseEditorDialog
                 _civilianBox.Text = _combatBox.Text;
         };
 
-        MainStack.Children.Add(CreateSectionLabel("Civilian Equipment Set:"));
+        _civilianLabel = CreateSectionLabel("Civilian Equipment Set:");
+        MainStack.Children.Add(_civilianLabel);
         _civilianBox = new TextBox
         {
             Text = startMirrored ? _initialCombat : _initialCivilian,
@@ -117,14 +119,16 @@ public class EquipmentRosterPickerDialog : BaseEditorDialog
     private void ApplyMirrorState()
     {
         bool mirror = _mirrorCheck?.IsChecked == true;
+        bool showCivilian = !mirror;
+        if (_civilianLabel != null) _civilianLabel.IsVisible = showCivilian;
         if (_civilianBox != null)
         {
-            _civilianBox.IsEnabled = !mirror;
+            _civilianBox.IsVisible = showCivilian;
             if (mirror && _combatBox != null)
                 _civilianBox.Text = _combatBox.Text;
         }
-        if (_civilianSearch != null) _civilianSearch.IsEnabled = !mirror;
-        if (_civilianList != null) _civilianList.IsEnabled = !mirror;
+        if (_civilianSearch != null) _civilianSearch.IsVisible = showCivilian;
+        if (_civilianList != null) _civilianList.IsVisible = showCivilian;
     }
 
     protected override string? GetResultValue()
