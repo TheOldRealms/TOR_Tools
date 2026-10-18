@@ -304,20 +304,32 @@ public class XmlEntry
     }
 
     /// <summary>
-    /// Writes an equipment roster reference and keeps a matching civilian variant
-    /// (&lt;EquipmentSet id="..." equipmentType="Civilian"/&gt;) in sync with it.
-    /// Call this instead of <see cref="SetNestedValue"/> for fields that are
-    /// flagged with FieldDefinition.PairedCivilianVariant.
+    /// Reads the id attribute of the civilian equipment set reference
+    /// (&lt;EquipmentSet id="..." equipmentType="Civilian"/&gt;) if present.
     /// </summary>
-    public void SetEquipmentRosterWithCivilianPair(string? equipmentId)
+    public string? GetCivilianEquipmentId()
     {
-        var equipments = OriginalElement.Element("Equipments");
+        return OriginalElement.Element("Equipments")?.Elements("EquipmentSet")
+            .FirstOrDefault(e => e.Attribute("equipmentType")?.Value == "Civilian")
+            ?.Attribute("id")?.Value;
+    }
 
-        if (string.IsNullOrEmpty(equipmentId))
+    /// <summary>
+    /// Writes combat and civilian equipment set references independently.
+    /// Pass the same id to both for a mirrored setup, different ids for an
+    /// explicit civilian loadout. Clearing combat drops the whole &lt;Equipments&gt;
+    /// block.
+    /// </summary>
+    public void SetEquipmentRosterPair(string? combatId, string? civilianId)
+    {
+        if (string.IsNullOrEmpty(combatId))
         {
-            // Clearing: drop both the combat and civilian EquipmentSets, and the
-            // whole <Equipments> container if nothing else lives in it.
-            if (equipments == null) return;
+            var equipments = OriginalElement.Element("Equipments");
+            if (equipments == null)
+            {
+                IsModified = true;
+                return;
+            }
             foreach (var set in equipments.Elements("EquipmentSet").ToList())
             {
                 set.Remove();
@@ -330,28 +342,62 @@ public class XmlEntry
             return;
         }
 
-        // Write combat EquipmentSet (SetNestedValue handles creating <Equipments>
-        // and the combat element when they don't exist yet).
-        SetNestedValue("Equipments/EquipmentSet[1]/@id", equipmentId);
+        // Write combat (SetNestedValue creates <Equipments> and the first
+        // <EquipmentSet> when they don't exist yet).
+        SetNestedValue("Equipments/EquipmentSet[1]/@id", combatId);
 
-        equipments = OriginalElement.Element("Equipments");
-        if (equipments == null) return;
+        var container = OriginalElement.Element("Equipments");
+        if (container == null) return;
 
-        var civilian = equipments.Elements("EquipmentSet")
+        var civilian = container.Elements("EquipmentSet")
             .FirstOrDefault(e => e.Attribute("equipmentType")?.Value == "Civilian");
-        if (civilian == null)
+
+        if (string.IsNullOrEmpty(civilianId))
         {
-            civilian = new XElement("EquipmentSet",
-                new XAttribute("id", equipmentId),
-                new XAttribute("equipmentType", "Civilian"));
-            equipments.Add(civilian);
+            civilian?.Remove();
+        }
+        else if (civilian == null)
+        {
+            container.Add(new XElement("EquipmentSet",
+                new XAttribute("id", civilianId),
+                new XAttribute("equipmentType", "Civilian")));
         }
         else
         {
-            civilian.SetAttributeValue("id", equipmentId);
+            civilian.SetAttributeValue("id", civilianId);
         }
 
         IsModified = true;
+    }
+
+    /// <summary>
+    /// Writes the combat equipment roster id. If the civilian variant was
+    /// previously mirroring combat (or missing), it is updated to match the new
+    /// value; if the civilian variant had been explicitly set to something
+    /// different, it is left alone so inline edits don't clobber a divergence
+    /// the user established through the dedicated picker.
+    /// </summary>
+    public void SetEquipmentRosterWithCivilianPair(string? equipmentId)
+    {
+        var equipments = OriginalElement.Element("Equipments");
+        var currentCombat = equipments?.Elements("EquipmentSet")
+            .FirstOrDefault(e => e.Attribute("equipmentType")?.Value != "Civilian")
+            ?.Attribute("id")?.Value;
+        var currentCivilian = equipments?.Elements("EquipmentSet")
+            .FirstOrDefault(e => e.Attribute("equipmentType")?.Value == "Civilian")
+            ?.Attribute("id")?.Value;
+
+        bool wasMirrored = string.IsNullOrEmpty(currentCivilian)
+            || string.Equals(currentCivilian, currentCombat, StringComparison.Ordinal);
+
+        if (wasMirrored)
+        {
+            SetEquipmentRosterPair(equipmentId, equipmentId);
+        }
+        else
+        {
+            SetEquipmentRosterPair(equipmentId, currentCivilian);
+        }
     }
 
     /// <summary>

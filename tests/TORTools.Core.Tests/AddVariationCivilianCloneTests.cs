@@ -176,6 +176,76 @@ public class AddVariationCivilianCloneTests
     }
 
     [Fact]
+    public void SetEquipmentRosterWithCivilianPair_PreservesDivergedCivilian()
+    {
+        // Prototype requirement: inline edits of the combat id must leave an
+        // explicitly-diverged civilian id alone. The dedicated picker dialog
+        // owns changing the civilian value.
+        var elem = new XElement("NPCCharacter",
+            new XAttribute("id", "test_lord"),
+            new XElement("Equipments",
+                new XElement("EquipmentSet", new XAttribute("id", "combat_old")),
+                new XElement("EquipmentSet",
+                    new XAttribute("id", "civilian_custom"),
+                    new XAttribute("equipmentType", "Civilian"))));
+        var entry = new TORTools.Core.Models.XmlEntry(elem);
+        entry.SetEquipmentRosterWithCivilianPair("combat_new");
+
+        var combat = elem.Element("Equipments")!.Elements("EquipmentSet")
+            .First(e => e.Attribute("equipmentType")?.Value != "Civilian");
+        var civilian = elem.Element("Equipments")!.Elements("EquipmentSet")
+            .First(e => e.Attribute("equipmentType")?.Value == "Civilian");
+        combat.Attribute("id")!.Value.Should().Be("combat_new");
+        civilian.Attribute("id")!.Value.Should().Be("civilian_custom");
+    }
+
+    [Fact]
+    public void SetEquipmentRosterPair_WritesDivergentIds()
+    {
+        var elem = new XElement("NPCCharacter", new XAttribute("id", "test_lord"));
+        var entry = new TORTools.Core.Models.XmlEntry(elem);
+        entry.SetEquipmentRosterPair("combat_a", "civilian_b");
+
+        var sets = elem.Element("Equipments")!.Elements("EquipmentSet").ToList();
+        sets.Should().HaveCount(2);
+        sets.First(s => s.Attribute("equipmentType")?.Value != "Civilian")
+            .Attribute("id")!.Value.Should().Be("combat_a");
+        sets.First(s => s.Attribute("equipmentType")?.Value == "Civilian")
+            .Attribute("id")!.Value.Should().Be("civilian_b");
+    }
+
+    [Fact]
+    public void SetEquipmentRosterPair_NullCivilian_DropsCivilianElement()
+    {
+        var elem = new XElement("NPCCharacter",
+            new XAttribute("id", "test_lord"),
+            new XElement("Equipments",
+                new XElement("EquipmentSet", new XAttribute("id", "combat")),
+                new XElement("EquipmentSet",
+                    new XAttribute("id", "civilian"),
+                    new XAttribute("equipmentType", "Civilian"))));
+        var entry = new TORTools.Core.Models.XmlEntry(elem);
+        entry.SetEquipmentRosterPair("combat", null);
+
+        var sets = elem.Element("Equipments")!.Elements("EquipmentSet").ToList();
+        sets.Should().HaveCount(1);
+        sets[0].Attribute("equipmentType").Should().BeNull();
+    }
+
+    [Fact]
+    public void GetCivilianEquipmentId_ReturnsCorrectId()
+    {
+        var elem = new XElement("NPCCharacter",
+            new XElement("Equipments",
+                new XElement("EquipmentSet", new XAttribute("id", "combat_only")),
+                new XElement("EquipmentSet",
+                    new XAttribute("id", "civ_xyz"),
+                    new XAttribute("equipmentType", "Civilian"))));
+        var entry = new TORTools.Core.Models.XmlEntry(elem);
+        entry.GetCivilianEquipmentId().Should().Be("civ_xyz");
+    }
+
+    [Fact]
     public void SetEquipmentRosterWithCivilianPair_WithNull_RemovesBoth()
     {
         var elem = new XElement("NPCCharacter",

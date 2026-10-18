@@ -1361,6 +1361,27 @@ public partial class FileTabView : UserControl
                         }
                     }
                 }
+                else if (fieldDef.PairedCivilianVariant)
+                {
+                    var parentWindow = TopLevel.GetTopLevel(editButton) as Window;
+                    if (parentWindow != null)
+                    {
+                        var currentCivilian = rowVm.XmlEntry.GetCivilianEquipmentId();
+                        var picker = new EquipmentRosterPickerDialog(
+                            dialogTitle,
+                            currentValue,
+                            currentCivilian,
+                            availableIds);
+                        var marker = await picker.ShowDialog<string?>(parentWindow);
+                        if (marker != null)
+                        {
+                            rowVm.XmlEntry.SetEquipmentRosterPair(picker.ResultCombatId, picker.ResultCivilianId);
+                            rowVm[attributeName] = picker.ResultCombatId ?? "";
+                            Console.WriteLine($"[EquipPicker] combat={picker.ResultCombatId} civilian={picker.ResultCivilianId}");
+                            RebuildLinks();
+                        }
+                    }
+                }
                 else
                 {
                     ShowTraitEditorPopup(editButton, currentValue, availableIds, dialogTitle, prefixToStrip, troopLevel, isSingleValue, null, (result) =>
