@@ -13,6 +13,7 @@ namespace TORTools.Core.Tests;
 /// the bug where strings_add wrote category=/subcategory= inline on &lt;string&gt; elements
 /// in tor_strings.xml.
 /// </summary>
+[Collection("FilePathResolverSerial")]
 public class StandaloneDocumentStoreLinkedFieldTests : IDisposable
 {
     private readonly string _tempDir;

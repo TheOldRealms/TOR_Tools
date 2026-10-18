@@ -15,6 +15,8 @@ public class StandaloneDocumentStore : IDocumentStore
     private readonly IXmlDocumentService _xmlService;
     private readonly IWorkspaceService _workspaceService;
     private readonly ISchemaService _schemaService;
+    private readonly CrossReferenceService _crossRefService = new();
+    private readonly FilePathResolver _pathResolver = new();
 
     private WorkspaceConfig _workspaceConfig = new();
     private readonly Dictionary<string, XmlDocumentWrapper> _loadedDocuments = new(StringComparer.OrdinalIgnoreCase);
@@ -215,6 +217,13 @@ public class StandaloneDocumentStore : IDocumentStore
                     MergeDataFromFile(doc, schema);
                 }
 
+                // Merge crossReference values (e.g. RaceLock from tor_extendeditemproperties.xml)
+                // so queries see them and so UpdateEntry can round-trip them correctly.
+                if (schema != null)
+                {
+                    MergeCrossReferences(doc, schema);
+                }
+
                 DocumentChanged?.Invoke(this, new DocumentChangedEventArgs
                 {
                     FileKey = fileKey,
@@ -245,14 +254,20 @@ public class StandaloneDocumentStore : IDocumentStore
             var schema = GetSchema(fileKey);
             var compactFormat = schema?.CompactFormat ?? true;
 
-            // Fields that live in a sidecar file (e.g. tor_strings_metadata.xml). These must
-            // be stripped from the main document on save; the UI's FileSaverService does the
-            // same thing (see FileSaverService.CreateDocumentFromEntries / SaveMergedDataFile).
-            var linkedFields = schema?.Fields
-                .Where(f => f.Value.LinkedField == true)
+            // Fields that live in a sidecar file (e.g. tor_strings_metadata.xml) OR in a
+            // crossReference source file (e.g. tor_extendeditemproperties.xml for RaceLock).
+            // Both must be stripped from the main document on save.
+            // IMPORTANT: only crossReference fields with a SourceFile live elsewhere.
+            // Pure foreign-key crossRefs (TargetFile only, like `culture`) live inline on
+            // the main element and must NOT be excluded.
+            var excludeFields = schema?.Fields
+                .Where(f => f.Value.LinkedField == true
+                            || (f.Value.Type == "crossReference"
+                                && f.Value.CrossReference != null
+                                && !string.IsNullOrEmpty(f.Value.CrossReference.SourceFile)))
                 .Select(f => f.Key)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var excludeFields = linkedFields != null && linkedFields.Count > 0 ? linkedFields : null;
+            if (excludeFields != null && excludeFields.Count == 0) excludeFields = null;
 
             Log($"SaveDocument({fileKey}) -> saving to {doc.FilePath} (compact={compactFormat}, linkedFields={excludeFields?.Count ?? 0})");
 
@@ -365,13 +380,43 @@ public class StandaloneDocumentStore : IDocumentStore
             return false;
         }
 
+        var schema = GetSchema(fileKey);
+        var doc = GetDocument(fileKey);
+        var baseDir = doc != null ? Path.GetDirectoryName(doc.FilePath) : null;
+
         foreach (var (name, value) in attributes)
         {
+            var fieldDef = schema?.GetField(name);
+            var crossRef = fieldDef?.CrossReference;
+
+            // Route crossReference writes to the source file (e.g. RaceLock -> tor_extendeditemproperties.xml).
+            // Matches the UI's FileTabViewModel.UpdateCrossReferenceValue path.
+            // Only applies to crossRefs with a SourceFile; pure foreign-key crossRefs
+            // (TargetFile only, like `culture`) live inline and get the regular path.
+            if (fieldDef?.Type == "crossReference" && crossRef != null
+                && !string.IsNullOrEmpty(crossRef.SourceFile) && !string.IsNullOrEmpty(baseDir))
+            {
+                var sourcePath = _pathResolver.FindSourceFile(baseDir, crossRef.SourceFile);
+                if (sourcePath != null)
+                {
+                    var localKey = string.IsNullOrEmpty(crossRef.LocalKeyField)
+                        ? entry.Id ?? entryId
+                        : entry.GetAttributeValue(crossRef.LocalKeyField) ?? entry.Id ?? entryId;
+                    var newValues = ParseCrossRefValueList(value);
+                    Log($"UpdateEntry -> crossRef {name}={value ?? "(null)"} -> {Path.GetFileName(sourcePath)} key={localKey}");
+                    _crossRefService.UpdateCrossReference(sourcePath, crossRef, localKey, newValues, compactFormat: true);
+                    // Also mirror onto the in-memory XElement so GetEntry reflects the write.
+                    entry.SetAttributeValue(name, value);
+                    continue;
+                }
+                Log($"UpdateEntry -> crossRef {name}: source file '{crossRef.SourceFile}' not found; falling back to inline");
+            }
+
             Log($"UpdateEntry -> set {name}={value ?? "(null)"}");
             entry.SetAttributeValue(name, value);
         }
 
-        // Auto-save
+        // Auto-save (strips linkedField/crossRef attrs from main doc).
         SaveDocument(fileKey);
 
         EntryChanged?.Invoke(this, new EntryChangedEventArgs
@@ -382,6 +427,12 @@ public class StandaloneDocumentStore : IDocumentStore
         });
 
         return true;
+    }
+
+    private static List<string> ParseCrossRefValueList(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return new List<string>();
+        return value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
     }
 
     public bool DeleteEntry(string fileKey, string entryId)
@@ -589,6 +640,57 @@ public class StandaloneDocumentStore : IDocumentStore
         }
 
         Log($"MergeData -> merged {mergedCount} entries from {mergedFilePath}");
+    }
+
+    /// <summary>
+    /// Loads crossReference values (e.g. RaceLock from tor_extendeditemproperties.xml) and
+    /// sets them as attributes on the in-memory XmlEntry elements. Mirrors the UI's
+    /// FileTabViewModel load path. On save, these attributes are stripped out again
+    /// (see excludeFields in SaveDocument).
+    /// </summary>
+    private void MergeCrossReferences(XmlDocumentWrapper doc, SchemaDefinition schema)
+    {
+        var baseDir = Path.GetDirectoryName(doc.FilePath);
+        if (string.IsNullOrEmpty(baseDir)) return;
+
+        // Only merge crossRefs that have a SourceFile (data lives elsewhere). Pure foreign-key
+        // crossRefs (`culture` → tor_cultures.xml) already live inline on the main element.
+        var crossRefFields = schema.Fields
+            .Where(kvp => kvp.Value.Type == "crossReference"
+                          && kvp.Value.CrossReference != null
+                          && !string.IsNullOrEmpty(kvp.Value.CrossReference.SourceFile))
+            .ToList();
+        if (crossRefFields.Count == 0) return;
+
+        var entries = _xmlService.GetEntries(doc);
+        foreach (var kvp in crossRefFields)
+        {
+            var fieldName = kvp.Key;
+            var config = kvp.Value.CrossReference!;
+            var sourcePath = _pathResolver.FindSourceFile(baseDir, config.SourceFile);
+            if (sourcePath == null)
+            {
+                Log($"MergeCrossRef -> {fieldName}: source '{config.SourceFile}' not found; skipping");
+                continue;
+            }
+
+            var crossRefs = _crossRefService.LoadCrossReferences(sourcePath, config);
+            if (crossRefs.Count == 0) continue;
+
+            var keyField = string.IsNullOrEmpty(config.LocalKeyField) ? "id" : config.LocalKeyField;
+            int applied = 0;
+            foreach (var entry in entries)
+            {
+                var localKey = entry.GetAttributeValue(keyField);
+                if (string.IsNullOrEmpty(localKey)) continue;
+                if (!crossRefs.TryGetValue(localKey, out var values) || values.Count == 0) continue;
+
+                var joined = string.Join(", ", values);
+                entry.SetAttributeValue(fieldName, joined);
+                applied++;
+            }
+            Log($"MergeCrossRef -> {fieldName}: applied {applied} values from {Path.GetFileName(sourcePath)}");
+        }
     }
 
     /// <summary>
