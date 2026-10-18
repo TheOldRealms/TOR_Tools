@@ -5042,4 +5042,74 @@
   <String id="tor_ironingot6_name" category="Ironingot6" />
   <String id="tor_cc_review_description_copy" category="Character Creation" />
   <String id="tor_test_mcp_linkedfield_verification" category="POIs" subcategory="Smoke Test" />
+  <String id="tor_poi_vampire_crypt.Name" category="POIs" subcategory="Vampire Crypt" />
+  <String id="tor_poi_vampire_crypt.Name_copy" category="POIs" subcategory="Vampire Crypt" />
+  <String id="tor_poi_vampire_crypt.EnterLabel" category="POIs" subcategory="Vampire Crypt" />
+  <String id="tor_poi_vampire_crypt.Undiscovered" category="POIs" subcategory="Vampire Crypt" />
+  <String id="tor_poi_vampire_crypt.Sealed" category="POIs" subcategory="Vampire Crypt" />
+  <String id="tor_poi_vampire_crypt.SiegeSealed" category="POIs" subcategory="Vampire Crypt" />
+  <String id="tor_poi_vampire_crypt.Rejected" category="POIs" subcategory="Vampire Crypt" />
+  <String id="tor_poi_vampire_crypt.MustHaveCareer" category="POIs" subcategory="Vampire Crypt" />
+  <String id="tor_poi_spellsingers_grove.Name" category="POIs" subcategory="Spellsingers Grove" />
+  <String id="tor_poi_spellsingers_grove.Name_copy" category="POIs" subcategory="Spellsingers Grove" />
+  <String id="tor_poi_spellsingers_grove.EnterLabel" category="POIs" subcategory="Spellsingers Grove" />
+  <String id="tor_poi_spellsingers_grove.Undiscovered" category="POIs" subcategory="Spellsingers Grove" />
+  <String id="tor_poi_spellsingers_grove.Sealed" category="POIs" subcategory="Spellsingers Grove" />
+  <String id="tor_poi_spellsingers_grove.SiegeSealed" category="POIs" subcategory="Spellsingers Grove" />
+  <String id="tor_poi_spellsingers_grove.Rejected" category="POIs" subcategory="Spellsingers Grove" />
+  <String id="tor_poi_spellsingers_grove.MustHaveCareer" category="POIs" subcategory="Spellsingers Grove" />
+  <String id="tor_poi_shaman_hut.Name" category="POIs" subcategory="Shaman Hut" />
+  <String id="tor_poi_shaman_hut.Name_copy" category="POIs" subcategory="Shaman Hut" />
+  <String id="tor_poi_shaman_hut.EnterLabel" category="POIs" subcategory="Shaman Hut" />
+  <String id="tor_poi_shaman_hut.Undiscovered" category="POIs" subcategory="Shaman Hut" />
+  <String id="tor_poi_shaman_hut.Sealed" category="POIs" subcategory="Shaman Hut" />
+  <String id="tor_poi_shaman_hut.SiegeSealed" category="POIs" subcategory="Shaman Hut" />
+  <String id="tor_poi_shaman_hut.Rejected" category="POIs" subcategory="Shaman Hut" />
+  <String id="tor_poi_shaman_hut.MustHaveCareer" category="POIs" subcategory="Shaman Hut" />
+  <String id="tor_poi_bretonnia_forest_trainer_shrine.Name" category="POIs" subcategory="Forest Shrine of the Lady" />
+  <String id="tor_poi_bretonnia_forest_trainer_shrine.Name_copy" category="POIs" subcategory="Forest Shrine of the Lady" />
+  <String id="tor_poi_bretonnia_forest_trainer_shrine.EnterLabel" category="POIs" subcategory="Forest Shrine of the Lady" />
+  <String id="tor_poi_bretonnia_forest_trainer_shrine.Undiscovered" category="POIs" subcategory="Forest Shrine of the Lady" />
+  <String id="tor_poi_bretonnia_forest_trainer_shrine.Sealed" category="POIs" subcategory="Forest Shrine of the Lady" />
+  <String id="tor_poi_bretonnia_forest_trainer_shrine.SiegeSealed" category="POIs" subcategory="Forest Shrine of the Lady" />
+  <String id="tor_poi_bretonnia_forest_trainer_shrine.WrongCulture" category="POIs" subcategory="Forest Shrine of the Lady" />
+  <String id="tor_poi_bretonnia_forest_trainer_shrine.NotCaster" category="POIs" subcategory="Forest Shrine of the Lady" />
+  <String id="tor_poi_runehall.Name" category="POIs" subcategory="Runehall" />
+  <String id="tor_poi_runehall.Name_copy" category="POIs" subcategory="Runehall" />
+  <String id="tor_poi_runehall.EnterLabel" category="POIs" subcategory="Runehall" />
+  <String id="tor_poi_runehall.Undiscovered" category="POIs" subcategory="Runehall" />
+  <String id="tor_poi_runehall.Sealed" category="POIs" subcategory="Runehall" />
+  <String id="tor_poi_runehall.SiegeSealed" category="POIs" subcategory="Runehall" />
+  <String id="tor_poi_runehall.WrongRace" category="POIs" subcategory="Runehall" />
+  <String id="tor_poi_runehall.MustHaveCareer" category="POIs" subcategory="Runehall" />
+  <String id="tor_poi_dwarf_engineer_hall.Name" category="POIs" subcategory="Dwarf Engineer Hall" />
+  <String id="tor_poi_dwarf_engineer_hall.Name_copy" category="POIs" subcategory="Dwarf Engineer Hall" />
+  <String id="tor_poi_dwarf_engineer_hall.EnterLabel" category="POIs" subcategory="Dwarf Engineer Hall" />
+  <String id="tor_poi_dwarf_engineer_hall.Undiscovered" category="POIs" subcategory="Dwarf Engineer Hall" />
+  <String id="tor_poi_dwarf_engineer_hall.Sealed" category="POIs" subcategory="Dwarf Engineer Hall" />
+  <String id="tor_poi_dwarf_engineer_hall.SiegeSealed" category="POIs" subcategory="Dwarf Engineer Hall" />
+  <String id="tor_poi_dwarf_engineer_hall.WrongCulture" category="POIs" subcategory="Dwarf Engineer Hall" />
+  <String id="tor_castlecomplex" category="Settlement Menus" subcategory="Castle Courtyard" />
+  <String id="tor_castlecomplex_copy" category="Settlement Menus" subcategory="Castle Courtyard" />
+  <String id="tor_castle_courtyard.leave" category="Settlement Menus" subcategory="Castle Courtyard" />
+  <String id="tor_castlecomplex_intro" category="Settlement Menus" subcategory="Castle Courtyard" />
+  <String id="tor_towncomplex" category="Settlement Menus" subcategory="Town Complex" />
+  <String id="tor_towncomplex_copy" category="Settlement Menus" subcategory="Town Complex" />
+  <String id="tor_towncomplex_intro" category="Settlement Menus" subcategory="Town Complex" />
+  <String id="tor_towncomplex.vlandia" category="Settlement Menus" subcategory="Town Complex" />
+  <String id="tor_towncomplex_intro.vlandia" category="Settlement Menus" subcategory="Town Complex" />
+  <String id="tor_towncomplex.khuzait" category="Settlement Menus" subcategory="Town Complex" />
+  <String id="tor_towncomplex_intro.khuzait" category="Settlement Menus" subcategory="Town Complex" />
+  <String id="tor_towncomplex.mousillon" category="Settlement Menus" subcategory="Town Complex" />
+  <String id="tor_towncomplex_intro.mousillon" category="Settlement Menus" subcategory="Town Complex" />
+  <String id="tor_towncomplex.sturgia" category="Settlement Menus" subcategory="Town Complex" />
+  <String id="tor_towncomplex_intro.sturgia" category="Settlement Menus" subcategory="Town Complex" />
+  <String id="tor_castlecomplex.vlandia" category="Settlement Menus" subcategory="Castle Courtyard" />
+  <String id="tor_castlecomplex_intro.vlandia" category="Settlement Menus" subcategory="Castle Courtyard" />
+  <String id="tor_castlecomplex.khuzait" category="Settlement Menus" subcategory="Castle Courtyard" />
+  <String id="tor_castlecomplex_intro.khuzait" category="Settlement Menus" subcategory="Castle Courtyard" />
+  <String id="tor_castlecomplex.mousillon" category="Settlement Menus" subcategory="Castle Courtyard" />
+  <String id="tor_castlecomplex_intro.mousillon" category="Settlement Menus" subcategory="Castle Courtyard" />
+  <String id="tor_castlecomplex.sturgia" category="Settlement Menus" subcategory="Castle Courtyard" />
+  <String id="tor_castlecomplex_intro.sturgia" category="Settlement Menus" subcategory="Castle Courtyard" />
 </StringMetadata>
