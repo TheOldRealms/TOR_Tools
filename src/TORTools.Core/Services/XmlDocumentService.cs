@@ -201,6 +201,13 @@ public class XmlDocumentService : IXmlDocumentService
         {
             sb.AppendLine($">{EscapeXmlText(element.Value)}</{elementName}>");
         }
+        else if (element.Nodes().Any())
+        {
+            // Authored as explicit open-close with whitespace-only body (e.g. the
+            // last entry in tor_clans.xml). XDocument represents the whitespace as
+            // a text node; collapsing to self-close drops the </tag> the user had.
+            sb.AppendLine($"></{elementName}>");
+        }
         else
         {
             sb.AppendLine(" />");
@@ -245,6 +252,12 @@ public class XmlDocumentService : IXmlDocumentService
         else if (hasTextContent)
         {
             sb.AppendLine($">{EscapeXmlText(element.Value)}</{elementName}>");
+        }
+        else if (element.Nodes().Any())
+        {
+            // Authored as explicit open-close with whitespace-only body; keep
+            // the </tag> rather than collapsing to self-close.
+            sb.AppendLine($"></{elementName}>");
         }
         else
         {
