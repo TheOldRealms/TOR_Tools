@@ -87,11 +87,27 @@ public class ScenesTools(IWorkspaceService workspaceService)
                 }
                 scripts.Add(new SceneScript { Name = (string?)s.Attribute("name") ?? "", Variables = vars });
             }
+            // Scenes may encode tags as either `tag="X"` attribute or <tags><tag name="X"/></tags>
+            // child block (the latter is what the current scener uses). Collect both forms.
+            var tags = new List<string>();
+            var attrTag = (string?)ge.Attribute("tag");
+            if (!string.IsNullOrEmpty(attrTag)) tags.Add(attrTag);
+            foreach (var t in ge.Elements("tags").Elements("tag"))
+            {
+                var tn = (string?)t.Attribute("name");
+                if (!string.IsNullOrEmpty(tn)) tags.Add(tn);
+            }
+            // Fall back to `old_prefab_name` when `prefab=""` is absent — the scener
+            // sometimes places entities with only a name + old_prefab_name (seen on
+            // sp_battle_set in the updated test_ambush scene).
+            var prefab = (string?)ge.Attribute("prefab") ?? "";
+            if (string.IsNullOrEmpty(prefab))
+                prefab = (string?)ge.Attribute("old_prefab_name") ?? "";
             list.Add(new SceneEntity
             {
-                Prefab = (string?)ge.Attribute("prefab") ?? "",
+                Prefab = prefab,
                 Name = (string?)ge.Attribute("name") ?? "",
-                Tag = (string?)ge.Attribute("tag") ?? "",
+                Tags = tags,
                 Position = pos.HasValue ? new double[] { pos.Value.x, pos.Value.y, pos.Value.z } : null,
                 Scripts = scripts,
             });
@@ -103,7 +119,7 @@ public class ScenesTools(IWorkspaceService workspaceService)
     {
         if (!string.IsNullOrEmpty(prefab) && !e.Prefab.Contains(prefab!, StringComparison.OrdinalIgnoreCase)) return false;
         if (!string.IsNullOrEmpty(name) && !e.Name.Contains(name!, StringComparison.OrdinalIgnoreCase)) return false;
-        if (!string.IsNullOrEmpty(tag) && !e.Tag.Contains(tag!, StringComparison.OrdinalIgnoreCase)) return false;
+        if (!string.IsNullOrEmpty(tag) && !e.Tags.Any(t => t.Contains(tag!, StringComparison.OrdinalIgnoreCase))) return false;
         if (!string.IsNullOrEmpty(script) && !e.Scripts.Any(s => s.Name.Contains(script!, StringComparison.OrdinalIgnoreCase))) return false;
         return true;
     }
@@ -196,7 +212,10 @@ public class ScenesTools(IWorkspaceService workspaceService)
         var ambushZones = entities
             .SelectMany(e => e.Scripts.Where(s => s.Name == "AmbushRetreatZone").Select(s => new { entity = e, script = s }))
             .ToList();
-        var battleSets = entities.Where(e => e.Prefab == "sp_battle_set").ToList();
+        var battleSets = entities.Where(e =>
+            e.Prefab == "sp_battle_set"
+            || e.Name == "sp_battle_set"
+            || e.Tags.Contains("battle_set")).ToList();
         var fleeAttackers = entities.Where(e => e.Prefab == "flee_line_attacker").ToList();
         var fleeDefenders = entities.Where(e => e.Prefab == "flee_line_defender").ToList();
 
@@ -319,7 +338,7 @@ public class ScenesTools(IWorkspaceService workspaceService)
             .ToList();
 
         var groups = entities
-            .GroupBy(e => string.IsNullOrEmpty(e.Prefab) ? (string.IsNullOrEmpty(e.Name) ? (string.IsNullOrEmpty(e.Tag) ? "<untagged>" : e.Tag) : e.Name) : e.Prefab)
+            .GroupBy(e => !string.IsNullOrEmpty(e.Prefab) ? e.Prefab : (!string.IsNullOrEmpty(e.Name) ? e.Name : (e.Tags.FirstOrDefault() ?? "<untagged>")))
             .Select(g => new ScriptsByPrefabGroup
             {
                 Prefab = g.Key,
@@ -422,7 +441,7 @@ public record SceneEntity
 {
     public string Prefab { get; init; } = "";
     public string Name { get; init; } = "";
-    public string Tag { get; init; } = "";
+    public List<string> Tags { get; init; } = new();
     public double[]? Position { get; init; }
     public List<SceneScript> Scripts { get; init; } = new();
 }
