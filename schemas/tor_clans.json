@@ -169,6 +169,18 @@
         "localKeyField": "id",
         "prefixToStrip": "Faction."
       }
+    },
+    "minor_faction_character_templates": {
+      "displayName": "Minor Faction Templates",
+      "description": "NPCCharacter.* template ids spawned as the minor faction's lord pool. Comma-separated.",
+      "type": "tagList",
+      "order": 21,
+      "width": 350,
+      "tagList": {
+        "containerElement": "minor_faction_character_templates",
+        "itemElement": "template",
+        "nameAttribute": "id"
+      }
     }
   }
 }
