@@ -64,9 +64,21 @@ public class FileSaverService
                 var compactFormat = context.Schema.CompactFormat;
                 var groupByField = context.Schema.GroupByField;
 
-                // Get linked fields that should not be written to the main file
+                // Fields that must NOT be written as inline attributes on the main element:
+                //  - LinkedField: value lives in a sidecar (e.g. tor_strings_metadata.xml).
+                //  - crossReference with SourceFile: value lives in the sidecar file
+                //    (e.g. RaceLock -> tor_extendeditemproperties.xml). Pure foreign-key
+                //    crossRefs (TargetFile only, like `culture`) are inline and keep the
+                //    regular path.
+                //  - localizationId: virtual field whose value is already carried by the
+                //    {=key} prefix on its sourceAttribute (e.g. name).
+                // Mirrors StandaloneDocumentStore.SaveDocument.
                 var linkedFields = context.Schema.Fields
-                    .Where(f => f.Value.LinkedField == true)
+                    .Where(f => f.Value.LinkedField == true
+                                || f.Value.Type == "localizationId"
+                                || (f.Value.Type == "crossReference"
+                                    && f.Value.CrossReference != null
+                                    && !string.IsNullOrEmpty(f.Value.CrossReference.SourceFile)))
                     .Select(f => f.Key)
                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -150,6 +162,11 @@ public class FileSaverService
 
                 // Skip ext_ prefixed fields - these are always stored in external files (tor_extendedunitproperties.xml)
                 if (columnName.StartsWith("ext_", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                // Skip virtual localizationId fields - value is read from the {=key} prefix
+                // on the sourceAttribute (e.g. name) and never written as its own attribute.
+                if (fieldDef?.Type == "localizationId")
                     continue;
 
                 var currentValue = rowVm[columnName];

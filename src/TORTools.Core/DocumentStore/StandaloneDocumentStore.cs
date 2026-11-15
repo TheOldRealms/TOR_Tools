@@ -255,13 +255,16 @@ public class StandaloneDocumentStore : IDocumentStore
             var compactFormat = schema?.CompactFormat ?? true;
 
             // Fields that live in a sidecar file (e.g. tor_strings_metadata.xml) OR in a
-            // crossReference source file (e.g. tor_extendeditemproperties.xml for RaceLock).
-            // Both must be stripped from the main document on save.
+            // crossReference source file (e.g. tor_extendeditemproperties.xml for RaceLock),
+            // plus virtual localizationId fields whose value is already carried by the
+            // {=key} prefix on their sourceAttribute. All must be stripped from the main
+            // document on save.
             // IMPORTANT: only crossReference fields with a SourceFile live elsewhere.
             // Pure foreign-key crossRefs (TargetFile only, like `culture`) live inline on
             // the main element and must NOT be excluded.
             var excludeFields = schema?.Fields
                 .Where(f => f.Value.LinkedField == true
+                            || f.Value.Type == "localizationId"
                             || (f.Value.Type == "crossReference"
                                 && f.Value.CrossReference != null
                                 && !string.IsNullOrEmpty(f.Value.CrossReference.SourceFile)))

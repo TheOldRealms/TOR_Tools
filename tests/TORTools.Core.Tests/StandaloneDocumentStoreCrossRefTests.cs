@@ -117,6 +117,41 @@ public class StandaloneDocumentStoreCrossRefTests : IDisposable
     }
 
     [Fact]
+    public void SaveStripsInlineLocalizationIdAttrFromMainFile()
+    {
+        // The `localizationId` virtual field's value is carried by the {=key} prefix on
+        // the name attribute. Any pre-existing inline `localizationId="..."` on an item
+        // is duplicate pollution and must be stripped on save.
+        File.WriteAllText(_mainFilePath, """
+<?xml version="1.0" encoding="utf-8"?>
+<Items>
+  <Item id="poll_item" name="{=str_poll_item}Polluted" Type="HeadArmor" culture="Culture.vlandia" value="100" localizationId="str_poll_item" />
+</Items>
+""");
+        File.WriteAllText(_sidecarPath, """
+<?xml version="1.0" encoding="utf-8"?>
+<ExtendedItemObjectPropertiesRoot>
+</ExtendedItemObjectPropertiesRoot>
+""");
+
+        var store = BuildStore();
+        store.Initialize();
+
+        // Unrelated update to trigger a save.
+        store.UpdateEntry("tor_armors.xml", "poll_item", new Dictionary<string, string?>
+        {
+            ["value"] = "200",
+        });
+
+        var mainXml = XDocument.Load(_mainFilePath);
+        var item = mainXml.Root!.Elements("Item").First();
+        Assert.Null(item.Attribute("localizationId"));
+        // The {=key}text prefix on name is preserved.
+        Assert.Equal("{=str_poll_item}Polluted", item.Attribute("name")?.Value);
+        Assert.Equal("200", item.Attribute("value")?.Value);
+    }
+
+    [Fact]
     public void SaveStripsInlineCrossRefAttrFromMainFile()
     {
         // Simulate a tor_armors.xml with the pre-existing inline-RaceLock pollution we
