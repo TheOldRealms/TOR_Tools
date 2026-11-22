@@ -1,0 +1,5 @@
+<Config>
+	<SpriteCategory Name="ui_spritetest">
+		<AlwaysLoad/>
+	</SpriteCategory>
+</Config>

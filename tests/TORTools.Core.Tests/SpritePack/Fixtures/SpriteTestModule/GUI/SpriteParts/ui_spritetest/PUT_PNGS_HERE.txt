@@ -1,0 +1,2 @@
+Put your PNG files in this folder. File name = sprite name: spritetest_icon.png is used in a prefab as Sprite="spritetest_icon".
+Then drag the SpriteTest folder onto spriteforge.exe, or run: spriteforge build <path to SpriteTest>

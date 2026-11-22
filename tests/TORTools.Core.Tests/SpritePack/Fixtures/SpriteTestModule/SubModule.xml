@@ -1,0 +1,13 @@
+<Module>
+	<Name value="SpriteTest"/>
+	<Id value="SpriteTest"/>
+	<Version value="v1.0.0"/>
+	<DefaultModule value="false"/>
+	<ModuleCategory value="Singleplayer"/>
+	<Official value="false"/>
+	<DependedModules>
+		<DependedModule Id="Native"/>
+	</DependedModules>
+	<SubModules/>
+	<Xmls/>
+</Module>
