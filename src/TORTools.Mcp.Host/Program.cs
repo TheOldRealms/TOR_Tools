@@ -91,7 +91,8 @@ builder.Services.AddMcpServer(options =>
 .WithTools<CompareTools>()
 .WithTools<StringsTools>()
 .WithTools<TranslationTools>()
-.WithTools<SettlementsTools>();
+.WithTools<SettlementsTools>()
+.WithTools<SpritePackTools>();
 
 var app = builder.Build();
 
