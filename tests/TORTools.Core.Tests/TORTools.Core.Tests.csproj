@@ -26,4 +26,12 @@
     <Using Include="FluentAssertions" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Binary oracle fixtures (real Modding-Kit .tpac files) end up next
+         to the test assembly so AppContext.BaseDirectory + Fixtures/ works. -->
+    <Content Include="SpritePack/Fixtures/**/*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

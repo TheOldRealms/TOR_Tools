@@ -11,6 +11,8 @@
   <ItemGroup>
     <!-- 3D Model Loading for Weapon Parts Editor -->
     <PackageReference Include="Silk.NET.Assimp" Version="2.23.0" />
+    <!-- SpritePack TPAC + RDC payload compression. -->
+    <PackageReference Include="K4os.Compression.LZ4" Version="1.3.8" />
   </ItemGroup>
 
 </Project>
