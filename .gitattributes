@@ -1,3 +1,30 @@
+# Windows desktop bundle
 release/*.dll filter=lfs diff=lfs merge=lfs -text
 release/*.exe filter=lfs diff=lfs merge=lfs -text
 release/*.pdb filter=lfs diff=lfs merge=lfs -text
+
+# Windows MCP bundle (TORTools.Mcp.Host)
+release-mcp/*.dll filter=lfs diff=lfs merge=lfs -text
+release-mcp/*.exe filter=lfs diff=lfs merge=lfs -text
+release-mcp/*.pdb filter=lfs diff=lfs merge=lfs -text
+release-mcp/TORTools.Mcp.Host filter=lfs diff=lfs merge=lfs -text
+release-mcp/runtimes/**/*.dll filter=lfs diff=lfs merge=lfs -text
+release-mcp/runtimes/**/*.so filter=lfs diff=lfs merge=lfs -text
+release-mcp/runtimes/**/*.so.* filter=lfs diff=lfs merge=lfs -text
+release-mcp/runtimes/**/*.dylib filter=lfs diff=lfs merge=lfs -text
+
+# Linux desktop bundle (TORTools.App)
+release-linux/*.dll filter=lfs diff=lfs merge=lfs -text
+release-linux/*.pdb filter=lfs diff=lfs merge=lfs -text
+release-linux/*.so filter=lfs diff=lfs merge=lfs -text
+release-linux/*.so.* filter=lfs diff=lfs merge=lfs -text
+release-linux/createdump filter=lfs diff=lfs merge=lfs -text
+release-linux/TORTools.App filter=lfs diff=lfs merge=lfs -text
+
+# Linux MCP bundle (TORTools.Mcp.Host)
+release-linux-mcp/*.dll filter=lfs diff=lfs merge=lfs -text
+release-linux-mcp/*.pdb filter=lfs diff=lfs merge=lfs -text
+release-linux-mcp/*.so filter=lfs diff=lfs merge=lfs -text
+release-linux-mcp/*.so.* filter=lfs diff=lfs merge=lfs -text
+release-linux-mcp/createdump filter=lfs diff=lfs merge=lfs -text
+release-linux-mcp/TORTools.Mcp.Host filter=lfs diff=lfs merge=lfs -text
