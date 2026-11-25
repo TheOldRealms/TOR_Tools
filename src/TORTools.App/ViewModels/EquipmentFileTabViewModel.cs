@@ -289,7 +289,7 @@ public partial class EquipmentFileTabViewModel : FileTabViewModel
 
             var newVariationIndex = rosterEntry.Children
                 .Count(c => c.ElementName == variationElementName &&
-                       c.GetAttributeValue("civilian")?.Equals("true", StringComparison.OrdinalIgnoreCase) != true);
+                       !FileSaverService.IsCivilianEquipmentSet(c.OriginalElement));
 
             var newRow = CreateVariationRow(rosterEntry, command.AddedVariation, newVariationIndex);
 
@@ -373,7 +373,7 @@ public partial class EquipmentFileTabViewModel : FileTabViewModel
 
         var variations = duplicatedRoster.Children
             .Where(c => c.ElementName == variationElementName &&
-                   c.GetAttributeValue("civilian")?.Equals("true", StringComparison.OrdinalIgnoreCase) != true)
+                   !FileSaverService.IsCivilianEquipmentSet(c.OriginalElement))
             .ToList();
 
         var insertIndex = lastRosterRowIndex + 1;
@@ -570,7 +570,7 @@ public partial class EquipmentFileTabViewModel : FileTabViewModel
             roster.RefreshChildren();
             foreach (var variation in roster.Children.Where(c => c.ElementName == variationElementName))
             {
-                if (variation.GetAttributeValue("civilian")?.Equals("true", StringComparison.OrdinalIgnoreCase) == true)
+                if (FileSaverService.IsCivilianEquipmentSet(variation.OriginalElement))
                     continue;
                 currentVariationElements.Add(variation.OriginalElement);
             }
@@ -604,7 +604,7 @@ public partial class EquipmentFileTabViewModel : FileTabViewModel
 
             var variations = roster.Children
                 .Where(c => c.ElementName == variationElementName &&
-                       c.GetAttributeValue("civilian")?.Equals("true", StringComparison.OrdinalIgnoreCase) != true)
+                       !FileSaverService.IsCivilianEquipmentSet(c.OriginalElement))
                 .ToList();
 
             int variationIndex = 1;

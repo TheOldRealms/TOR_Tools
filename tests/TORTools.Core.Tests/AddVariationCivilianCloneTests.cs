@@ -7,18 +7,23 @@ using TORTools.Core.Services;
 namespace TORTools.Core.Tests;
 
 /// <summary>
-/// Reproduces #14: when the user adds a new EquipmentSet via AddVariationCommand,
-/// the save path's civilian-clone generator should also emit a matching
-/// &lt;EquipmentSet civilian="true"&gt; sibling.
+/// Civilian-variant regeneration on save.
 ///
-/// The civilian clone is produced by FileSaverService.GenerateCivilianClones which
-/// lives in the App layer; this test exercises the Core-level primitive directly
-/// so it can be driven without an Avalonia window.
+/// Vanilla's SandBox/ModuleData/sandbox_equipment_sets.xml shape is: N combat
+/// &lt;EquipmentSet&gt; siblings followed by exactly one trailing
+/// &lt;EquipmentSet equipmentType="Civilian"&gt; sibling, regardless of how many
+/// combat variants the roster has. These tests pin that invariant plus
+/// idempotency when the file already carries legacy civilian="true" or stray
+/// equipmentType="Civilian" entries (the exact damage seen in TOR_Core's
+/// tor_equipment_sets.xml before the fix).
+///
+/// The real generator lives in FileSaverService (App layer); this test file
+/// inlines the same logic to exercise it without pulling in Avalonia.
 /// </summary>
 public class AddVariationCivilianCloneTests
 {
     [Fact]
-    public void AddVariation_ThenGenerateCivilianClones_EmitsCivilianSibling()
+    public void AddVariation_ThenGenerateCivilianClones_EmitsSingleCivilianSibling()
     {
         var tempPath = Path.GetTempFileName();
         try
@@ -40,34 +45,24 @@ public class AddVariationCivilianCloneTests
             var doc = svc.Load(tempPath);
             var roster = svc.GetEntries(doc).First();
 
-            // Simulate the user clicking "Add Variation" in the UI.
             var cmd = new AddVariationCommand(doc, roster, "EquipmentSet");
             cmd.Execute();
             cmd.AddedVariation.Should().NotBeNull();
-
-            // Simulate the user filling in equipment on the new combat variation.
             cmd.AddedVariation!.OriginalElement.Add(
                 new XElement("Equipment",
                     new XAttribute("slot", "Head"),
                     new XAttribute("id", "Item.helmet")));
 
-            // Count: 1 original combat, 1 original civilian, 1 new combat (no civilian clone yet).
-            var combatBefore = roster.OriginalElement.Elements("EquipmentSet")
-                .Count(e => e.Attribute("civilian")?.Value != "true");
-            var civilianBefore = roster.OriginalElement.Elements("EquipmentSet")
-                .Count(e => e.Attribute("civilian")?.Value == "true");
-            combatBefore.Should().Be(2);
-            civilianBefore.Should().Be(1);
-
-            // Now run the exact same logic as FileSaverService.GenerateCivilianClones.
             RegenerateCivilianClones(roster.OriginalElement, "EquipmentSet");
 
-            var combatAfter = roster.OriginalElement.Elements("EquipmentSet")
-                .Count(e => e.Attribute("civilian")?.Value != "true");
-            var civilianAfter = roster.OriginalElement.Elements("EquipmentSet")
-                .Count(e => e.Attribute("civilian")?.Value == "true");
-            combatAfter.Should().Be(2, because: "the two combat sets must still be present");
-            civilianAfter.Should().Be(2, because: "every combat set must have a civilian clone, including the newly-added one");
+            var sets = roster.OriginalElement.Elements("EquipmentSet").ToList();
+            var combat = sets.Where(e => !IsCivilian(e)).ToList();
+            var civilian = sets.Where(IsCivilian).ToList();
+            combat.Should().HaveCount(2, because: "both combat variations survive");
+            civilian.Should().HaveCount(1, because: "vanilla roster has exactly one civilian set regardless of combat count");
+            civilian[0].Attribute("equipmentType")!.Value.Should().Be("Civilian");
+            civilian[0].Attribute("civilian").Should().BeNull(because: "the legacy marker is stripped, not re-emitted");
+            sets.Last().Should().BeSameAs(civilian[0], because: "civilian goes at the end, after all combat sets");
         }
         finally
         {
@@ -76,10 +71,56 @@ public class AddVariationCivilianCloneTests
     }
 
     [Fact]
+    public void RegenerateCivilianClones_StripsQuadrupledDamage()
+    {
+        // The exact damage pattern in TOR_Core/ModuleData/tor_equipment_sets.xml
+        // pre-fix: every logical loadout has 4 identical siblings (combat +
+        // civilian="true" + equipmentType="Civilian" + both). Regenerating must
+        // collapse to combat + one trailing equipmentType="Civilian".
+        var roster = new XElement("EquipmentRoster",
+            new XAttribute("id", "damaged"),
+            new XElement("EquipmentSet",
+                new XElement("Equipment", new XAttribute("slot", "Item0"), new XAttribute("id", "Item.sword"))),
+            new XElement("EquipmentSet",
+                new XAttribute("civilian", "true"),
+                new XElement("Equipment", new XAttribute("slot", "Item0"), new XAttribute("id", "Item.sword"))),
+            new XElement("EquipmentSet",
+                new XAttribute("equipmentType", "Civilian"),
+                new XElement("Equipment", new XAttribute("slot", "Item0"), new XAttribute("id", "Item.sword"))),
+            new XElement("EquipmentSet",
+                new XAttribute("equipmentType", "Civilian"),
+                new XAttribute("civilian", "true"),
+                new XElement("Equipment", new XAttribute("slot", "Item0"), new XAttribute("id", "Item.sword"))));
+
+        RegenerateCivilianClones(roster, "EquipmentSet");
+
+        var sets = roster.Elements("EquipmentSet").ToList();
+        sets.Should().HaveCount(2);
+        sets[0].Attribute("equipmentType").Should().BeNull();
+        sets[0].Attribute("civilian").Should().BeNull();
+        sets[1].Attribute("equipmentType")!.Value.Should().Be("Civilian");
+        sets[1].Attribute("civilian").Should().BeNull();
+    }
+
+    [Fact]
+    public void RegenerateCivilianClones_IsIdempotent()
+    {
+        var roster = new XElement("EquipmentRoster",
+            new XElement("EquipmentSet",
+                new XElement("Equipment", new XAttribute("slot", "Item0"), new XAttribute("id", "Item.sword"))));
+
+        RegenerateCivilianClones(roster, "EquipmentSet");
+        var firstPass = roster.Elements("EquipmentSet").Count();
+        RegenerateCivilianClones(roster, "EquipmentSet");
+        var secondPass = roster.Elements("EquipmentSet").Count();
+
+        firstPass.Should().Be(2);
+        secondPass.Should().Be(2, because: "repeated saves must not accumulate civilian siblings");
+    }
+
+    [Fact]
     public void AddRoster_WithEmptyVariation_ThenGenerateCivilianClones_EmitsCivilianSibling()
     {
-        // Simulates the full "add new roster" flow (AddRowCommand + AddVariationCommand)
-        // plus the save-time civilian generation.
         var tempPath = Path.GetTempFileName();
         try
         {
@@ -103,7 +144,6 @@ public class AddVariationCivilianCloneTests
             var newRoster = entries.Last();
             var addVariation = new AddVariationCommand(doc, newRoster, "EquipmentSet");
             addVariation.Execute();
-            // Fill some equipment on the new variation (as the user would).
             addVariation.AddedVariation!.OriginalElement.Add(
                 new XElement("Equipment",
                     new XAttribute("slot", "Head"),
@@ -117,9 +157,10 @@ public class AddVariationCivilianCloneTests
             svc.Save(doc, tempPath, compactFormat: false);
 
             var output = File.ReadAllText(tempPath);
-            System.Console.WriteLine(output);
-            output.Should().Contain("<EquipmentSet civilian=\"true\"",
-                because: "a brand-new roster/variation must also produce a civilian clone on save");
+            output.Should().Contain("<EquipmentSet equipmentType=\"Civilian\"",
+                because: "a brand-new roster must also produce a civilian clone on save");
+            output.Should().NotContain("civilian=\"true\"",
+                because: "the legacy marker must not be emitted");
         }
         finally
         {
@@ -261,24 +302,29 @@ public class AddVariationCivilianCloneTests
         elem.Element("Equipments").Should().BeNull(because: "clearing the roster id should drop the whole Equipments block");
     }
 
-    // Inline copy of FileSaverService.GenerateCivilianClones so we can test the
-    // behaviour without pulling in the App assembly / Avalonia.
+    // Inline copy of FileSaverService.GenerateCivilianClones.
     private static void RegenerateCivilianClones(XElement rosterElement, string variationElementName)
     {
         var civilianElements = rosterElement.Elements(variationElementName)
-            .Where(e => e.Attribute("civilian")?.Value?.Equals("true", System.StringComparison.OrdinalIgnoreCase) == true)
+            .Where(IsCivilian)
             .ToList();
         foreach (var c in civilianElements) c.Remove();
 
-        var combatElements = rosterElement.Elements(variationElementName)
-            .Where(e => e.Attribute("civilian")?.Value?.Equals("true", System.StringComparison.OrdinalIgnoreCase) != true)
-            .ToList();
+        var combatElements = rosterElement.Elements(variationElementName).ToList();
+        if (combatElements.Count == 0) return;
 
-        foreach (var combatElement in combatElements)
-        {
-            var civilianClone = new XElement(combatElement);
-            civilianClone.SetAttributeValue("civilian", "true");
-            combatElement.AddAfterSelf(civilianClone);
-        }
+        var clone = new XElement(combatElements[0]);
+        clone.Attribute("civilian")?.Remove();
+        clone.SetAttributeValue("equipmentType", "Civilian");
+        combatElements[^1].AddAfterSelf(clone);
+    }
+
+    private static bool IsCivilian(XElement e)
+    {
+        var civ = e.Attribute("civilian")?.Value;
+        if (!string.IsNullOrEmpty(civ) && civ.Equals("true", System.StringComparison.OrdinalIgnoreCase))
+            return true;
+        var type = e.Attribute("equipmentType")?.Value;
+        return !string.IsNullOrEmpty(type) && type.Equals("Civilian", System.StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -548,58 +548,59 @@ public class FileSaverService
     }
 
     /// <summary>
-    /// Auto-generates civilian clone EquipmentSets for each combat EquipmentSet.
+    /// Ensures each equipment roster has exactly one civilian variant, shaped to match
+    /// vanilla SandBox/ModuleData/sandbox_equipment_sets.xml: one trailing
+    /// &lt;EquipmentSet equipmentType="Civilian"&gt; sibling per roster regardless of how
+    /// many combat variations the roster has. Any legacy civilian markers
+    /// (civilian="true" or extra equipmentType="Civilian" entries) are stripped first so
+    /// the save is idempotent — repeated saves don't accumulate siblings.
     /// </summary>
     private void GenerateCivilianClones(FileEditContext context)
     {
         if (context.XmlEntries.Count == 0) return;
 
         var variationElementName = context.Schema?.VariationElement ?? "EquipmentSet";
-        var cloneCount = 0;
 
         foreach (var roster in context.XmlEntries)
         {
             var rosterId = roster.Id ?? "(no id)";
-
-            // IMPORTANT: Query the actual XElement children directly, not the cached Children collection
-            // This ensures we see the current state of the XML tree
             var rosterElement = roster.OriginalElement;
 
-            // Remove existing civilian clones first (query XElement directly)
             var civilianElements = rosterElement.Elements(variationElementName)
-                .Where(e => e.Attribute("civilian")?.Value?.Equals("true", StringComparison.OrdinalIgnoreCase) == true)
+                .Where(IsCivilianEquipmentSet)
                 .ToList();
-
-            Console.WriteLine($"[EquipmentSets] Roster {rosterId}: removing {civilianElements.Count} existing civilian clones");
 
             foreach (var civilianElement in civilianElements)
             {
                 civilianElement.Remove();
             }
 
-            // Get all combat sets directly from XElement (no civilian attribute)
-            var combatElements = rosterElement.Elements(variationElementName)
-                .Where(e => e.Attribute("civilian")?.Value?.Equals("true", StringComparison.OrdinalIgnoreCase) != true)
-                .ToList();
-
-            Console.WriteLine($"[EquipmentSets] Roster {rosterId}: found {combatElements.Count} combat variations to clone");
-
-            // Clone each combat set as civilian
-            foreach (var combatElement in combatElements)
+            var combatElements = rosterElement.Elements(variationElementName).ToList();
+            if (combatElements.Count == 0)
             {
-                var civilianClone = new XElement(combatElement);
-                civilianClone.SetAttributeValue("civilian", "true");
-
-                // Add after the combat set
-                combatElement.AddAfterSelf(civilianClone);
-                cloneCount++;
+                Console.WriteLine($"[EquipmentSets] Roster {rosterId}: no combat sets, skipping civilian");
+                roster.RefreshChildren();
+                continue;
             }
 
-            // Refresh the Children collection to match the modified XElement tree
+            var source = combatElements[0];
+            var clone = new XElement(source);
+            clone.Attribute("civilian")?.Remove();
+            clone.SetAttributeValue("equipmentType", "Civilian");
+            combatElements[^1].AddAfterSelf(clone);
+
+            Console.WriteLine($"[EquipmentSets] Roster {rosterId}: stripped {civilianElements.Count} old civilian entries, emitted 1 (from {combatElements.Count} combat sets)");
             roster.RefreshChildren();
         }
+    }
 
-        Console.WriteLine($"[EquipmentSets] Generated {cloneCount} civilian clones total");
+    internal static bool IsCivilianEquipmentSet(XElement element)
+    {
+        var civilianAttr = element.Attribute("civilian")?.Value;
+        if (!string.IsNullOrEmpty(civilianAttr) && civilianAttr.Equals("true", StringComparison.OrdinalIgnoreCase))
+            return true;
+        var typeAttr = element.Attribute("equipmentType")?.Value;
+        return !string.IsNullOrEmpty(typeAttr) && typeAttr.Equals("Civilian", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>

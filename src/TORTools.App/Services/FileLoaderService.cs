@@ -393,10 +393,9 @@ public class FileLoaderService
                 int variationIndex = 1;
                 foreach (var variation in variations)
                 {
-                    var isCivilian = variation.GetAttributeValue("civilian")?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
-
-                    // Skip civilian variations - they will be auto-generated on save
-                    if (isCivilian) continue;
+                    // Skip civilian variants (both the vanilla equipmentType="Civilian" shape
+                    // and the legacy civilian="true" marker) — they're auto-regenerated on save.
+                    if (FileSaverService.IsCivilianEquipmentSet(variation.OriginalElement)) continue;
 
                     // Extract equipment from this variation
                     var equipment = new Dictionary<string, string>();
