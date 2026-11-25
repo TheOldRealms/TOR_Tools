@@ -118,6 +118,150 @@
       "order": 30,
       "width": 200
     },
+    "weapon_class": {
+      "displayName": "Weapon Class",
+      "description": "Vanilla weapon class on the nested Weapon component.",
+      "type": "enum",
+      "nested": true,
+      "nestedPath": "ItemComponent/Weapon/@weapon_class",
+      "order": 40,
+      "width": 110,
+      "group": "Weapon",
+      "enumValues": [
+        { "value": "Bow", "displayName": "Bow" },
+        { "value": "Crossbow", "displayName": "Crossbow" },
+        { "value": "Musket", "displayName": "Musket" },
+        { "value": "Pistol", "displayName": "Pistol" },
+        { "value": "ThrowingAxe", "displayName": "Throwing Axe" },
+        { "value": "ThrowingKnife", "displayName": "Throwing Knife" },
+        { "value": "Javelin", "displayName": "Javelin" },
+        { "value": "Stone", "displayName": "Stone" }
+      ]
+    },
+    "ammo_class": {
+      "displayName": "Ammo Class",
+      "description": "Projectile/ammo class accepted by this weapon.",
+      "type": "enum",
+      "nested": true,
+      "nestedPath": "ItemComponent/Weapon/@ammo_class",
+      "order": 41,
+      "width": 100,
+      "group": "Weapon",
+      "enumValues": [
+        { "value": "Arrow", "displayName": "Arrow" },
+        { "value": "Bolt", "displayName": "Bolt" },
+        { "value": "Cartridge", "displayName": "Cartridge" },
+        { "value": "Stone", "displayName": "Stone" },
+        { "value": "ThrowingAxe", "displayName": "Throwing Axe" },
+        { "value": "ThrowingKnife", "displayName": "Throwing Knife" },
+        { "value": "Javelin", "displayName": "Javelin" }
+      ]
+    },
+    "weapon_length": {
+      "displayName": "Length",
+      "description": "Weapon length (cm).",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "ItemComponent/Weapon/@weapon_length",
+      "order": 42,
+      "width": 70,
+      "group": "Weapon"
+    },
+    "missile_speed": {
+      "displayName": "Missile Speed",
+      "description": "Launch speed of the projectile.",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "ItemComponent/Weapon/@missile_speed",
+      "order": 43,
+      "width": 90,
+      "group": "Weapon"
+    },
+    "accuracy": {
+      "displayName": "Accuracy",
+      "description": "Accuracy rating (0-100).",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "ItemComponent/Weapon/@accuracy",
+      "order": 44,
+      "width": 80,
+      "group": "Weapon"
+    },
+    "thrust_speed": {
+      "displayName": "Thrust Speed",
+      "description": "Thrust attack speed.",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "ItemComponent/Weapon/@thrust_speed",
+      "order": 45,
+      "width": 90,
+      "group": "Weapon"
+    },
+    "speed_rating": {
+      "displayName": "Speed Rating",
+      "description": "Overall weapon speed rating.",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "ItemComponent/Weapon/@speed_rating",
+      "order": 46,
+      "width": 90,
+      "group": "Weapon"
+    },
+    "thrust_damage": {
+      "displayName": "Thrust Damage",
+      "description": "Damage dealt on thrust/launch.",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "ItemComponent/Weapon/@thrust_damage",
+      "order": 47,
+      "width": 90,
+      "group": "Weapon"
+    },
+    "thrust_damage_type": {
+      "displayName": "Damage Type",
+      "description": "Vanilla damage type.",
+      "type": "enum",
+      "nested": true,
+      "nestedPath": "ItemComponent/Weapon/@thrust_damage_type",
+      "order": 48,
+      "width": 90,
+      "group": "Weapon",
+      "enumValues": [
+        { "value": "Pierce", "displayName": "Pierce" },
+        { "value": "Cut", "displayName": "Cut" },
+        { "value": "Blunt", "displayName": "Blunt" }
+      ]
+    },
+    "ammo_limit": {
+      "displayName": "Ammo Limit",
+      "description": "Max rounds carried by this weapon (per stack).",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "ItemComponent/Weapon/@ammo_limit",
+      "order": 49,
+      "width": 80,
+      "group": "Weapon"
+    },
+    "reload_phase_count": {
+      "displayName": "Reload Phases",
+      "description": "Number of reload phases (crossbows/muskets use 2-3).",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "ItemComponent/Weapon/@reload_phase_count",
+      "order": 50,
+      "width": 80,
+      "group": "Weapon"
+    },
+    "item_usage": {
+      "displayName": "Item Usage",
+      "description": "Vanilla item_usage animation set key.",
+      "type": "string",
+      "nested": true,
+      "nestedPath": "ItemComponent/Weapon/@item_usage",
+      "order": 51,
+      "width": 140,
+      "group": "Weapon"
+    },
     "DamageProportions": {
       "displayName": "Damage",
       "description": "Damage type proportions dealt by this weapon.",

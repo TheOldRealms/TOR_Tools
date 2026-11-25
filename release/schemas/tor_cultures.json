@@ -4,6 +4,7 @@
   "description": "Culture definitions with troop references, NPCs, equipment rosters, and naming conventions.",
   "rootElement": "SPCultures",
   "entryElement": "Culture",
+  "compactFormat": false,
   "fields": {
     "id": {
       "displayName": "ID",

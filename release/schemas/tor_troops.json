@@ -175,12 +175,19 @@
     },
     "EquipmentRosterId": {
       "displayName": "Equipment Set",
-      "description": "Reference to equipment roster template.",
-      "type": "string",
+      "description": "Combat equipment set ID. Click to navigate.",
+      "type": "crossReference",
       "order": 20,
       "width": 240,
       "nested": true,
-      "nestedPath": "Equipments/EquipmentSet[1]/@id"
+      "nestedPath": "Equipments/EquipmentSet[1]/@id",
+      "pairedCivilianVariant": true,
+      "crossReference": {
+        "targetFile": "tor_equipment_sets.xml",
+        "targetKeyField": "id",
+        "localKeyField": "EquipmentRosterId",
+        "singleValue": true
+      }
     },
     "is_female": {
       "displayName": "Female",

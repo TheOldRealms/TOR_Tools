@@ -110,6 +110,164 @@
       "order": 30,
       "width": 200
     },
+    "weapon_class": {
+      "displayName": "Weapon Class",
+      "description": "Vanilla weapon class on the nested Weapon component. Banner entries use a <Banner> child instead and aren't covered here.",
+      "type": "enum",
+      "nested": true,
+      "nestedPath": "ItemComponent/Weapon/@weapon_class",
+      "order": 40,
+      "width": 130,
+      "group": "Weapon",
+      "enumValues": [
+        { "value": "LargeShield", "displayName": "Large Shield" },
+        { "value": "SmallShield", "displayName": "Small Shield" },
+        { "value": "OneHandedAxe", "displayName": "One-Handed Axe" },
+        { "value": "OneHandedSword", "displayName": "One-Handed Sword" },
+        { "value": "Mace", "displayName": "Mace" },
+        { "value": "Dagger", "displayName": "Dagger" }
+      ]
+    },
+    "hit_points": {
+      "displayName": "Hit Points",
+      "description": "Shield durability (max damage absorbed before breaking).",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "ItemComponent/Weapon/@hit_points",
+      "order": 41,
+      "width": 80,
+      "group": "Weapon"
+    },
+    "body_armor": {
+      "displayName": "Body Armor",
+      "description": "Passive armor contribution while held (shield-only).",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "ItemComponent/Weapon/@body_armor",
+      "order": 42,
+      "width": 80,
+      "group": "Weapon"
+    },
+    "weapon_length": {
+      "displayName": "Length",
+      "description": "Weapon/shield length (cm).",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "ItemComponent/Weapon/@weapon_length",
+      "order": 43,
+      "width": 70,
+      "group": "Weapon"
+    },
+    "weapon_balance": {
+      "displayName": "Balance",
+      "description": "Weapon balance stat.",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "ItemComponent/Weapon/@weapon_balance",
+      "order": 44,
+      "width": 70,
+      "group": "Weapon"
+    },
+    "speed_rating": {
+      "displayName": "Speed Rating",
+      "description": "Overall swing/block speed rating.",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "ItemComponent/Weapon/@speed_rating",
+      "order": 45,
+      "width": 90,
+      "group": "Weapon"
+    },
+    "thrust_speed": {
+      "displayName": "Thrust Speed",
+      "description": "Thrust attack speed.",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "ItemComponent/Weapon/@thrust_speed",
+      "order": 46,
+      "width": 90,
+      "group": "Weapon"
+    },
+    "thrust_damage": {
+      "displayName": "Thrust Damage",
+      "description": "Thrust damage.",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "ItemComponent/Weapon/@thrust_damage",
+      "order": 47,
+      "width": 90,
+      "group": "Weapon"
+    },
+    "thrust_damage_type": {
+      "displayName": "Thrust Type",
+      "description": "Thrust damage type.",
+      "type": "enum",
+      "nested": true,
+      "nestedPath": "ItemComponent/Weapon/@thrust_damage_type",
+      "order": 48,
+      "width": 90,
+      "group": "Weapon",
+      "enumValues": [
+        { "value": "Blunt", "displayName": "Blunt" },
+        { "value": "Pierce", "displayName": "Pierce" },
+        { "value": "Cut", "displayName": "Cut" }
+      ]
+    },
+    "swing_damage": {
+      "displayName": "Swing Damage",
+      "description": "Swing damage (offhand weapons).",
+      "type": "int",
+      "nested": true,
+      "nestedPath": "ItemComponent/Weapon/@swing_damage",
+      "order": 49,
+      "width": 90,
+      "group": "Weapon"
+    },
+    "swing_damage_type": {
+      "displayName": "Swing Type",
+      "description": "Swing damage type.",
+      "type": "enum",
+      "nested": true,
+      "nestedPath": "ItemComponent/Weapon/@swing_damage_type",
+      "order": 50,
+      "width": 90,
+      "group": "Weapon",
+      "enumValues": [
+        { "value": "Blunt", "displayName": "Blunt" },
+        { "value": "Pierce", "displayName": "Pierce" },
+        { "value": "Cut", "displayName": "Cut" }
+      ]
+    },
+    "modifier_group": {
+      "displayName": "Modifier Group",
+      "description": "Vanilla modifier_group key (e.g. shield).",
+      "type": "string",
+      "nested": true,
+      "nestedPath": "ItemComponent/Weapon/@modifier_group",
+      "order": 51,
+      "width": 110,
+      "group": "Weapon"
+    },
+    "item_usage": {
+      "displayName": "Item Usage",
+      "description": "Vanilla item_usage animation set key.",
+      "type": "string",
+      "nested": true,
+      "nestedPath": "ItemComponent/Weapon/@item_usage",
+      "order": 52,
+      "width": 110,
+      "group": "Weapon"
+    },
+    "physics_material": {
+      "displayName": "Physics Material",
+      "description": "Vanilla physics_material key.",
+      "type": "string",
+      "nested": true,
+      "nestedPath": "ItemComponent/Weapon/@physics_material",
+      "order": 53,
+      "width": 130,
+      "group": "Weapon"
+    },
     "ItemTraits": {
       "displayName": "Item Traits",
       "description": "Traits assigned to this item (from extended properties). Ctrl+Click to navigate.",

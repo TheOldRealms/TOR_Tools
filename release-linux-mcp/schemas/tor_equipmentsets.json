@@ -2,7 +2,7 @@
   "file": "tor_equipment_sets.xml",
   "displayName": "Equipment Sets",
   "description": "Equipment loadout templates for troops. Each roster contains multiple variations.",
-  "_comment_vanilla_flags": "NOTE: Vanilla Bannerlord supports a <Flags> element with IsCivilianTemplate, IsCombatantTemplate, IsWandererEquipment at roster level. TOR and XmlGenerator don't use this - only the 'civilian' attribute on EquipmentSet. May need to add support in future if TOR adopts vanilla Flags.",
+  "_comment_vanilla_shape": "Civilian variant uses equipmentType=\"Civilian\" on a trailing <EquipmentSet> sibling, matching SandBox/ModuleData/sandbox_equipment_sets.xml. Legacy civilian=\"true\" is accepted on load but stripped on save. Exactly one civilian set per roster is emitted, cloned from the first combat set; the civilian cell is hidden in the grid.",
   "rootElement": "EquipmentRosters",
   "entryElement": "EquipmentRoster",
   "hasNestedVariations": true,
@@ -44,7 +44,7 @@
     },
     "civilian": {
       "displayName": "Type",
-      "description": "Equipment type: Civilian sets are auto-generated as clones of combat sets on save.",
+      "description": "Equipment type. The civilian variant (<EquipmentSet equipmentType=\"Civilian\">) is auto-regenerated on save from the first combat set and hidden from the grid.",
       "type": "enum",
       "order": 4,
       "width": 80,
