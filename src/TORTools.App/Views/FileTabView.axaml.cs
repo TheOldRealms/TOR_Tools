@@ -2341,20 +2341,40 @@ public partial class FileTabView : UserControl
             var selectedItem = items.FirstOrDefault(i => i.Tag?.ToString() == currentDisplayValue);
             comboBox.SelectedItem = selectedItem;
 
+            // Indirect crossrefs (sourceFile set, e.g. RaceLock -> tor_extendeditemproperties.xml)
+            // don't live on the main entry — FileSaverService.SyncChangesToXml skips crossref
+            // columns, so a bare rowVm write never reaches the sidecar. Route the write
+            // through UpdateCrossReferenceValue, matching the Edit button path.
+            var hasSourceFile = !string.IsNullOrEmpty(fieldDef.CrossReference?.SourceFile);
+            var localKeyField = fieldDef.CrossReference?.LocalKeyField ?? "id";
+
             // Handle selection change
             comboBox.SelectionChanged += (s, e) =>
             {
                 if (comboBox.SelectedItem is ComboBoxItem selectedComboItem)
                 {
-                    var newValue = selectedComboItem.Tag?.ToString() ?? "";
+                    var rawValue = selectedComboItem.Tag?.ToString() ?? "";
 
-                    // Add prefix when saving
-                    if (!string.IsNullOrEmpty(newValue) && !string.IsNullOrEmpty(prefixToAdd))
+                    if (hasSourceFile)
                     {
-                        newValue = prefixToAdd + newValue;
+                        // Indirect: write to sidecar file; sidecar stores the raw ID (no prefix).
+                        var localKey = rowVm[localKeyField] ?? "";
+                        if (!string.IsNullOrEmpty(localKey))
+                        {
+                            vm.UpdateCrossReferenceValue(attributeName, localKey, rawValue);
+                        }
+                        rowVm[attributeName] = rawValue;
                     }
-
-                    rowVm[attributeName] = newValue;
+                    else
+                    {
+                        // Direct: value lives inline on the main entry; apply prefixToAdd.
+                        var newValue = rawValue;
+                        if (!string.IsNullOrEmpty(newValue) && !string.IsNullOrEmpty(prefixToAdd))
+                        {
+                            newValue = prefixToAdd + newValue;
+                        }
+                        rowVm[attributeName] = newValue;
+                    }
                 }
             };
 
