@@ -274,6 +274,22 @@ public class StandaloneDocumentStore : IDocumentStore
 
             Log($"SaveDocument({fileKey}) -> saving to {doc.FilePath} (compact={compactFormat}, linkedFields={excludeFields?.Count ?? 0})");
 
+            // Migrate any inline crossRef-with-sourceFile values (e.g. legacy inline
+            // RaceLock="gor2" on <Item>) to their sidecar before the strip below drops
+            // them. Without this, legacy inline values on untouched entries are
+            // silently lost on save.
+            if (schema != null && excludeFields != null)
+            {
+                var baseDirMig = Path.GetDirectoryName(doc.FilePath);
+                if (!string.IsNullOrEmpty(baseDirMig))
+                {
+                    var migrated = _crossRefService.MigrateInlineLinkedFields(
+                        _xmlService.GetEntries(doc), schema, baseDirMig, _pathResolver);
+                    if (migrated > 0)
+                        Log($"SaveDocument({fileKey}) -> migrated {migrated} inline crossRef values to sidecar(s)");
+                }
+            }
+
             // tor_strings uses groupByField="category" where category is itself a linked field,
             // so we need the special save path that reads the group value from XmlEntry attrs
             // (which include the merged-in linked values) rather than from the raw XML.

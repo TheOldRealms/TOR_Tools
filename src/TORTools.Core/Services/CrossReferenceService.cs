@@ -434,6 +434,122 @@ public class CrossReferenceService
     }
 
     /// <summary>
+    /// Migrates inline linkedField attribute values on the main document to the sidecar
+    /// file(s) before save strips them. Covers the open-save-no-edit data-loss scenario:
+    /// 144+ armor entries in tor_armors.xml carried inline RaceLock attributes, and a
+    /// save would strip them without writing them anywhere, silently losing the value.
+    ///
+    /// Rules:
+    /// - Only attribute-path crossRefs (sourceValuePath "@AttrName") are migrated.
+    ///   Element-path crossRefs (e.g. "ItemTraits/ItemTrait") have no inline form.
+    /// - Sidecar wins on conflict: if the sidecar already has a non-empty value for the
+    ///   key/attribute, the inline value is NOT overwritten (a prior UI edit beats a
+    ///   stale inline value).
+    /// - All linkedFields sharing one sidecar file are migrated in one load/save pass
+    ///   to avoid O(N) disk churn on big files like tor_extendeditemproperties.xml.
+    ///
+    /// Returns the total number of (entry, field) pairs migrated.
+    /// </summary>
+    public int MigrateInlineLinkedFields(
+        IReadOnlyList<Models.XmlEntry> entries,
+        Schema.SchemaDefinition schema,
+        string baseDir,
+        FilePathResolver filePathResolver)
+    {
+        if (schema.Fields == null || schema.Fields.Count == 0) return 0;
+
+        var linkedFieldsBySource = schema.Fields
+            .Where(kvp => kvp.Value.Type == "crossReference"
+                          && kvp.Value.CrossReference != null
+                          && !string.IsNullOrEmpty(kvp.Value.CrossReference.SourceFile)
+                          && kvp.Value.CrossReference.SourceValuePath != null
+                          && kvp.Value.CrossReference.SourceValuePath.StartsWith("@"))
+            .GroupBy(kvp => kvp.Value.CrossReference!.SourceFile!, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (linkedFieldsBySource.Count == 0) return 0;
+
+        var totalMigrated = 0;
+
+        foreach (var group in linkedFieldsBySource)
+        {
+            var sourceFileName = group.Key;
+            var sourcePath = filePathResolver.FindSourceFile(baseDir, sourceFileName);
+            if (sourcePath == null)
+            {
+                Console.Error.WriteLine($"[MigrateInline] Source file not found: {sourceFileName}");
+                continue;
+            }
+
+            XDocument sidecarDoc;
+            try { sidecarDoc = XDocument.Load(sourcePath, LoadOptions.PreserveWhitespace); }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[MigrateInline] Failed to load {sourcePath}: {ex.Message}");
+                continue;
+            }
+            var sidecarRoot = sidecarDoc.Root;
+            if (sidecarRoot == null) continue;
+
+            var sidecarEntryName = sidecarRoot.Elements().FirstOrDefault()?.Name.LocalName
+                                   ?? "ExtendedItemObjectProperties";
+            var modified = false;
+
+            foreach (var fieldKvp in group)
+            {
+                var fieldName = fieldKvp.Key;
+                var config = fieldKvp.Value.CrossReference!;
+                var sidecarAttrName = config.SourceValuePath.Substring(1);
+                var localKeyField = string.IsNullOrEmpty(config.LocalKeyField) ? "id" : config.LocalKeyField;
+                var sourceKeyField = config.SourceKeyField;
+
+                // Build lookup of existing sidecar entries keyed by SourceKeyField.
+                var existingEntries = new Dictionary<string, XElement>(StringComparer.OrdinalIgnoreCase);
+                foreach (var el in sidecarRoot.Elements())
+                {
+                    var k = el.Attribute(sourceKeyField)?.Value;
+                    if (!string.IsNullOrEmpty(k)) existingEntries[k] = el;
+                }
+
+                foreach (var entry in entries)
+                {
+                    var inlineValue = entry.OriginalElement.Attribute(fieldName)?.Value?.Trim();
+                    if (string.IsNullOrEmpty(inlineValue)) continue;
+
+                    var localKey = entry.GetAttributeValue(localKeyField);
+                    if (string.IsNullOrEmpty(localKey)) continue;
+
+                    if (existingEntries.TryGetValue(localKey, out var existing))
+                    {
+                        var existingVal = existing.Attribute(sidecarAttrName)?.Value?.Trim();
+                        if (!string.IsNullOrEmpty(existingVal)) continue; // sidecar wins
+                        existing.SetAttributeValue(sidecarAttrName, inlineValue);
+                    }
+                    else
+                    {
+                        var newEl = new XElement(sidecarEntryName);
+                        newEl.SetAttributeValue(sourceKeyField, localKey);
+                        newEl.SetAttributeValue(sidecarAttrName, inlineValue);
+                        sidecarRoot.Add(newEl);
+                        existingEntries[localKey] = newEl;
+                    }
+                    modified = true;
+                    totalMigrated++;
+                }
+            }
+
+            if (modified)
+            {
+                SaveDocument(sidecarDoc, sourcePath, compactFormat: true);
+                Console.Error.WriteLine($"[MigrateInline] {sourceFileName}: migrated entries to sidecar");
+            }
+        }
+
+        if (totalMigrated > 0) ClearCache();
+        return totalMigrated;
+    }
+
+    /// <summary>
     /// Saves an XDocument with the specified format.
     /// </summary>
     private static void SaveDocument(XDocument doc, string filePath, bool compactFormat)

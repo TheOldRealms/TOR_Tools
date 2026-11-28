@@ -12,6 +12,8 @@ namespace TORTools.App.Services;
 public class FileSaverService
 {
     private readonly IXmlDocumentService _xmlService;
+    private readonly CrossReferenceService _crossRefService = new();
+    private readonly FilePathResolver _pathResolver = new();
 
     public FileSaverService(IXmlDocumentService xmlService)
     {
@@ -51,6 +53,18 @@ public class FileSaverService
             if (context.Schema.HasNestedVariations)
             {
                 GenerateCivilianClones(context);
+            }
+
+            // Migrate legacy inline crossRef-with-sourceFile values (e.g. inline
+            // RaceLock="gor2" on <Item>) to their sidecar before the strip below drops
+            // them. Mirrors StandaloneDocumentStore.SaveDocument.
+            var migrationBaseDir = Path.GetDirectoryName(context.FilePath);
+            if (!string.IsNullOrEmpty(migrationBaseDir))
+            {
+                var migrated = _crossRefService.MigrateInlineLinkedFields(
+                    context.XmlEntries, context.Schema, migrationBaseDir, _pathResolver);
+                if (migrated > 0)
+                    Console.WriteLine($"[Save] Migrated {migrated} inline crossRef values to sidecar(s)");
             }
 
             // Check if this is a multi-file schema that needs split saving
