@@ -182,6 +182,14 @@
       "nested": true,
       "nestedPath": "skill[@id='Spellcraft']/@value"
     },
+    "Berserk": {
+      "displayName": "Berserk",
+      "type": "string",
+      "order": 31,
+      "width": 75,
+      "nested": true,
+      "nestedPath": "skill[@id='Berserk']/@value"
+    },
     "UsedBy": {
       "displayName": "Used By",
       "description": "Units that use this skill template. Click to navigate.",
